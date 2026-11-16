@@ -1,0 +1,12 @@
+{
+  "projectId": "demo-lazcakong",
+  "appId": "1:000000000000:web:demo",
+  "apiKey": "demo-api-key",
+  "authDomain": "demo-lazcakong.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "demo-lazcakong.firebasestorage.app",
+  "messagingSenderId": "000000000000",
+  "measurementId": "",
+  "oAuthClientId": "",
+  "recaptchaSiteKey": ""
+}

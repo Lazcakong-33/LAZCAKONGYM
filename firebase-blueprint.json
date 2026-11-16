@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "AthleteProfile": {
+      "title": "AthleteProfile",
+      "description": "Registered athlete account, credentials, routines, workout history, personal records, and body weight logs.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique profile ID" },
+        "name": { "type": "string", "description": "Athlete full name" },
+        "email": { "type": "string", "description": "Athlete login email" },
+        "pin": { "type": "string", "description": "Secret 4-6 digit login PIN" },
+        "avatar": { "type": "string", "description": "Emoji avatar" },
+        "goal": { "type": "string", "description": "Primary fitness goal" },
+        "weeklyTargetDays": { "type": "number", "description": "Target training days per week" },
+        "isAdmin": { "type": "boolean", "description": "Whether user is coach/admin" },
+        "createdAt": { "type": "string", "description": "ISO creation timestamp" },
+        "lastSyncedAt": { "type": "string", "description": "ISO sync timestamp" }
+      },
+      "required": ["id", "name", "email", "pin"]
+    },
+    "InviteLink": {
+      "title": "InviteLink",
+      "description": "Single-use invitation token generated exclusively by the Administrator. Expires immediately after 1 use.",
+      "type": "object",
+      "properties": {
+        "token": { "type": "string", "description": "Unique single-use invitation token" },
+        "createdAt": { "type": "string", "description": "ISO creation timestamp" },
+        "createdBy": { "type": "string", "description": "Admin name or email" },
+        "note": { "type": "string", "description": "Optional recipient label" },
+        "used": { "type": "boolean", "description": "True once consumed by an athlete" },
+        "usedAt": { "type": "string", "description": "ISO timestamp when consumed" },
+        "usedByName": { "type": "string", "description": "Name of athlete who used the invite" },
+        "usedByEmail": { "type": "string", "description": "Email of athlete who used the invite" },
+        "revoked": { "type": "boolean", "description": "True if manually expired by Admin" }
+      },
+      "required": ["token", "createdAt", "createdBy", "used"]
+    },
+    "DeletedAthlete": {
+      "title": "DeletedAthlete",
+      "description": "Tombstone record of permanently deleted athletes to guarantee immediate multi-device synchronization and prevent stale local caching.",
+      "type": "object",
+      "properties": {
+        "athleteId": { "type": "string", "description": "ID of the deleted athlete" },
+        "deletedAt": { "type": "string", "description": "ISO timestamp of deletion" },
+        "deletedBy": { "type": "string", "description": "Admin who performed the deletion" }
+      },
+      "required": ["athleteId", "deletedAt"]
+    }
+  },
+  "firestore": {
+    "/athletes/{athleteId}": {
+      "schema": { "$ref": "#/entities/AthleteProfile" },
+      "description": "Global collection of registered athletes and their synced training data"
+    },
+    "/deleted_athletes/{athleteId}": {
+      "schema": { "$ref": "#/entities/DeletedAthlete" },
+      "description": "Registry of deleted athletes ensuring instant cross-device purge and permanent removal"
+    },
+    "/invites/{inviteId}": {
+      "schema": { "$ref": "#/entities/InviteLink" },
+      "description": "Single-use invitation links created by the Administrator"
+    }
+  }
+}

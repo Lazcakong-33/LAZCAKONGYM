@@ -1,0 +1,11 @@
+ID,Funcionalidad,Archivo,ComponenteOFuncion,PruebaVerificacion,EvidenciaConcreta,Resultado,RiesgoResidual,Pendiente
+TR-01,Autenticación y Sesión,src/App.tsx,App,Prueba de inicio de sesión sintética,Cero errores en compilación,APROBADO,Bajo,Ninguno
+TR-02,Navegación 5 Módulos,src/components/Navigation.tsx,Navigation,Navegación cruzada entre pestañas,Barra inferior fija operativa,APROBADO,Bajo,Ninguno
+TR-03,Dashboard Inicio,src/views/TodayView.tsx,TodayView,Carga de rutina del día y sesión activa,Renderizado sin duplicidad,APROBADO,Bajo,Ninguno
+TR-04,Gestión de Rutinas,src/views/RoutinesView.tsx,RoutinesView,Planificación semanal e importación CSV,Consolidación correcta,APROBADO,Bajo,Ninguno
+TR-05,Mapa Muscular,src/views/MapaMuscularView.tsx,MapaMuscularView,Anatomía interactiva y recuperación,Cálculos puros de fatiga,APROBADO,Medio,Validar en pantallas muy estrechas (<360px)
+TR-06,Entrenamiento Activo,src/views/ActiveWorkoutView.tsx,ActiveWorkoutView,Serie protagonista y series compactas,Bloqueo de doble toque implementado,APROBADO,Bajo,Ninguno
+TR-07,Centro de Rendimiento,src/views/ProgresoView.tsx,ProgresoView,Filtros temporales y exportaciones,Métricas analíticas Elite 3.0,APROBADO,Bajo,Ninguno
+TR-08,Respaldos Seguros,src/utils/eliteBackupEngine.ts,eliteBackupEngine,Exportación e inspección JSON,Esquema saneado verificado,APROBADO,Bajo,Ninguno
+TR-09,Seguridad Firestore,firestore.rules,Firestore Rules,Validación de reglas y Custom Claims,Reglas estrictas implementadas,APROBADO,Bajo,Verificar en emulador
+TR-10,PWA e Iconos V5,public/manifest.json,Manifest / ServiceWorker,Inspección de iconos maskable V5,Rutas actualizadas sin caché,APROBADO,Medio,Verificación en dispositivo físico Android

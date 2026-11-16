@@ -1,0 +1,1262 @@
+{
+  "generator": "ImageGen",
+  "exercises": [
+    {
+      "delivery": 36,
+      "sourceId": "a57918fc-5aad-5b5e-b059-4891f968e1b6",
+      "prompt": "Original ImageGen eight-pose sequence: Jalón facial en suspensión. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "suspension"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "c9f28dee-814d-4cef-910a-6161ca46382d",
+      "prompt": "Original ImageGen eight-pose sequence: Levantamiento Turco. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "kettlebell"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "effc2800-2625-404d-8a56-3c42c67fa439",
+      "prompt": "Original ImageGen eight-pose sequence: Molino con Kettlebell. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "kettlebell"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "20c44ab5-6563-5a0d-b750-1964d3aba1b6",
+      "prompt": "Original premium fitness illustration sprite. EXACTLY 4 columns by 2 rows of EIGHT equal SQUARE cells, landscape 2:1. Bradford barbell press: standing overhand wide grip, bar starts FRONT of neck clavicle level; lift ONLY just above crown, move behind crown then lower BEHIND neck upper trapezius; reverse over head to FRONT clavicles. Eight phases front, upward, justclearcrown, behindneck, justclearcrown, forward, lowerfront, front. Elbows always partly flexed NEVER full overhead lockout. Same shirtless muscular darkhaired man black shorts shoes fixed camera graphite black gym, working deltoids lime #CCFF00. All equipment and whole body fit every cell same position scale background. One complete cycle. No text numbers borders logos.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "85666015-efc0-4b27-bae5-5dbb6fefc5eb",
+      "prompt": "Original ImageGen eight-pose sequence: Press Cubano de Pie. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "1b12da4f-fdea-458c-a3dc-d630bc297639",
+      "prompt": "Original ImageGen eight-pose sequence: Press Cubano Sentado. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "94c21e20-4a05-866d-b727-5c67cca61b47",
+      "prompt": "Original ImageGen eight-pose sequence: Press de Arnold con mancuernas sentado. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "f5d19b6b-fb4a-5900-8993-8beb19a3a794",
+      "prompt": "Original premium fitness illustration sprite. EXACTLY 4 columns by 2 rows of EIGHT equal SQUARE cells, landscape 2:1. Single RIGHT arm KETTLEBELL PUSH PRESS. One kettlebell only held at right shoulder rack; shallow squat knee dip; explosive leg extension driving bell; right arm overhead lockout; controlled lowering to shoulder rack; shallow knee flexion catch; stand rack. Left arm relaxed by side. Fullbody feet stationary. Same shirtless muscular darkhaired man black shorts shoes fixed camera graphite black gym, working deltoids lime #CCFF00. All equipment and whole body fit every cell same position scale background. One complete cycle. No text numbers borders logos.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "kettlebell"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "1bf3fec3-3ec8-48b8-bb5c-7439876c7aab",
+      "prompt": "Original ImageGen eight-pose sequence: Press de hombro a un brazo con mancuerna. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "c64c25ff-7e50-422e-ba86-ac7e24ddf6e5",
+      "prompt": "Original ImageGen eight-pose sequence: Press de Hombro con Kettlebell a Una Mano. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "kettlebell"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "65e0d493-ff1c-4492-a82a-109167974678",
+      "prompt": "Original ImageGen eight-pose sequence: Press de Hombro con Mancuerna Semiarrodillado. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "603caf54-423d-4715-89ac-d1b4b499107a",
+      "prompt": "Original ImageGen eight-pose sequence: Press de hombro de pie con barra landmine a un brazo. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "landmine",
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "98055ba3-3b26-463f-8ed8-ef7f2811bede",
+      "prompt": "Original ImageGen eight-pose sequence: Press de Hombros Alterno de Pie con Mancuernas. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "29e65c0c-5a3f-48e8-b423-cdbe9fef77fa",
+      "prompt": "Original ImageGen eight-pose sequence: Press de hombros con agarre martillo en máquina sentado. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "machine"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "f6b447b8-ddb6-a278-8b64-aa5ea715ef82",
+      "prompt": "Original ImageGen eight-pose sequence: Press de hombros con barra sentado. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "62d8e1ae-e1fa-44f0-a2f0-8ad732d30942",
+      "prompt": "Original ImageGen eight-pose sequence: Press de Hombros con Mancuerna Semiarrodillado. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "456473b0-442a-434b-8e07-b1a71872b489",
+      "prompt": "Original ImageGen eight-pose sequence: Press de hombros con mancuernas de pie. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "5077809b-faae-5cc6-9eb5-a8fe0848d32b",
+      "prompt": "Original premium fitness illustration sprite. EXACTLY 4 columns by 2 rows of EIGHT equal SQUARE cells, landscape 2:1. Standing bilateral CABLE shoulder press using TWO SEPARATE D handles attached to TWO LOW pulleys at ankles height. Two cables from floor to each hand visible ALL frames. Hands shoulderheight, halfwayup, nearlyup, overhead, nearlyup, halfwaydown, shoulders, shoulders. Handles NEVER connect as a bar. Floorpulleys, two cablelines and towers fixed, same handles all frames. Same shirtless muscular darkhaired man black shorts shoes fixed camera graphite black gym, working deltoids lime #CCFF00. All equipment and whole body fit every cell same position scale background. One complete cycle. No text numbers borders logos.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "6b0ffef6-8dd1-4b89-999a-a11d85d9e16f",
+      "prompt": "Original ImageGen eight-pose sequence: Press de hombros en máquina. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "machine"
+      ]
+    },
+    {
+      "delivery": 36,
+      "sourceId": "0e6340a2-0757-508a-b1c0-a26cb2b75de5",
+      "prompt": "Original ImageGen eight-pose sequence: Press de hombros en máquina con discos. Fixed camera, graphite black and lime #CCFF00, no text.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "plate-loaded machine"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "d37cc65e-3c18-4e39-8ea2-200c4f20e348",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press de Hombros Sentado con Agarre Neutro. Seated on upright bench two DUMBBELLS neutral grip palms facing eachother all frames, shoulder rack to overhead and return. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "ef258e02-3b95-4569-9993-b34fabd06cd0",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press de Hombros Sentado en Máquina Smith. Seated upright bench inside SMITH machine, straight bar attached TWO vertical rails slides shoulder FRONT neck to overhead and back. Entire rails visible. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "smith",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "f29a4a3f-4309-4159-9ef1-369beea0eec2",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press de Hombros Tsunami. Standing TSUNAMI overhead press, flexible black bar loaded equal small plates ends, subtle downward bow under load, twohand overhand grip front shoulders to overhead and return. Feet fixed no squat. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "tsunami bar"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "1867ddc7-68d0-5447-8687-a2b9758d773c",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press landmine a dos manos. Standing TWO HANDS clasp one loaded free end LANDMINE bar at upperchest, other end pivot fixed floor forward. Press freeend diagonally up arms straighten then return. Camera threequarter side entire bar visible. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "landmine",
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "d447c943-d6c5-488d-add7-a317b6855141",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press landmine a un brazo arrodillado. TALL KNEELING both knees on floor ONE ARM landmine press. Right hand holds loaded freeend at shoulder, anchored otherend floor ahead. Press diagonally forward up then return. Bothknees remain floor. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "landmine",
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "d1da7f1a-1aa7-4798-9a0d-a4eccf36ff5f",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press landmine unilateral medio arrodillado. HALF KNEELING right knee floor leftfoot planted, right hand one loaded landmine bar freeend shoulder to diagonallyup thenreturn, fixedfloorpivot otherend visible. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "landmine",
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "019a870f-c75a-96aa-addc-5bc492b68bc8",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press Militar Tras Nuca con Barra. Standing BARBELL BEHIND NECK shoulder press. Rear threequarter camera so bar clearly behindhead, wide overhandgrip, start uppertrapezius behindneck press straight overhead return behindneck. Feet fixed. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "845e552e-35b7-8fd4-8ecb-6c03874085cd",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press tras nuca en Multipower sentado. Seated uprightbench in SMITH MACHINE BEHIND NECK press, rear threequarter camera, bar attachedverticalrails behindhead rises fromuppertrapezius overhead thenreturn. Samebenchrailsposition. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "smith",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "f9820b37-eeb2-5b40-9ee8-d5f399609ca1",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press vikingo con barra landmine. Standing LANDMINE VIKING press. Bar pivot fixedfloor infront, loadedfreeend fitted TWO neutralgrip Viking parallelhandles at shoulders. Bothhands pushsameattachment diagonallyup thenreturn. Entire bar visible fixedpivot. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "landmine",
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "b60387b4-b1cc-5372-a2f4-5287a6db7ed1",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press Z con barra. BARBELL Z PRESS seated on FLOOR legs straight forward separated heelsfixed. Uprighttorso no bench. Barbell frontshoulders to overhead and return, legs remainstraight floor. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "ab0ed063-c4fc-5e05-af13-2c1693c02962",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Press Z con mancuernas. DUMBBELL Z PRESS seated on FLOOR bothlegs straightforward heelsfixed no bench. Two dumbbells shoulderheight press overhead return. No kneebend. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "19862249-cbd3-4104-bcc0-b5ad1c21bd73",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Push press con barra. BARBELL PUSH PRESS standing bar frontrack. Shallow knee dip then powerful legdrive bar overhead lockout then controlled shoulderrack return. Eightposes include knee dip drive lockout descent catch stand. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "0349439c-c56e-4bd8-88b9-7bf9b00f3811",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Push Press con Mancuernas. DUMBBELL PUSH PRESS standing TWO dumbbells shoulderrack, shallow knee dip legdrive drives both overhead lockout, lower rack catch knees thenstand. Both dumbbells remain held throughout. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "890ca0c8-ff8d-4f2b-ad34-d9743118bfee",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Remo Alto Inclinado Sentado con Mancuernas. Seated on bench hinge forward chestnearthighs rear DELT HIGH ROW with TWO dumbbells. Arms hang beneathshoulders then bend elbows flarewide pull dumbbells toward upperribs, return hang. Fixed hingetorso, elbows bend90 atpeak. Not fly. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "e9421df5-65a2-4fac-8dfa-bf2552e9f755",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Remo posterior para deltoides con mancuernas. Standing bentover REAR DELT dumbbell ROW. Hiphinge backflat knees soft fixed, arms hang two dumbbells then bend elbows flaredwide upperarms outto sides90 forearmsdown, dumbbells near upperribs return hang. Rear deltoids highlight. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "85ee1bd7-ae5f-43ea-bef2-590f3e7e75ff",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Remo vertical con barra y agarre al ancho de los hombros. Standing upright BARBELL UPRIGHT ROW grip shoulderwidth. Straightbar at thighs, pull vertically near torso elbows lead high wide to shoulders bar upperchest, lower thighs. Fixed upright torso no overheadpress. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "5a4288af-d6e5-1b30-d668-4a6e3b55b399",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Remo vertical con barra y agarre ancho. Standing upright BARBELL UPRIGHT ROW WIDE grip hands muchwiderthan shoulders. Bar thighs pull upright elbowsout reaching shoulderheight bar lowerchest return thighs. Grip fixed wide. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "68152684-1e2f-1ffb-39dc-fd1c741f63ac",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Remo vertical con barra y agarre cerrado. Standing upright BARBELL UPRIGHT ROW NARROW grip hands 15cm apart centerbar. Bar thighs pull highnear torso elbowsleadwide reaching shoulders, bar upperchest return thighs. Fixedgrip. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "7074ca94-a20d-cfa8-7702-b59e4bd31ab9",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Remo vertical con mancuernas. Standing upright TWO DUMBBELL UPRIGHT ROW. Two separate dumbbells thighs raise toward lowerchest by lifting elbows wide high and bending elbows, return thighs. No overheadpress. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 37,
+      "sourceId": "2f8af6f8-5cd3-821e-ec81-1314359d9cfc",
+      "prompt": "Original premium fitness sprite EXACTLY FOUR columns TWO rows EIGHT equal square cells landscape2:1. One full cycle start intermediate contract return, lefttoright topthenbottom. Exercise Remo vertical con polea. Standing CABLE UPRIGHT ROW facing LOWPULLEY floorlevel. Twohand overhandgrip short straightbar cableattachedmiddle barthighs pullnear torso elbowsleadwidebarupperchest thenreturnthighs. Singlecable alwaysvisible bar to lowpulley. Same muscular shirtless darkhaired male black shorts shoes all8cells graphite black gym lime #CCFF00 workingdeltoids. Camera locked fullbody and ALL equipment within eachcell, identical framing scale anatomy gearposition. No text numbers letters logos borders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "bbf7d889-640a-4032-ad12-7edceed931d3",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Remo vertical en máquina Smith: Standing SMITH UPRIGHT ROW bar attached twoverticalrails. Overhand shoulderwidth hands fixed, barthighs pullvertical closebody elbowsleadwide up to shoulderheight bar upperchest, lowerbackthighs. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle shoulder highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "smith"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "3c8b1675-4705-4572-9855-3ee077946aa3",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Rotación con Kettlebell Alrededor de la Cabeza: KETTLEBELL HALO standing holding SAME ONE kettlebell by horns BOTH hands rotatearound head. Eightphases bellfrontface, lefttemple, behindleft, behindhead, behindright, righttemple, front, front. Both hands always hold samebell elbowsbend torsofeetfixed. Not overheadpress. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle shoulder highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "kettlebell"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "3ba7a9b4-88ba-4390-9593-de658b6668e6",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Rotación Cubana con Mancuernas: DUMBBELL CUBAN ROTATION standing upperarms horizontal out sides fixed elbows90. Forearms hanging dumbbells below elbows rotate shoulders externally until forearmsvertical dumbbellsabove elbows then return. Elbowpositions stationary all8poses no overheadpress. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle shoulder highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "77e949b2-df71-4560-b72c-f79eaa7966dc",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Rotación externa de hombro sentado: SEATED CABLE EXTERNAL shoulder ROTATION. Upright on bench right elbow pinned rightwaist bent90. Cablepulley elbowheight across LEFT side. Onehandle right hand starts acrossabdomen, rotates forearmout right while elbowfixed atwaist thenreturns. Horizontal arc no armraise. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle shoulder highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "cable",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "1dde3ef2-f45d-4881-a0e0-dc54b3a70814",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Rotación Externa en Decúbito Lateral: SIDE LYING DUMBBELL EXTERNAL ROTATION leftsideonflatbench rightelbow pinned rightwaist90deg. Rightforearm starts acrossabdomen pointingfloor then rotates up towardceiling keepingelbowwaist fixed. Leftarm supportshead. Return controlled. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle shoulder highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbell",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "4059e331-670f-57f1-99e3-0609b0270190",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Tirón alto con barra desde posición colgante: BARBELL HANG HIGH PULL standing barhang upperthighs overhand shoulderwide. Hiphinge kneeflex shallowdip then hipkneeextension shrug elbowslead highwide barupperchest, lowerbar reset hiphinge. Not overheadpress. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle shoulder highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "c1af5fc6-a3be-4467-87f9-b4e8abb1f55e",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Volante de pie con mancuerna: DUMBBELL STEERING WHEEL standing holding ONE dumbbell horizontally BY BOTHENDS with BOTH hands arms extendedforward shoulderheight. Rotate dumbbell like steeringwheel fromhorizontal to diagonalright vertical then diagonalleft returnhorizontal whilearmsstayforward. No overheadlift. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle shoulder highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "f4e6f7fe-9615-558b-8e9e-64442224794a",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Abdominales completos en banco declinado: DECLINE BENCH FULL SIT UP anklesfixed under elevatedrollers at highend. Liefaceup torsohead LOWERthan feet ondeclinedbench then curlallway upright towardknees, lowerback. Sidecamera entirebench visible feetpositionfixed no slidingbench. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "decline bench"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "2f181b12-c156-48f8-bfb4-efc2ffc650dc",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Abdominales con peso: WEIGHTED SIT UP lyingfaceup onmat kneesbent feetflat SAME roundweightplate heldagainstchest bothhandsallframes. Torso risesupright towardknees thenlowers mat. Feetfixed platefixedonchest. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "weight plate",
+        "mat"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "1d5e0f91-6491-5b38-a12d-63da4acf3bd9",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Abdominales en GHD: GHD SIT UP sidecamera full GHD machinevisible samehippad elevated and feetlocked rollersforward all8frames. Start upright hips onpad kneesgentlebend; lower torsoBACK into air behindhippad armsreachoverhead towardfloor; raise torso reachinghandsforward feet andreturnupright. Never lieprone no backextension. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "GHD"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "b2e609bf-d783-4f44-8213-de75f13eb878",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Crunch abdominal de pie en polea: STANDING HIGH CABLE CRUNCH facingcabletower ropefromtop held beside temples elbowsbent fixed. Standing knees soft feetfixed contractabs roundupperback ribs towardpelvis headelbowsdown, return upright. Cablealwaysattachedrope no armextensions. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "431ad34e-e714-4ef2-9f2f-b629359da2ff",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Crunch abdominal en máquina: SEATED ABDOMINAL CRUNCH MACHINE feetfixedfloor seatback paddedupperlever handlesbesidetemples. Curltorso forward ribs towardpelvis movingupperlever with torso thenreturn. Entire consistentweightstackmachine visible allposes. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "machine"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "cb4adf67-8fc7-4fee-b077-0971132d0c9a",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Crunch abdominal sentado en polea: SEATED HIGH CABLE CRUNCH onflatbench facingawayfromtower. RopefromHIGHpulley heldbesidetemples elbowsfixed. Hips staybench feetfloor curltorsoforward usingabs returnupright. Same rope cable alwaysconnected visible. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "cable",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "5574c68f-61a7-4dd5-beb3-f89fb4c4942f",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Crunch con Balón de Estabilidad: STABILITY BALL CRUNCH faceup lowerback on ONE large graphiteSwissball feetfloor knees90. Armscrossedchest. Start torso slightbackoverball curlshouldersribs towardpelvis without hipmotion, return. Ballsizepositionunchanged. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "stability ball"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "591883dc-8fce-4307-a13c-a767d15dcab8",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Crunch en máquina acostado: LYING MACHINE CRUNCH. Supine on specialized lowhorizontal abdominal machine, hipslowerbackremainpaddedbench feetsecuredrollers, hands holdhandles nearhead attached upper resistancelever. Raise shoulders andupperback curling towardknees thenreturn lowerbackalwaysbench. Sideview entireunchangingmachine visible. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "machine"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "412d4c49-4c4f-49c4-9d24-9cdd176000fa",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Crunch lateral de rodillas con cable: KNEELING LATERAL CABLE CRUNCH two kneesfloor sideways tohighcabletower. Ropehighpulley heldalong righttemple, bend torso sideways right ribstowardrighthip thenreturnupright. Hipcenterknees stationary, no forwardcrunch. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "79b4b650-53d9-4e87-8bd8-7143d3f7802d",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Círculos de Rodillas en Suspensión: HANGING KNEE CIRCLES handsfixed on overheadpullupbar straightarms suspended feetofffloor. Both kneesbent90 heldtogether makecircular path left upward chest right downward left return. Frontview bodyhang staysfixed equipmentnoloss. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "6f6e176e-fe86-4e95-be39-55fb09d9fb5a",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Dedos a la Barra: TOES TO BAR strict hangingoverhand pullupbar handsfixed armsstraight shouldersengaged. Start hang straightlegs downward; raise bothlegs forward pelviscurlsuntil BOTH toes touchbar betweenhands overhead; lower controlled backtohang. Sideview entirebarfeet visible not pullup. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "b445a407-9f2f-477b-afa6-9be25ecefc35",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Desplazamiento con Barra - De Rodillas: KNEELING BARBELL ROLLOUT sideview kneesfixedmat BOTH hands shoulderwidthonbarbell loaded equalroundplates rollingfloor. Start barunderschoulders hipsaboveknees, rollforward lowerbodyalmostplank kneesfloor armsextended, pullback tostart. Plates stayfloor same diameter no weightlifting. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 38,
+      "sourceId": "2b86d658-a0cb-43ce-b782-77e927d3e72c",
+      "prompt": "Original premium fitness educational sprite. EXACT FOUR columns TWO rows EIGHT equal SQUARE cells landscape 2:1. 8chronologicalposes full controlled cycle return. Elevaciones de Piernas en Banco Inclinado: INCLINE BENCH LEG RAISE supineon inclinedbench headHIGH shouldersgrip handlesoverhead fixed. FeetLOW startlegs straight alignedbench then flexhips raising bothstraightlegs towardvertical curlpelvisslightly thenlower. Headhips supportedbench entiretime. Sideview equipmentunchanged. Same male athlete muscular shirtless darkhaired blackshortsshoes. GraphiteBLACKgym, lime #CCFF00 targetmuscle abdominals highlight. LOCKED camera identical fullbody framing scaleequipment within everycell. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "incline bench"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "15c51d26-076f-4ceb-8702-c15fdf3cb937",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Fondos Coreanos. PARALLEL BAR DIP variant feetmoveback on descent. Start armsstraight supportedbetweenparallelbars feetofffloor underneathbody; bendelbows90 torsoleansforward bodytilts45 straightlegsback; pressback upright legsreturnbeneathhips. Handsfixed twoparallelbars never behindsinglebar. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedpectorals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "pectorals",
+      "equipment": [
+        "parallel bars"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "68fd5792-ddb1-4b46-8842-3cd11b0d7e8b",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Press Poliquin con Mancuernas. SUPINE FLAT BENCH TWO DUMBBELL CHEST PRESS. Headbackhipsfixedbench feetfloor dumbbells sideschest elbowsbent90 pressverticalabovechest thenreturnchest. Pectorals lime. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedpectorals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "pectorals",
+      "equipment": [
+        "dumbbells",
+        "flat bench"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "c98e66c4-2657-4c42-bfbb-99425b312dd2",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Press de California. BARBELL CALIFORNIA PRESS supineflatbench feetfloor closeoverhandgrip. Eightorderedposes 1barabovecheststraightarms 2bendelbows barnearforehead 3barjustbehindcrown 4elbowsstillbent moveupperarmsdown barLOWchest 5startpressfromlowchest 6midpress 7barabovechestextended 8sameextended. Benchbodyfixed entirebarvisible. Tricepshighlight. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedtriceps highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "triceps",
+      "equipment": [
+        "barbell",
+        "flat bench"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "9231a2c9-f7eb-43ae-a6b4-3686dcc7777d",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Pullover para Tríceps con Barra. BARBELL TRICEPS PULLOVER supineflatbench feetfixedfloor. Bothhands shoulderwidthsupinatedgrip bar abovechest. Bendelbows barforehead then movebentupperarmsBACK barbehindhead benchheight. Reverse shoulderarc baroverface thenextendelbowsabovechest. Fullcycle8poses fixedbenchhipsnotrise. Tricepshighlight. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedtriceps highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "triceps",
+      "equipment": [
+        "barbell",
+        "flat bench"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "6a4145f4-8ef2-43f7-a9e9-51159327623e",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Remo de Kayak en Polea. STANDING HIGH CABLE KAYAK ROW bothhands straightbar connected HIGHpulley. Armsnearlystraight atshoulderheight startfront; pulldownarctowardRIGHT hip rotatetorso right; returnfront; pulltowardLEFT hiprotatetorso left; returnfront. Bothfeetplanted samebarcable always. Dorsalhighlight. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedlats highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "lats",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "e3c8ed4e-067b-4435-aaed-36c75976bab1",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Remo sentado con flexión en polea. SEATED LOW CABLE FLEXION ROW feetonfootplate kneesgentlebend fixed. Startarmsstraight slightforwardupperbackround; pullhandleabdomen whiletorsoextends toneutralupright, squeeze shoulderblades, returnarmsextend slightcontrolledforwardupperbackflexion. No leaningbackhyperextension. Cablealwaysvisible. Dorsalhighlight. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedlats highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "lats",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "67f6aae7-5674-4e6e-9b39-1e4a0c956e5c",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Tirón alrededor. HALF KNEELING HIGH CABLE LAT PULL AROUND. Sideways to HIGHpulley rightkneedown leftfootplanted. RIGHT outerhand reachesacrossbody towardhighLEFTpulley; pullhandle sweepingarc downrightelbowtowardrightpocket thenreturnoverheadcrossbody. Fixedhips no twisting leftarmrest. Dorsalhighlight. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedlats highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "lats",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "a73c52dc-e7cc-4775-8a59-5b2277bf9697",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevación de cadera en Multipower de rodillas. SMITH KNEELING HIP EXTENSION correctvariant bar resting UPPERTRAPS behindneck onshoulders attachedverticalrails. Bothkneesonpad shinsfloor all8poses. Start hipsback towardheels torsoforwardsmallhinge; extendhipssqueeze glutes riseTALLKNEELING hipsabove knees; returnhinge hipsback. No bench no baracrosships. Gluteshighlight side3quarterfullmachine. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedglutes highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "glutes",
+      "equipment": [
+        "smith"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "2187784c-77b0-4106-9b6f-cd5938da82b8",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevación de talón a una pierna con mancuerna. SINGLE LEG DUMBBELL CALF RAISE standing RIGHT legstraight footfloor oneDBright hand armstraight. LEFT handwallforbalance leftknee bent leftfootofffloorallposes. RaiseRIGHTheel tiptoe plantarflex ankle thenlowerheel floor. Torsovertical kneesfixed. Calfhighlight. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedcalves highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "calves",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "f9ac9620-8a9e-46e4-bab1-64d7412a868e",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Extensión Terminal de Rodilla en Polea. STANDING CABLE TERMINAL KNEE EXTENSION facecabletower handsframeforbalance. Short CUFF aroundback RIGHTknee justbelowkneecap connectedcable atKNEEHEIGHT infront. Rightforefoot staysfloorall8poses. Start slight rightkneebend heelraised, extendrightknee backward heelreturnfloor, return slightflexionheelup. Smallrange kneeONLY hipsfeetfixed leftlegstable. Quadslimehighlight. No anklecuff no kicking. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedquadriceps highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "quadriceps",
+      "equipment": [
+        "cable",
+        "knee cuff"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "720a8f79-75aa-4d96-ae21-e94b863d7990",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Apertura cruzada acostado en polea. SUPINE LYING CROSS LATERAL CABLE RAISE floor between TWO LOWpulleys shouldersalignedpulleys. RIGHThand holdsLEFTtowerhandle LEFThandRIGHThandle cablescross. Topdownfixedcamera entirebodyandpulleys. Armsnearlystraight startDOWNbesidehips handscrossedoverpelvis; abductarmsSIDEWAYS closefloor toTshape shoulderheight thenreturnhips. Neverraisearmstowardceiling no chestfly. Lateralshouldershighlight. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targeteddeltoids highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "deltoids",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "f46bcb1e-3eff-49d3-adee-000a1502fd8d",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevación posterior del deltoides con barra. STANDING BARBELL REAR DELT RAISE BEHIND BODY. Rear3quartercamera fixed: bothhandsoverhand gripbar behindthighs hips. ElbowsleadOUTandBACK bend slightly raisingbarshortdistanceup behindhips towardlowback thenlower armsstraight. Not shrug not frontuprightrow not bentover. Rearshouldershighlight. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedrear deltoids highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "rear deltoids",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "765217dc-7f1f-4c1e-b4d3-2c195d7a696c",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevaciones de Piernas Rectas en Silla Romana. CAPTAINS CHAIR STRAIGHT LEG RAISE. Forearmsfixedonelbowpads handsverticalhandles backagainstverticalpad. Bodyhang feetofffloor startbothlegsstraightdown raisebothstraightlegs forwardhorizontalL thenlower. Hipsstaybackpad no kneebend. Abshighlight. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedabdominals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "captains chair"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "e9cd8dfe-d2be-42be-b259-d1d3fc671aa9",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevaciones de rodillas colgado. HANGING KNEE RAISE overheadpullupbar bothhandsfixed armsstraight wholebodyofffloor. Startlegshang thenbendknees raisingboth towardchest hipsflex thenlowerlegsbackdown. No pullup bodyhangfixed. Abs. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedabdominals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "f8bff329-d28e-4a8a-b495-184fe80c7368",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevaciones de Rodillas en Silla Romana. CAPTAINS CHAIR KNEE RAISE forearmsfixedpads backpad handsverticalhandles bodyofffloor. Bothkneesbend lift towardchest curlpelvis thenlowerlegshang. Samechairno pullup. Abs. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedabdominals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "captains chair"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "5a9aa9a7-2666-4fb4-a56c-ace7b6d4602d",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevación Colgante de Garhammer. HANGING GARHAMMER RAISE bothhandsfixedpullupbar armsstraight. KneesBENT90throughout all8poses startthighsslightlyinfrontbody; curlpelvis liftbentkneesto chest shortcontrolledarc; returnkneesstillbent90. Neverextendkneesorhanglegsstraight. Abs. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedabdominals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "3339b89d-601e-5eeb-a551-deb1b513413d",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevación de piernas acostado en banco plano. SUPINE FLAT BENCH LEG RAISE headbackhipsbench handsgripbenchbehindhead. Bothlegsstraight startlow alignedbench beyondend raisebothvertical slightpelviscurl thenlower. Samebenchlegsnostandingkneebends. Abs. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedabdominals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "bench"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "806178d3-cc6d-4295-8263-a21ea9be34b7",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevación de Piernas Colgando a la Barra. HANGING STRAIGHT LEGS TO BAR. Sidecamera fixedpullupbar bothhandsstraightarmsgripfixed. Startlegshangdown feetofffloor; raisebothstraightlegs forwardLthenup toesTOUCHBAR betweenhands pelviscurls; lowerbackdown. Fullbodyfit. Abs. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedabdominals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "cebcd0b9-f4ec-483e-b2cf-f759efd759f4",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevación de Piernas Colgando con Peso. WEIGHTED HANGING LEG RAISE bothhandsfixedpullupbar armsstraight. Identicalsmallankleweights strapped BOTHankles all8poses. Straightlegsstartdown raisebothforwardhorizontal90hipflexion pause thenlower. No toesbar no kneebend. Fullbodygearvisible. Abs. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedabdominals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar",
+        "ankle weights"
+      ]
+    },
+    {
+      "delivery": 39,
+      "sourceId": "88d01eae-b72c-4649-8178-0be9633ec6d2",
+      "prompt": "Original premium FITNESS exercise 8POSE sprite, exactly FOUR columns TWO rows EIGHT squarecells landscape2:1. Elevación de Piernas Rectas Colgado. STRICT HANGING STRAIGHT LEG RAISE bothhandsfixedpullupbar armsstraight. Legsstraightdown toforwardHORIZONTAL90degrees hipflexion thenlower. No toesbar no kneesbent. Fixedcamera fullbodybarfeetofffloor. Abs. Onecompletecycle includingreturn eightchronologicalposes. Same musculardarkhaired shirtlessmale blackshortsshoes fixedcamera samebodygearframing scale allposes. GRAPHITEBLACKgym lime#CCFF00 targetedabdominals highlighted. Entirebody and equipmentwithincellmargins. No textnumbersborderslogos.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "1fac415a-983a-4610-bb36-6c8889314a76",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Elevación de Piernas Rectas en Barras Paralelas: PARALLEL DIP BAR STRAIGHT LEG RAISE handsfixed parallelbars armsSTRAIGHT supportingbody no forearmpads. Legs straight hangdown thenraise forwardhorizontalL thenlower. No pullup kneesfixed. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "parallel bars"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "8eeb3700-043a-401e-969e-f9d735aba6ed",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Elevación de rodillas en máquina Ab Coaster: AB COASTER machine sidecamera complete fixed curvedrail base armrestpads front. Bothknees shins on SAME movingkneepadforever forearmsfixedupperpads handshandles. Contractabs pullkneecarriageUPandFORWARD along curvedrail towardchest thenlower. Torso fixed45deg no situp no chair. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "ab coaster"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "d53971e5-7438-4a9e-b041-0158b3142546",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Elevación oblicua de rodillas colgado: HANGING OBLIQUE KNEE RAISE fixedhands onpullupbar straightarms. Bentkneesraise diagonally towardRIGHTchest pelvisrotatesright thenlower; nextkneesraiseLEFT andlower. Fullcycle8frames hangingfeetneverfloor. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "d0f8718c-b950-4960-80a5-cc057c225b84",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Giro con barra landmine: LANDMINE ROTATION standing bothhands holdloadedfreeendbar armsalmoststraight chestheight. Otherbarendanchoredfloorinfront SAMEpivotfixed. Sweepfreeend fromRIGHT hipupcenter thenLEFThipandbackcenterRIGHT. Pivotfeetandtorso controlled. Entirebarfullbodyvisibleallframes. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "landmine",
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "265b1439-6005-4282-94f7-ab6f63e0e296",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Giro con cable (arriba abajo): HIGH TO LOW CABLE WOODCHOP standing sideways tower highpulley BOTHhands singlehandle startleftshoulderhigh armsalmoststraight, rotate torso sweeping diagonallyDOWNacrossbody torighthip thenreturnleftshoulder. Feetplantedsoftknees controlledhiprotation cablealwaysconnected. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "0ec75482-1934-4b86-84d2-46da9a89d67d",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Giro con cable (horizontal): HORIZONTAL CABLE TWIST standsideways tower CHESTHEIGHTpulley bothhandshandle armsforward almoststraight chestheight. Rotatetorso awaytower horizontal arc shoulderheight hands no verticalmotion; returncenter. Hipsstable feetplanted. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "56f2585b-203d-4be6-9957-c52bcd9e4d73",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Giro de Pie con Barra: STANDING BARBELL TORSO TWIST lightstraightbar resting acrossBACKSHOULDERS overhandwidegripall8poses. Standfeetplantedkneessoft rotate torsoRIGHTcenterLEFTcenter legsremainforward. Barrotateswithshoulders not overheadpress. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "f840c38e-9b55-493d-9350-eab5a6d67483",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Giro Ruso con Barra: SEATED RUSSIAN TWIST BARBELL seatedmat kneesbent BOTHfeet slightlyraised allposes torsoleansback15degrees straightback. BOTHhands holdlight SHORTbarbell infrontchest. Rotate torso bar towardRIGHT hipcenterLEFThipcenter. Armsbent barneverbehindshoulders. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "a3da9e1f-b976-4458-92f4-4af1264793fa",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Giro ruso con mancuerna: SEATED DUMBBELL RUSSIAN TWIST kneesbent bothfeetslightlyraised torsoleansback samefixedbalance. Bothhands holdONEdumbbell ends chestheight rotate torso andDBright hipcenterlefthipcenter all8poses. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "a741580c-cf0a-49d6-a30d-5ee70ad9be0c",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Giro ruso con peso: SEATED WEIGHTED RUSSIAN TWIST bothhands ONE roundweightplate atchest. Kneesbent heelslightlyraised torsoleansback. Rotate torsoplate towardrighthipcenterlefthipcenter cycle. Sameplate allposes no changinggear. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "weight plate"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "9f9a7752-0ad7-44e9-a025-d68e9ac1a419",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Inclinación Lateral de Pie con Mancuerna: STANDING DUMBBELL SIDE BEND ONE dumbbell RIGHT hand armstraight side. LEFT handhead. Feetfixedhipwidth legsstraightsoftknees. BendTORSO sidewaysRIGHT slideDBdownrightthigh thenreturnupright. Neverbendforward noarmcurl. Obliqueslime. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "0d4721f5-3941-4356-9666-4f210bb6b314",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. L-sit: L SIT on two lowparallelparallettes handsfixedhandles armsstraight liftbody hipsbetweenhandles bothlegsSTRAIGHT forwardhorizontal. 8poses liftingheelsintoL HOLDslightbreathing thenlower heelsstart. No bentknees no chair bodyequipmentfixed. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "parallettes"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "a65c12ab-688e-47bf-966c-994dcc71ec89",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Medio molino de viento colgado: HANGING HALF WINDMILL handsoverhandfixedpullupbar armsstraight. BOTHlegsstraight forwardHORIZONTAL L maintainhip90 throughcycle, rotatebothlegstogether RIGHT towardside returncenter thenLEFTreturncenter. No toesbar no kneebend no legdrop. Wholebodyfit. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "14046b3a-d435-4452-925e-511a8addfffb",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Patadas de tijera colgado: HANGING SCISSOR KICKS fixedhandspullupbar armsstraight. Bothlegsstraight forward45deg alternate onehigher otherlower in smallverticalscissor frontbackmotion thenreverse. Neverbendknees no bicycling no widesideabduction. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "c8837562-afba-4d90-b0bb-31b0b17a0a7d",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Perro de caza a una pierna con TRX: SUSPENSION SINGLE LEG BIRD DOG sideview. FOREARMS floor leftfootinsideONEsuspensionstirrup taut tofixedanchorbehind. Bodyforearmplank rightlegsuspended behindextended. RaiseRIGHTlegslightly andextendLEFTarm forward whileRIGHTforearmandLEFTfootinstrap supportbody thenreturnleftforearmfloor rightleglevel. No pike no standing. Sameleftfootstrap allframes. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "suspension trainer"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "ad8cbff5-7fab-47f9-8332-447ef6785681",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Plancha con Balón Suizo: SWISS BALL FOREARM PLANK forearmsrestONElarge graphiteSwissball feettoesfloor legsstraight bodyheadtoheelaligned. 8subtlecontrolledbreathingposes hipslevel staticcorehold fixedballsizeposition no crunch no rollouts. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "stability ball"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "d0e78959-c1de-400c-a7fb-44c1015d5013",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Press Pallof en polea: STANDING PALLOF PRESS towerCHESTHEIGHTpulley onLEFT side. Bothhandssinglehandle centeredchest pressSTRAIGHTFORWARD armsstraight atchestheight thenreturnchest. Torsohipsfeetfaceforwardfixed ANTIROTATION no twisting. Cable toside tension alwaysvisible. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "5170255c-cc48-41b6-9b26-a72669deab44",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Press Pallof en polea baja: LOW PULLEY PALLOF PRESS standingtowerLEFT ankleheightpulley cableDIAGONAL tobothhandshandle atchest. PresshandsSTRAIGHTFORWARD shoulderheight thenreturnchest. Torsofacesforwardfixed no rotation no squats. Entirelowpulleycablevisible. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "15f450f0-f4f1-4391-b59e-c79cd37956ac",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Puente lateral con mancuernas: WEIGHTED SIDE BRIDGE leftforearmfloor elbowundershoulder feetstacked straightlegs. RIGHThandholdsONEdumbbell RESTING ON RIGHTHIP allframes. Liftpelvisfromfloor untilbody straightheadtoheels HOLD thenlowertostart cycle. NeverraiseDBoverhead. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 40,
+      "sourceId": "149f6670-3321-4e86-a231-796f1c26a1a4",
+      "prompt": "Original premiumfitness instructional sprite EXACTLY4COLUMNS2ROWS EIGHTequalSQUAREcells landscape2:1. Rodamiento con Rueda Abdominal: KNEELING AB WHEEL ROLLOUT bothkneesfixedmat bothhandsfixedONEcentralabwheelhandles wheelonfloorunder shoulders. RollwheelFORWARD straightarms bodyextends nearlyplank kneesfloor thenpullbackhipsaboveknees. Samewheelsize fixedfloorcamera sideview no standing. EIGHTchronologicalposes ONEcompletecycleincludingreturn; same muscularshirtlessdarkhairedmale blackshortsshoes GRAPHITEBLACKgym LIME#CCFF00 abdominalworkingmuscles. LOCKEDcamera fullbodyequipmentwithinmargins samepositiongear scaleall8cells. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "ab wheel"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "51e27022-23d5-4196-aa85-a3b2f1c213b4",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Rodillas a codos colgando. HANGING KNEES TO ELBOWS bothhandsfixedpullupbar straightarms shoulderengaged. Startlegshang thenbendkneesandcurlpelvis liftingkneesallwaytoELBOWS thenlower. Nottoesbar no pullup. Sideview. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 abdominals highlight. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "b8bf5d99-8df7-4eb8-aa9d-8bac39d070b7",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Rotación ascendente. STANDING ROTATION holdingONEsmall dumbbellRIGHT hand atRIGHT shoulder elbowbent90 palmup. Hipsfeetstable faceforward, rotateTORSOleft awayfromloadedhand thenreturnneutral. Dumbbellpositionrelativechestunchanged no overheadpress. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 abdominals highlight. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "320b01fe-acda-4f6b-a510-646506eecc29",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Rotación de tronco con cable en posición de rodillas. TALL KNEELING HIGH TO LOW CABLE WOODCHOP BOTHkneesfloor. HIGHpulleyLEFT side bothhandsonehandle leftshoulderheight rotateTORSO sweepinghands diagonallyDOWNtoRIGHT hip thenreturn. Kneeshipsremainstationary. Cablealwaysconnected. Variant follows HOWTO steps. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 abdominals highlight. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "0ad57432-b306-46f9-a486-635db0a1080c",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Rotación de Tronco en Máquina. SEATED ROTARY TORSO MACHINE hipsseatlegsfixed feetsecuredpads. Chestshouldersagainst rotatingupperpads bothhandshandles. RotateUPPERTORSOandmachineupperlever RIGHTreturncenter LEFTreturncenter. Baseweightstackalwaysstationary. No fullmachine rotation. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 abdominals highlight. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "machine"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "8f86a994-5d86-423c-a395-55122f54de34",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Rotación de tronco en máquina sentado. SEATED TORSO ROTATION MACHINE feetfloor knees90 hipsseatfixed. Bothhandsholdpaddeduppermachinehandles chestheight. TorsoandupperhandlesrotateRIGHTcenterLEFTcenter againstweightstack. No crunchnobenchpress fixedmachinebase. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 abdominals highlight. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "machine"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "8fc0c9c9-e4ee-5914-a2c4-aa07bf00610f",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Sostén de piernas elevadas en banco. SIX INCH BENCH HOLD supineflatbench handsgripbenchSIDESnearhips. Lowerbackhipsremainbench, liftstraightlegs15cm andheadshouldersslightly HOLD severalposes smallbreathing thenreturnlie. No fullsitup no highlegraise. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 abdominals highlight. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "bench"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "cbafebcc-8125-5113-b1d7-9bae7640a101",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Traslado de mancuerna en plancha. DUMBBELL PLANK PULL THROUGH highplank bothhandsfloor feetwide bodyaligned. ONE dumbbellleftside belowchest. RIGHThandreachesunderchest dragSAME dumbbell toRIGHTfloor replacehand; LEFThandreachesunder dragSAME dumbbellbackLEFT replacehand. One DB and3supportpoints no renegaderow. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 abdominals highlight. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "9c4894a4-9d5b-416e-8718-f957823c0ac0",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. V-Ups en Suspensión. SUSPENSION SUPINE V UP sidecamera heels BOTHfeetINSAMEtwofootstraps anchoredhighaheadfeet. Startfaceup backmat straightlegslowarmsabovehead, simultaneouslyraiseSTRAIGHTlegsandtorso hipsremainmat reachinghands towardfeetVshape. Feetremainstraps entirecycle strapsanglesfollowfeet. Lowerbackstartcontrolled no proneplank. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 abdominals highlight. No textnumberslogosborders.",
+      "primaryMuscle": "abdominals",
+      "equipment": [
+        "suspension trainer"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "2f471d53-3998-40e5-bfb3-542da8be66af",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Caminata del Granjero. FARMER WALK TWO loadedfarmercarryhandles oneeachhand armsSTRAIGHTdown, torsovertical. Eightposes twoalternatingwalkingstrides returnmatchinggait. Fixedcamera lateral bodymovesminimalwithinframe no cameratracking, sameheavyhandlesat sides NEVER curl. Forearmslime. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "farmer handles"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "ed9b5a18-18d0-4d80-bb07-b67f0ad96663",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Caminata del Granjero Unilateral. UNILATERAL FARMER SUITCASE WALK ONEkettlebellRIGHThand armstraightdown LEFThandempty. Walktwoalternatingstrides torsoverticallevel no sidebend. Fixedcamera sameframing sameonebellweight all8poses. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "kettlebell"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "bcdc45cd-8548-4416-864f-fb0928b9da8a",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Colgado pasivo. PASSIVE DEAD HANG fixedoverheadpullupbar overhandgrip bothhands straightarms relaxedshoulders bodyfeetofffloor. Eightgentlebreathingposes no pullup no scapularshrug no kneesraise. Samebarbodyposition. Forearmhighlight. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "8662095d-cb00-1466-73f1-70394857c241",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Curl de antebrazos con barra en agarre inverso. STANDING REVERSE WRIST CURL straightbar OVERHAND palmsdown armsDOWN almoststraight ELBOWSSTATIONARY nearthighs all8poses. OnlyWRISTEXTENSION smallarc bar rises3cm byhandbendingback thenreturn. NEVER bendelbows orbarabovehips. Forearmslime. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "12b4858c-6c84-43b4-964d-cfd590ff7958",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Curl de Muñeca con Mancuerna a Una Mano. SEATED ONE ARM DUMBBELL WRIST CURL RIGHTforearm firmlyhorizontal resting RIGHTthigh elbowfixed. RIGHTpalmUP wristbeyondkneecap holdingONEsmallDB fingersgrip. OnlyrightWRISTflexes up towardforearm thenlowers, no elbowmovement. Lefthandrest. Fullbodyandhandvisible. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbell",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "2fc473c6-c392-4036-8fa8-fdf760cb65d2",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Curl de muñeca de pie con barra. STANDING BARBELL WRIST CURL underhandpalmsup armsSTRAIGHTDOWN infrontthighs elbowsstationaryall8poses. OnlyWRISTS curlbar smallarc towardpalms andlower. Barheightthighs NEVER moveswaistchest. No bicepscurl. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "5ee4154e-6595-4f89-92bf-b36ad01d149f",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Curl de muñeca de pie con barra detrás de la espalda. BEHIND BACK BARBELL WRIST CURL standing backthreequartercamera armsstraightdown behindhips bothhandsunderhandbar behindthighs. OnlyWRISTSflex curlbar3cm up towardpalms thenlower armsELBOWSstationary. No shrug norow no bicepscurl. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "barbell"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "4c88201a-d81c-4c88-b0e2-9b58a5f2e0b1",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Curl de Muñeca de Pie con Mancuerna. STANDING TWO DUMBBELL WRIST CURL palmsforward armsstraightdown besidefrontthighs ELBOWSstationary. ONLYwristscurlDBssmallarc towardforearms thenlower. DBremainbelowhips. No bicepscurl. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "faa4c3c5-2276-4933-826f-cc678b4e6676",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Curl de muñeca en máquina. SEATED WRIST CURL MACHINE FOREARMS horizontal firmlySUPPORTEDonpad wristsbeyondedge PALMSUP holdingrotatingleverhandles. ONLYwristflexion rotateshandles smallarc up thenreturnextended wrists. Elbowsforearmsfixedpad all8poses. Machinebaseweightstackfixedvisible no preachercurl. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "machine"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "d1613595-46fa-4f15-9467-807cb3b2b88c",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Curl de Muñeca en Polea. SEATED LOW CABLE WRIST CURL benchfacingtower FOREARMSrestTHIGHS horizontal palmsUP handsshortstraightbar cablemiddle toLOWpulley. ONLYwristsflex barup smallarc thenlower, elbowsforearmsTHIGHSfixed allposes no bicepscurl. Fullbenchcabletower inframe. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "cable",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "d271435e-ad73-4dab-a3a8-3c171781c4a4",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Curl de muñeca en polea sentado. SEATED CABLE WRIST CURL forearmsrestsflatbenchhorizontal wrists beyondbenchfrontedge palmsUP shortstraightbar connectedLOWpulley. Onlywristflexion curlsbarUPtowardforearms thenlower. Elbowsneverliftbench shouldersstill. Samecablebarvisible. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "cable",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 41,
+      "sourceId": "bf409651-d501-4f6f-b314-cd0cc5452063",
+      "prompt": "Original PREMIUM FITNESS 8POSE SPRITE exactFOURcolumnsTWOrows EIGHTequalSQUAREcells landscape2:1. Curl de muñeca inverso con barra. SEATED BARBELL REVERSE WRIST CURL FOREARMS fullysupportedTHIGHS horizontal palmsDOWN overhandgripbar wristsbeyondknees. ONLY wristEXTENSION bendsknucklesUP thenlower hands. ELBOWSforearmsstationary thighsall8frames no bicepscurl. FullcontrolledcycleincludingRETURN. Fixedcamera samefullbodyframing scaleanatomyequipment everycell entirebodygearinsidecellmargin. Same shirtlessmuscular darkhairedman blackshortsshoes GRAPHITEBLACKgym lime#CCFF00 forearms highlight. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "barbell",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "b2c6ca4b-db03-4553-8d9f-6e5e87bbd118",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl de Muñeca Inverso de Pie con Mancuernas. STANDING REVERSE WRIST CURL TWO dumbbells palmsDOWN armsSTRAIGHTdown infrontthighs ELBOWSstationary. ONLY wristsEXTEND handback smallarc dumbbellsrise3cm belowhipsthendecline. No bicepscurl no armsraising. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "24143ad6-3b55-459f-bdac-b8721dd1e668",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl de Muñeca Inverso Sentado con Barra EZ. SEATED EZ BAR REVERSE WRIST CURL entireforearmssupportedHORIZONTAL thighs wristsbeyondknees. BothhandsoverhandpalmsDOWN lightEZbar. OnlyWRISTEXTENSION knucklesbendUP thenlower. Elbowsandforearmsfixedall8frames no bicepscurl. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "EZ bar",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "09aed7e3-7a9c-4e38-81a6-bb7675692cbf",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl de muñeca neutral con mancuerna a un brazo. SEATED SINGLE NEUTRAL WRIST DUMBBELL CURL RIGHTforearmSUPPORTEDhorizontalonpad thumbUP neutralgripONEdumbbell wristbeyondedge. OnlyWRIST radialdeviation tips thumbsideUP soverticalDBtiltsupsmallarc thenreturn. Forearmelbowfixedsamepad all8poses. No bicepscurl no pronationsupination. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbell",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "8008ee41-c9d1-42a3-8ea5-773f9f954230",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl de Muñeca Sentado con Barra EZ. SEATED EZ BAR WRIST CURL BOTHforearmsfirmlySUPPORTEDHORIZONTALonthighs PALMSUP wristsbeyondknees holdinglightEZbar. OnlyWRISTflexion curlsbarUP towardforearms thenlowers extendedhands. Forearmselbowsneverleavepad no bicepscurl. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "EZ bar",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "f0020a27-c8da-5a08-80c0-6c7d62cb3153",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl en banco Scott con barra EZ y agarre prono. EZ BAR REVERSE PREACHER CURL seatedScottbench UPPERARMSfullyrestinclinedpreacherpadbothhandsOVERHANDpalmsDOWN onEZbar. ExtendELBOWSbarlow thenflexELBOWS bar towardface andlower. Upperarmsneverleavepad wristsstraight. Hereelbowmoves correctlyreversebicepscurl. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "EZ bar",
+        "preacher bench"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "c5e55508-8f59-4c68-a5b5-7f5b2b7df078",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl en Polea con Agarre Inverso. STANDING LOW CABLE REVERSE CURL shortstraightbar palmsDOWN overhand fixedwrists. Upperarmsverticalclosebody elbowsPINNED sides; flexELBOWS bringingbarthighstoupperabdomen thenlower. CableattachedcenterbarLOWpulleyall8frames no wristcurl. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "b03f3b8c-b957-4838-b198-eeda7a389132",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl inverso con barra EZ. STANDING EZ BAR REVERSE BICEPS CURL palmsDOWNoverhandEZbar grip wristsstraight fixed. Upperarmsvertical torso elbowsremainatsides flexELBOWS barthighstochest thenlower. No supination no wristcurl no bodyhinge. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "EZ bar"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "c8a73206-c24b-46e7-9f38-b9e049a3afe5",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl inverso con mancuernas. STANDING TWO DUMBBELL REVERSE BICEPS CURL palmsDOWNthroughout allposes wristsstraight. ElbowsPINNED sides upperarmsvertical curlDBs byELBOWflexion fromthighstoshoulders thenlower. BothDBssameweights no rotation neutralhammer. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "f3410c98-ed27-4d72-a198-651f70330c20",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl inverso de muñeca con mancuerna a un brazo. SEATED SINGLE RIGHT REVERSE WRIST CURL RIGHTFOREARMhorizontalFULLYRESTSpad palmDOWN wristjustbeyondedgeholdingONEsmallDB. ONLYWRISTEXTENSION knucklesUP towardforearm thenreturnhandslower. ForearmandELBOWfixed horizontal all8poses. Otherhandthigh no bicepscurl. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbell",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "91c42a1f-9c3c-4b39-8325-177d96e6c806",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Curl Invertido de Araña con Barra EZ. EZ BAR REVERSE SPIDER CURL chestdown oninclinebench supportedtorso stomachchestbench feetfloor. BotharmsHANGVERTICAL beneathshoulders overhandEZbarpalmsDOWN, flexELBOWS raisebar towardforehead thenlower. Upperarmsfixedhanging chestneverleavesbench. No uprightpreacher. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "EZ bar",
+        "incline bench"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "d723ed09-c017-4ea4-8f63-90c1a00cbb6a",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Dominada Escapular. SCAPULAR PULLUP hangingfixedpullupbar overhandhands ARMSSTRAIGHT LOCKEDELBOWS all8poses. Startpassivehang shouldersnear ears thenDEPRESSandRETRACTscapula toraisebodyONLY3cm withoutelbowbend thenrelaxhang. Legsstraightfeetofffloor. No fullpullup no kneesraise. Forearmsandlowertrapsgreen. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "pull-up bar"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "fa5a7a63-5bd3-4032-9116-acffb083597c",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Enrollamiento de Muñeca de Pie con Cable. STANDING CABLE WRIST ROLL holdshortstraightBAR BOTHhandsoverhand armsEXTENDEDforwardshoulderheight elbowslockedsoft. CableattachedCENTERbar leadsLOWpulleyfloor. ONLYWRISTS alternatehandrolling bar towardself thenreverse. Handsrotatearoundbar axis whilebarcenterstayssameposition armsfixedheightall8poses. Notbicepscurl notwristcurlatthigh. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "cable"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "9836a9dd-c3fc-465c-8ae3-4defcbccf9c1",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Paseo del granjero con mancuernas. TWO DUMBBELL FARMER CARRY largeequalDBoneeachhand armsSTRAIGHTsides torsovertical. 8poses twoalternatingwalkingstrides consistentgaitfixedcamera bodycenterstayswithinframe. SameDBsnevercurl armsno raising. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbells"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "8d0b122e-3029-4722-a56a-9b9aa76575bf",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Paseo del granjero unilateral. UNILATERAL FARMER CARRY ONEheavyDUMBBELL RIGHT hand hangingarmstraightLEFT handempty. Walktwoalternatingstridesleveltorso no leaning no curling. Fixedcamera samefullbodyframing sameoneDBall8poses. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbell"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "08ebb48f-60d2-44e9-91f9-930e37b8d841",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Pronación acostada con mancuernas. LYING SUPINE DUMBBELL PRONATION flatbench feetfloor headbackhipssupported. BOTHARMSnearlystraight verticalabovechest holdingtwoSMALL DBs. StartpalmsfaceEACHOTHER DBsparallel bodyaxis; rotateFOREARMS inwardtoPALMSDOWN soDBaxesrotate90degrees thenreturnneutral. Entirearmspositionsstayverticalunchanged no press no elbowflexion. Forearmslime. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbells",
+        "bench"
+      ]
+    },
+    {
+      "delivery": 42,
+      "sourceId": "2c5c5e94-5091-4615-820e-ded247f917d6",
+      "prompt": "Originalpremiumfitness eightposes SPRITE EXACT FOUR COLUMNS TWO ROWS EIGHTsquarecells WIDE2:1. Exercise: Supinación con Mancuernas en Decúbito. SEATED ONE ARM SUPINATING DUMBBELL CURL percurrentHOWTO. Seateduprightbench feetfloor RIGHTupperarmpinnedsidetorso elbowfixedspace. Start rightarmDOWN ONEdumbbellneutralpalmIN; flexELBOWandrotateFOREARM toPALMUP atshoulderheight thenlowerreturnneutralgrip. Leftemptyhandthigh. SingleDBall8poses. Forearmhighlight. Fullcontrolledcycleincludingreturn. Same musculardarkhairedshirtlessmale blackshortsshoes graphiteBLACKgym lime#CCFF00FOREARMS highlighted. CameraLOCKED fullbodyALLgearinsidemargins identicalframing scaleequipment all8cells. No textnumberslogosborders.",
+      "primaryMuscle": "forearms",
+      "equipment": [
+        "dumbbell",
+        "bench"
+      ]
+    }
+  ]
+}

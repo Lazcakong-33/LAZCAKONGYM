@@ -1,0 +1,22 @@
+{
+  "exercises": 669,
+  "originalMediaFilesVerified": 1338,
+  "exactLegacyIdMappings": 668,
+  "legacyCatalogExcluded": 356,
+  "existingBackupAndUpdateSafetyTests": 4,
+  "typescript": "passed",
+  "build": "passed",
+  "resolverChecks": "passed",
+  "componentRenderChecks": "passed",
+  "interactiveBrowserReview": "pending-environment-cannot-launch-chromium",
+  "productionDeploy": false,
+  "productionRulesChanged": false,
+  "userDataMigrated": false,
+  "verifiedOn": "2026-11-16",
+  "serverStartup": "passed",
+  "httpHealthPageAndWebp": "passed",
+  "geminiModelDefaultAndOverride": "passed",
+  "geminiLiveAPI": "not-tested-no-key",
+  "githubUpload": "blocked-by-automatic-approval-review",
+  "githubBranchHead": "8ca5b5f08f089321cdbde31410c5502048955af9"
+}

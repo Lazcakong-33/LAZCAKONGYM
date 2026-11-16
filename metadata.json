@@ -1,0 +1,6 @@
+{
+  "name": "LAZCAKONGYM",
+  "description": "App de entrenamiento de alto rendimiento con rutinas editables, descansos, calculadora de discos y registro en tiempo real.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

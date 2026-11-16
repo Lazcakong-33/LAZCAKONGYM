@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+:root {
+  --theme-primary: #CCFF00;
+  --theme-primary-hover: #b8e600;
+  --theme-glow: rgba(204, 255, 0, 0.25);
+  --theme-soft-bg: rgba(204, 255, 0, 0.12);
+  --theme-border-soft: rgba(204, 255, 0, 0.35);
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+html,
+body {
+  background-color: #090909;
+  color: #F5F5F5;
+  overflow-x: hidden;
+  min-height: 100dvh;
+}
+
+@layer utilities {
+  .display-panel {
+    @apply bg-[#171717] border border-[#303030];
+  }
+
+  .display-card-elevated {
+    @apply bg-[#171717] border border-[#303030];
+  }
+
+  .display-metric {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 800;
+    color: #CCFF00;
+    letter-spacing: -0.025em;
+  }
+
+  .glass-card {
+    @apply bg-[#171717]/90 backdrop-blur-lg backdrop-filter;
+  }
+
+  .glass-panel {
+    @apply bg-[#171717]/95 backdrop-blur-md backdrop-filter;
+  }
+
+  .theme-text {
+    color: #CCFF00;
+  }
+  .theme-bg {
+    background-color: #CCFF00;
+  }
+  .theme-border {
+    border-color: #CCFF00;
+  }
+  .theme-glow-shadow {
+    box-shadow: 0 0 18px rgba(204, 255, 0, 0.25);
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Custom dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090909;
+}
+::-webkit-scrollbar-thumb {
+  background: #303030;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #454545;
+}
+
+/* Touch active scale helper */
+.active-press {
+  transition: transform 0.1s ease;
+}
+.active-press:active {
+  transform: scale(0.97);
+}
+
+/* Edge-to-edge transparent tap highlights and touch-callout suppression */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

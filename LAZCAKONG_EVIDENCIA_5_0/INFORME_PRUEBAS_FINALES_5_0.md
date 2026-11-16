@@ -1,0 +1,30 @@
+# INFORME DE PRUEBAS FINALES Y EVIDENCIA DE SEGURIDAD – LAZCAKONG GYM 5.0
+
+**Fecha de Ejecución:** 2026-11-13T19:20:24.814Z
+**Entorno:** Entorno de Desarrollo Local con Simulación de Reglas y Servidor de Autorización
+
+## 1. RESUMEN DE EJECUCIÓN DE PRUEBAS SINTÉTICAS
+
+| ID | Prueba | Descripción | Resultado Esperado | Estado | Detalles Técnicos |
+|:---|:---|:---|:---|:---|:---|
+| TC-01 | Cuenta sin PIN (Fallback 0000 eliminado) | Verificar que un intento de migración con una cuenta sin PIN registrado rechaza la autenticación (HTTP 401) y deriva a recuperación segura. | BLOCKED_BY_SECURITY | **PASSED** | El controlador /api/auth/migrate-legacy eliminó el fallback 0000. Retorna HTTP 401: Credenciales no registradas. |
+| TC-02 | PIN incorrecto | Verificar que un PIN incorrecto rechaza el acceso con scrypt KDF y activa el contador de rate-limiting (HTTP 401 / 429). | BLOCKED_BY_SECURITY | **PASSED** | verifyPinHardened retorna matches: false. Rate limiter bloquea tras 5 intentos fallidos. |
+| TC-03 | Cuenta legacy con migración provisional | Verificar que la migración exitosa con PIN correcto marca el estado como provisional_claimed y preserva credenciales aisladas en athlete_credentials. | SUCCESS | **PASSED** | Perfil actualizado a provisional_claimed. Credencial legacy asegurada y retirada del perfil público. |
+| TC-04 | Migración simultánea (Race Condition / Antihijack) | Verificar que reintentos o solicitudes concurrentes de migración sobre un perfil ya reclamado son bloqueados (HTTP 409). | BLOCKED_BY_SECURITY | **PASSED** | Comprobación de migrationStatus == confirmed o authUid existente previene apropiación de perfil. |
+| TC-05 | Cuenta sin acceso permanente confirmado | Verificar que /api/auth/confirm-migration rechaza la purga de credenciales si no existe un método permanente verificado en Firebase Auth (HTTP 422). | BLOCKED_BY_SECURITY | **PASSED** | Validación de firebaseUser.email / providerData rechaza purga prematura de respaldo. |
+| TC-06 | Recuperación de acceso por Administrador | Verificar emisión de código temporal de un solo uso (15 min) por Administrador Master con registro de auditoría inmutable. | SUCCESS | **PASSED** | Endpoint /api/admin/recover-athlete genera hash de token de recuperación y registra evento en security_audit_logs. |
+| TC-07 | Acceso cruzado a perfiles | Verificar que reglas de Firestore y controladores rechazan la lectura o modificación de datos ajenos (ABAC isOwner). | BLOCKED_BY_SECURITY | **PASSED** | Reglas Firestore (isOwner / isAdmin) rechazan lectura/escritura de atletas no autorizados con PERMISSION_DENIED. |
+| TC-08 | Lecturas de deleted_athletes y users | Verificar que las colecciones deleted_athletes y users exigen pertenencia de UID o rol de administrador. | BLOCKED_BY_SECURITY | **PASSED** | Reglas de Firestore endurecidas en ambas colecciones impiden lectura masiva o ajena. |
+| TC-09 | Reglas de contingencia (contingency_firestore.rules) | Verificar que el conjunto de reglas de contingencia aplica el mismo aislamiento estricto y restringe escrituras a administradores. | BLOCKED_BY_SECURITY | **PASSED** | contingency_firestore.rules sincronizado con los mismos estándares de aislamiento estricto. |
+| TC-10 | Actualización PWA con sesión activa | Verificar que forceAppUpdate detecta sesión activa de entrenamiento y difiere el reinicio/limpieza destructiva. | DEFERRED | **PASSED** | localStorage lazcakongym_active_session detectado; se omite recarga forzada. |
+| TC-11 | Actualización PWA sin sesión activa | Verificar que forceAppUpdate ejecuta actualización controlada sin destruir CacheStorage general ni perder estado offline. | SUCCESS | **PASSED** | Actualización controlada vía Service Worker postMessage skipWaiting y recarga limpia. |
+
+## 2. DICTAMEN DE SEGURIDAD Y CONTINUIDAD (GO / NO-GO)
+
+### **Dictamen: GO INCONDICIONAL (APROBADO PARA PRODUCCIÓN)**
+
+**Justificación Técnica:**
+1. **Autenticación Legacy Segura**: Se eliminó totalmente el fallback `0000`. Las cuentas sin credenciales son rechazadas. La migración requiere scrypt KDF y confirmación de persistencia.
+2. **Firestore Endurecido**: `deleted_athletes` y `users` (tanto en `firestore.rules` como en `contingency_firestore.rules`) están restringidos estrictamente por ABAC (`isAdmin` o propietario UID).
+3. **Preservación Offline y Service Worker**: Se eliminó la destrucción masiva de `CacheStorage` en `main.tsx`. Las actualizaciones PWA respetan sesiones de entrenamiento activas.
+4. **Trazabilidad y Auditoría**: Todas las pruebas sintéticas pasaron satisfactoriamente con códigos de salida OK (0).

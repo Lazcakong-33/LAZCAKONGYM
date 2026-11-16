@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for hardened security
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Admin authorization strictly via verified Google Sign-In identity (Starter Tier compatible, no Custom Claims)
+    function isAdmin() {
+      return isAuthenticated() &&
+        ('email_verified' in request.auth.token) &&
+        request.auth.token.email_verified == true &&
+        ('email' in request.auth.token) &&
+        request.auth.token.email == 'admin@example.invalid' &&
+        ('firebase' in request.auth.token) &&
+        request.auth.token.firebase.get('sign_in_provider', '') == 'google.com';
+    }
+    
+    // Strict athlete isolation: match UID or existing document authUid (no Custom Claims required)
+    function isOwner(athleteId) {
+      return isAuthenticated() && (
+        request.auth.uid == athleteId ||
+        (resource != null && resource.data.get('authUid', '') == request.auth.uid)
+      );
+    }
+    
+    function isOwnerCreate(athleteId) {
+      return isAuthenticated() && (
+        request.auth.uid == athleteId ||
+        request.resource.data.authUid == request.auth.uid
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // 1. ATHLETES COLLECTION (/athletes/{athleteId})
+    // -------------------------------------------------------------------------
+    // NO open fallback: Non-admin users can ONLY read and write their OWN profile.
+    // Client is strictly forbidden from:
+    // - Granting itself isAdmin.
+    // - Linking unauthorized authUid.
+    // - Writing credentials (pin) directly into the public/sport profile document.
+    match /athletes/{athleteId} {
+      allow read: if isAdmin() || isOwner(athleteId);
+      
+      allow create: if isAdmin() || (
+        isOwnerCreate(athleteId) &&
+        (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin != true) &&
+        request.resource.data.authUid == request.auth.uid &&
+        !('pin' in request.resource.data)
+      );
+      
+      allow update: if isAdmin() || (
+        isOwner(athleteId) &&
+        // Prevent client-side escalation of administrative privileges
+        (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == resource.data.get('isAdmin', false)) &&
+        // Prevent client-side hijacking or re-association of authUid
+        (!('authUid' in request.resource.data) || request.resource.data.authUid == resource.data.get('authUid', '')) &&
+        // Ensure credentials are never written or updated from client SDK
+        (!('pin' in request.resource.data))
+      );
+      
+      allow delete: if isAdmin() || isOwner(athleteId);
+    }
+    
+    // -------------------------------------------------------------------------
+    // 2. ISOLATED CREDENTIALS COLLECTION (/athlete_credentials/{athleteId})
+    // -------------------------------------------------------------------------
+    // ZERO CLIENT ACCESS: Completely inaccessible from web/mobile client SDKs.
+    // Purely server-side access via Firebase Admin SDK for migration and verification.
+    match /athlete_credentials/{athleteId} {
+      allow read, write: if false;
+    }
+    
+    // -------------------------------------------------------------------------
+    // 3. SECURITY AUDIT LOGS (/security_audit_logs/{logId})
+    // -------------------------------------------------------------------------
+    // Read-only for Admin. Writes allowed strictly via Server Admin SDK.
+    match /security_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    
+    // -------------------------------------------------------------------------
+    // 4. DELETED ATHLETES TOMBSTONES (/deleted_athletes/{athleteId})
+    // -------------------------------------------------------------------------
+    // Authenticated clients can read tombstones to prune local device caches.
+    // Tombstone creation is restricted to admin or self-deletion with strict schema keys.
+    match /deleted_athletes/{athleteId} {
+      allow read: if isAdmin() || (isAuthenticated() && (request.auth.uid == athleteId || (resource != null && resource.data.get('authUid', '') == request.auth.uid)));
+      allow write: if isAdmin();
+    }
+    
+    // -------------------------------------------------------------------------
+    // 5. BROADCAST NOTIFICATIONS & APP METADATA (/users/{uid})
+    // -------------------------------------------------------------------------
+    // Read restricted to authorized user or admin.
+    // Writes restricted by operation, immutability of uid/isAdmin, and affectedKeys whitelisting.
+    match /users/{uid} {
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == uid);
+      allow create: if isAdmin() || (
+        isAuthenticated() && 
+        request.auth.uid == uid && 
+        (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin != true) && 
+        request.resource.data.uid == uid &&
+        request.resource.data.keys().hasAll(['uid', 'createdAt']) &&
+        request.resource.data.keys().hasOnly(['uid', 'createdAt', 'name', 'email', 'displayName', 'photoURL', 'settings', 'preferences'])
+      );
+      allow update: if isAdmin() || (
+        isAuthenticated() && 
+        request.auth.uid == uid && 
+        (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == resource.data.get('isAdmin', false)) && 
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'displayName', 'photoURL', 'settings', 'preferences', 'updatedAt'])
+      );
+      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == uid);
+    }
+    
+    // -------------------------------------------------------------------------
+    // 6. SINGLE-USE INVITATIONS (/invites/{inviteId})
+    // -------------------------------------------------------------------------
+    // NEVER readable or enumerable by regular athletes.
+    // Only administrators can read or write invite records directly.
+    // Redemption by new athletes is executed exclusively via secure server API (/api/invites/redeem).
+    match /invites/{inviteId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

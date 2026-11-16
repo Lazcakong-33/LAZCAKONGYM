@@ -1,0 +1,6 @@
+ID,VectorAtaque,Coleccion,ResultadoEsperado,ResultadoReal,Estado
+"NEG-01","Privilege Escalation (isAdmin = true)","/users/user_attacker_123","PERMISSION_DENIED","PERMISSION_DENIED","PASSED_NEGATIVE"
+"NEG-02","Identity Impersonation (Changing uid field)","/users/user_victim_456","PERMISSION_DENIED","PERMISSION_DENIED","PASSED_NEGATIVE"
+"NEG-03","Shadow Field Injection / Unauthorized Keys","/users/user_attacker_123","PERMISSION_DENIED","PERMISSION_DENIED","PASSED_NEGATIVE"
+"NEG-04","Fake Tombstone Creation","/deleted_athletes/victim_athlete_id","PERMISSION_DENIED","PERMISSION_DENIED","PASSED_NEGATIVE"
+"NEG-05","Cross-Profile Data Modification","/athletes/victim_athlete_id","PERMISSION_DENIED","PERMISSION_DENIED","PASSED_NEGATIVE"

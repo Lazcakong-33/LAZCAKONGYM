@@ -1,0 +1,12 @@
+LAZCAKONG GYM — BIBLIOTECA COMPLETA
+669 ejercicios únicos por sourceId. 669 GIF + 669 WebP animados + 669 miniaturas.
+Cada animación tiene 8 fotogramas, 500 ms por fotograma, 4 segundos en bucle infinito.
+
+Extraer TODO el ZIP conservando la carpeta assets. Abrir ABRIR_BIBLIOTECA.html en el navegador.
+El visor funciona sin conexión: buscar por nombre, filtrar por grupo y pulsar Animar.
+Para integrar en la app: copiar assets y catalogo.json; usar sourceId como clave estable y webp como animación principal.
+INDICE_669.csv y JSON contienen las rutas de todos los ejercicios. PROGRESO_669.json conserva el historial.
+VERIFICACION.json contiene recuentos y SHA-256 de todos los recursos. RESOLUCIONES.json documenta variantes aclaradas.
+Las adaptaciones y revisiones históricas se conservan en historicalStatus y technicalReview.
+
+Edición compacta: GIF de hasta 288×288 px con 128 colores; WebP animados originales conservados. Cada entrada del catálogo indica gifWidth/gifHeight y webpWidth/webpHeight. Se mantienen 8 fotogramas y 4 segundos en ambos formatos.

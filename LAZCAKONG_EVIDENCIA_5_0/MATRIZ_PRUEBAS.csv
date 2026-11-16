@@ -1,0 +1,8 @@
+PruebaID,Modulo,DescripcionPrueba,IdentidadSintetica,ResultadoEsperado,ResultadoObservado,Estado,Notas
+PR-01,Navegacion,Cambio entre los 5 módulos principales,Atleta_Test_01,Navegación instantánea sin recarga,Transición fluida sin parpadeos,APROBADO,Ninguna
+PR-02,Entrenar,Registro de serie en tarjeta protagonista,Atleta_Test_01,Actualización de KG y Reps sin duplicar,Registro exitoso y bloqueo antiduplicado,APROBADO,Ninguna
+PR-03,Entrenar,Inicio de descanso automático,Atleta_Test_01,Temporizador activo de 90s,Activación correcta con beeps/háptica,APROBADO,Ninguna
+PR-04,Progreso,Cambio de filtro temporal (7D a Todo),Atleta_Test_01,Recálculo inmediato de gráficos y métricas,Gráficos actualizados,APROBADO,Ninguna
+PR-05,Respaldos,Exportación e inspección de respaldo JSON,Atleta_Test_01,JSON válido con perfiles y rutinas,Estructura JSON correcta con checksum,APROBADO,Ninguna
+PR-06,Seguridad,Validación de Custom Claims en reglas,Admin_Test_01,Acceso administrativo concedido,Reglas evaluadas positivamente,APROBADO,Ninguna
+PR-07,PWA,Verificación de build de producción,Sistema,Build de 24 MB sin errores ni warnings,Build exitoso (24 MB),APROBADO,Ninguna

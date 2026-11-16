@@ -1,0 +1,78 @@
+name: 'Firestore Rules Security Tests'
+
+on:
+  push:
+    branches: [ "main", "master", "dev" ]
+  pull_request:
+    branches: [ "main", "master", "dev" ]
+  workflow_dispatch:
+
+jobs:
+  test-firestore-rules:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Java JDK (Required for Firebase Emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install Dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Verify Named Database Rules Config Mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "
+            const fs = require('node:fs');
+            const expectedDb = '(default)';
+            const pairs = [
+              ['firebase.json', 'firestore.rules'],
+              ['firebase.contingency.json', 'contingency_firestore.rules'],
+            ];
+            for (const [cfg, rules] of pairs) {
+              const parsed = JSON.parse(fs.readFileSync(cfg, 'utf8'));
+              const match = Array.isArray(parsed.firestore) && parsed.firestore.find(
+                (entry) => entry.database === expectedDb && entry.rules === rules
+              );
+              if (!match || !fs.existsSync(rules)) {
+                throw new Error(cfg + ' must map ' + expectedDb + ' -> ' + rules);
+              }
+              console.log('Verified:', cfg, '->', expectedDb, '->', rules);
+            }
+          "
+
+      - name: Run Normal Firestore Rules Tests against Emulator (Named DB)
+        shell: bash
+        run: >
+          firebase emulators:exec
+          --config firebase.json
+          --only firestore,auth
+          --project demo-lazcakongym-test
+          "npm run test:rules"
+        env:
+          CI: true
+
+      - name: Run Contingency Firestore Rules Tests against Emulator (Named DB)
+        shell: bash
+        run: >
+          firebase emulators:exec
+          --config firebase.contingency.json
+          --only firestore,auth
+          --project demo-lazcakongym-test
+          "npm run test:rules:contingency"
+        env:
+          CI: true

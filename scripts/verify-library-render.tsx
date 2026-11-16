@@ -1,0 +1,22 @@
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import assert from 'node:assert/strict';
+import { ExerciseLibraryView } from '../src/views/ExerciseLibraryView';
+import { ExerciseDetailModal } from '../src/components/ExerciseDetailModal';
+import { EXERCISE_LIBRARY } from '../src/data/exerciseLibrary';
+import type { Exercise } from '../src/types';
+
+const noop = () => {};
+const html = renderToStaticMarkup(<ExerciseLibraryView routines={[]} onAddExerciseToRoutine={noop} onCreateRoutineWithExercise={noop} />);
+assert(html.includes('669'));
+assert(html.includes('Biblioteca LazcaKong Gym'));
+assert(html.includes('Cuadrícula Muscular'));
+assert(!html.includes('smartworkout'));
+assert(!html.includes('youtube.com'));
+const item = EXERCISE_LIBRARY[0];
+const ex: Exercise = { id:'routine-item',libraryExerciseId:item.id,name:item.name,targetMuscles:item.muscleGroup,defaultSets:3,repRange:'8-12',restSeconds:90,restText:'90 s',objective:'Hipertrofia',defaultVideoUrl:'',techniqueCues:[] };
+const detail=renderToStaticMarkup(<ExerciseDetailModal exercise={ex} isOpen onClose={noop} />);
+assert(detail.includes(item.videoUrl!));
+assert(detail.includes('4 segundos'));
+assert(!detail.includes('smartworkout'));
+console.log('Render de biblioteca (grupos musculares, 669 ejercicios) y ficha animada local: correcto.');
