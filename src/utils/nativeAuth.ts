@@ -158,6 +158,17 @@ export function normalizeNativeGoogleError(err: any): Error {
     return wrapped;
   }
 
+  // Credential Manager [16] is NOT proof of a missing SHA. It can also be caused
+  // by account reauthentication, OAuth consent/test-user or device account state.
+  // Keep the raw technical error out of user-visible strings.
+  if (lower.includes('[16]') || lower.includes('account reauth failed')) {
+    const wrapped: any = new Error(
+      'Google no pudo volver a autenticar la cuenta en Android (código 16). Revisa que esta cuenta esté autorizada en la pantalla de consentimiento OAuth y que la firma SHA-1 del APK corresponda al cliente OAuth Android. Consulta el diagnóstico técnico si persiste.'
+    );
+    wrapped.code = 'auth/native-google-account-reauth-failed';
+    return wrapped;
+  }
+
   if (
     lower.includes('developer_error') ||
     lower.includes('developer console') ||
@@ -165,12 +176,10 @@ export function normalizeNativeGoogleError(err: any): Error {
     lower.includes('no credentials available') ||
     lower.includes('10:') ||
     lower.includes('sha') ||
-    lower.includes('12500') ||
-    lower.includes('[16]') ||
-    lower.includes('account reauth failed')
+    lower.includes('12500')
   ) {
     const wrapped: any = new Error(
-      `Google Sign-In nativo requiere registrar la huella SHA-1/SHA-256 de com.lazcakong.gym y su cliente OAuth Android en Firebase/Google Cloud Console, además de android/app/google-services.json (${raw}).`
+      'La configuración Google OAuth de Android no coincide con esta APK. Verifica com.lazcakong.gym, las huellas SHA de la firma instalada y el Web Client ID en el mismo proyecto Google Cloud/Firebase.'
     );
     wrapped.code = 'auth/native-google-config-required';
     return wrapped;
