@@ -56,6 +56,8 @@ jobs:
         run: npm run lint
 
       - name: Run Verification Suites
+        env:
+          CI_ANDROID_ONLY: 'true'
         run: |
           npx tsx src/server/__tests__/adminAccessRepairSuite.ts
           npx tsx src/server/__tests__/pwaStartupSessionSuite.ts
