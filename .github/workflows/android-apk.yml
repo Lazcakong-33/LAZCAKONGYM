@@ -208,11 +208,11 @@ jobs:
           retention-days: 14
 
       - name: Package Development OTA Bundle (Optional, Never Auto-Published to Prod)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.generate_dev_ota_bundle == true }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.generate_dev_ota_bundle == true) || (github.event_name == 'push' && github.ref == 'refs/heads/ci/android-apk-ota') }}
         run: npm run ota:package -- --channel development
 
       - name: Upload Development OTA Artifact
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.generate_dev_ota_bundle == true }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.generate_dev_ota_bundle == true) || (github.event_name == 'push' && github.ref == 'refs/heads/ci/android-apk-ota') }}
         uses: actions/upload-artifact@v4
         with:
           name: lazcakong-gym-ota-development
