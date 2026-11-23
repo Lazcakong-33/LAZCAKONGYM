@@ -452,8 +452,7 @@ async function runSuite() {
     }
   });
 
-  // 6. Live test-environment measurements (BEFORE Admin gRPC penalty vs AFTER direct REST path)
-  await check('Live test-environment latency breakdown (BEFORE vs AFTER)', async () => {
+  // 6. Optional live benchmark: never probe production Google Cloud or external APIs during CI.\n  // Run explicitly with RUN_LIVE_FIREBASE_BENCHMARK=1 only in an authorized test environment.\n  if (process.env.RUN_LIVE_FIREBASE_BENCHMARK === '1') {\n    await check('Live test-environment latency breakdown (BEFORE vs AFTER)', async () => {
     const hasServiceAccount = Boolean(parseConfiguredServiceAccount());
 
     // Measure Firebase Auth certs endpoint (part of server JWT verify)
@@ -507,7 +506,10 @@ async function runSuite() {
     console.log(
       `   • Estimated server /api/auth/session-init AFTER (direct parallel REST): ${restSingleGetMs.toFixed(1)} ms`
     );
-  });
+    });
+  } else {
+    console.log('ℹ️  Skipping live Firebase/Google Cloud benchmark (RUN_LIVE_FIREBASE_BENCHMARK not enabled).');
+  }
 
   console.log(`\n🎉 ALL ${passed} PWA STARTUP SESSION CHECKS PASSED!`);
 }
