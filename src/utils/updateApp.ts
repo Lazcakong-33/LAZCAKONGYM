@@ -4,9 +4,9 @@
  * and automatically restart into the newest build without losing athlete local records.
  */
 
-export const APP_VERSION = 'v6.4.2';
-export const APP_BUILD_ID = '6.4.2-muscle-map';
-export const BUILD_DATE = '2026-11-17';
+export const APP_VERSION = 'v6.4.3';
+export const APP_BUILD_ID = '6.4.3-inicio';
+export const BUILD_DATE = '2026-11-23';
 
 export const OFFLINE_SYNC_QUEUE_STORAGE_KEY = 'lazcakon_pending_offline_sync_queue';
 export const DEFERRED_UPDATE_FLAG_KEY = 'lazcakon_deferred_update_pending';
