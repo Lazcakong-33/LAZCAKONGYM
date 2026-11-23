@@ -643,9 +643,9 @@ export const TodayView: React.FC<TodayViewProps> = ({
             type="button"
             onClick={onNavigateActive}
             style={{ backgroundColor: 'var(--accent-primary)', color: 'var(--accent-contrast-text)' }}
-            className="min-h-[40px] px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-accent-contrast font-black text-xs uppercase tracking-wider shrink-0 cursor-pointer active:scale-95"
+            className="min-h-[48px] px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-accent-contrast font-black text-xs uppercase tracking-wider shrink-0 cursor-pointer active:scale-95"
           >
-            Continuar
+            Retomar sesión
           </button>
         </section>
       )}
@@ -699,6 +699,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
             <button
               type="button"
               onClick={() => setShowDaySelector((prev) => !prev)}
+              aria-expanded={showDaySelector}
               title="Cambiar día de entrenamiento"
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#090909]/90 border border-accent/80 shadow-[0_0_12px_var(--accent-glow)] mb-3 cursor-pointer active:scale-95 transition-transform"
             >
@@ -748,7 +749,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
           {/* Columna Derecha: Gorila Musculoso LAZCAKONG GYM */}
           <div
             onClick={() => activeRoutine && onSelectDay(activeRoutine)}
-            className="w-[132px] xs:w-[148px] sm:w-[172px] shrink-0 flex items-center justify-center relative cursor-pointer"
+            className="w-[24vw] max-w-[36%] xs:w-[148px] sm:w-[172px] shrink-0 flex items-center justify-center relative cursor-pointer"
             title="Ver ejercicios de la rutina"
           >
             <div className="pointer-events-none absolute inset-2 rounded-full bg-[#CCFF00]/20 blur-xl" />
@@ -762,6 +763,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
         </div>
 
         {/* Botón Principal Temático con Texto de Contraste Accesible */}
+        {!activeSession && (
         <div className="relative z-10 mt-4">
           <button
             type="button"
@@ -772,9 +774,10 @@ export const TodayView: React.FC<TodayViewProps> = ({
             className="w-full min-h-[52px] py-3.5 px-5 rounded-2xl bg-accent hover:bg-accent-hover text-accent-contrast font-black italic text-sm xs:text-base sm:text-lg uppercase tracking-wide flex items-center justify-center gap-3 shadow-[0_4px_22px_var(--accent-glow)] active:scale-[0.99] transition-all cursor-pointer"
           >
             <Play className="w-5 h-5 fill-current shrink-0" />
-            <span>COMENZAR ENTRENAMIENTO</span>
+            <span>{activeRoutine ? 'Comenzar entrenamiento' : 'Ver mis rutinas'}</span>
           </button>
         </div>
+        )}
       </section>
 
       {/* 3. ESTADÍSTICAS: PROGRESO SEMANAL & VOLUMEN TOTAL (2 tarjetas en una fila) */}
