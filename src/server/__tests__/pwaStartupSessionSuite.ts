@@ -452,7 +452,10 @@ async function runSuite() {
     }
   });
 
-  // 6. Optional live benchmark: never probe production Google Cloud or external APIs during CI.\n  // Run explicitly with RUN_LIVE_FIREBASE_BENCHMARK=1 only in an authorized test environment.\n  if (process.env.RUN_LIVE_FIREBASE_BENCHMARK === '1') {\n    await check('Live test-environment latency breakdown (BEFORE vs AFTER)', async () => {
+  // 6. Optional live benchmark: never probe production Google Cloud or external APIs during CI.
+  // Run explicitly with RUN_LIVE_FIREBASE_BENCHMARK=1 only in an authorized test environment.
+  if (process.env.RUN_LIVE_FIREBASE_BENCHMARK === '1') {
+    await check('Live test-environment latency breakdown (BEFORE vs AFTER)', async () => {
     const hasServiceAccount = Boolean(parseConfiguredServiceAccount());
 
     // Measure Firebase Auth certs endpoint (part of server JWT verify)
