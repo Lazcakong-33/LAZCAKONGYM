@@ -87,13 +87,32 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Setup Android SDK 36
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK Platform 36 & Build Tools
+      - name: Prepare Android SDK 36 (GitHub hosted SDK, no obsolete tools package)
+        shell: bash
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [ -z "$SDK_ROOT" ] || [ ! -d "$SDK_ROOT" ]; then
+            echo "::error::Android SDK missing from GitHub runner (ANDROID_HOME / ANDROID_SDK_ROOT)."
+            exit 1
+          fi
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "::error::Android command-line tools missing: $SDKMANAGER"
+            exit 1
+          fi
+          "$SDKMANAGER" --version
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" --install \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "platform-tools"
+          test -f "$SDK_ROOT/platforms/android-36/android.jar"
+          test -x "$SDK_ROOT/build-tools/36.0.0/apksigner"
+          test -x "$SDK_ROOT/build-tools/36.0.0/aapt"
+          echo "Android SDK 36 and build tools 36.0.0 verified."
 
       - name: Configure Optional google-services.json from Secret
         shell: bash
@@ -165,6 +184,11 @@ jobs:
             echo "ERROR: No se encontró archivo APK compilado."
             exit 1
           fi
+          echo "Verifying APK integrity, signature and package ID..."
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          "$SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose "$APK_SRC"
+          "$SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK_SRC" | grep -F "package: name='com.lazcakong.gym'"
+          unzip -tq "$APK_SRC" >/dev/null
           cp "$APK_SRC" artifacts-apk/
           sha256sum artifacts-apk/*.apk > artifacts-apk/SHA256SUMS.txt
           ls -lh artifacts-apk
