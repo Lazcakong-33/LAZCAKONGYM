@@ -115,7 +115,12 @@ async function main() {
   });
 
   await runCase('3. iOS Xcode & Swift Package Manager structure prepared cleanly', () => {
-    const infoPlist = fs.readFileSync(path.join(ROOT, 'ios/App/App/Info.plist'), 'utf8');
+    const iosProject = path.join(ROOT, 'ios/App/App/Info.plist');
+    if (!fs.existsSync(iosProject) && process.env.CI_ANDROID_ONLY === 'true') {
+      console.log('ℹ️ iOS project not included in Android-only CI; skipping iOS structure checks.');
+      return;
+    }
+    const infoPlist = fs.readFileSync(iosProject, 'utf8');
     assert.ok(infoPlist.includes('LAZCAKONG GYM'));
     assert.ok(
       fs.existsSync(path.join(ROOT, 'ios/App/CapApp-SPM/Package.swift')),
