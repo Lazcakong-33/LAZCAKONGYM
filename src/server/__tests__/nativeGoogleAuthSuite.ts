@@ -272,6 +272,13 @@ async function runTests() {
     );
     assert.equal(shaErr.code, 'auth/native-google-config-required');
 
+    const reauth16Err: any = normalizeNativeGoogleError(
+      new Error('Google Sign-In failed: [16] Account reauth failed. Credential Manager retry exhausted.')
+    );
+    assert.equal(reauth16Err.code, 'auth/native-google-account-reauth-failed');
+    assert.ok(!reauth16Err.message.includes('Credential Manager retry exhausted'));
+    assert.ok(!reauth16Err.message.includes('requiere registrar la huella'), 'Code 16 is not conclusive proof of SHA misconfiguration');
+
     const cancelErr: any = normalizeNativeGoogleError({
       code: 'USER_CANCELLED',
       message: 'User cancelled sign-in',
