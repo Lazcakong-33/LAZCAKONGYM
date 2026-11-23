@@ -4089,6 +4089,14 @@ export function useGymState() {
           formattedMessage: `Error de red al conectar con Firebase Authentication. Verifica tu conexión a internet. ${diagnostic}`,
         };
       }
+      if (code === 'auth/native-google-account-reauth-failed' || code === 'auth/native-google-config-required') {
+        return {
+          code,
+          rawMessage,
+          // Do not echo raw native exception + operation twice into the small login dialog.
+          formattedMessage: rawMessage,
+        };
+      }
       if (code.includes('-26') || rawMessage.includes('auth/error-code:-26')) {
         return {
           code,
