@@ -139,14 +139,18 @@ jobs:
           LAZCAKONG_DEBUG_KEY_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          if [ -n "${ANDROID_DEBUG_KEYSTORE_BASE64:-}" ] && [ -n "${LAZCAKONG_DEBUG_KEYSTORE_PASSWORD:-}" ] && [ -n "${LAZCAKONG_DEBUG_KEY_ALIAS:-}" ] && [ -n "${LAZCAKONG_DEBUG_KEY_PASSWORD:-}" ]; then
-            DEBUG_KS_TMP="${RUNNER_TEMP}/lazcakong-debug.keystore"
-            echo "$ANDROID_DEBUG_KEYSTORE_BASE64" | base64 -d > "$DEBUG_KS_TMP"
-            export LAZCAKONG_DEBUG_KEYSTORE_FILE="$DEBUG_KS_TMP"
-            echo "Debug keystore restaurado desde GitHub Secrets para conservar firma de Android Studio."
-          else
-            echo "AVISO: Sin secretos ANDROID_DEBUG_KEYSTORE_*; compilando con certificado debug temporal de CI (no actualizará encima de un APK debug firmado en otro PC sin desinstalar)."
+          if [ -z "${ANDROID_DEBUG_KEYSTORE_BASE64:-}" ] || [ -z "${LAZCAKONG_DEBUG_KEYSTORE_PASSWORD:-}" ] || [ -z "${LAZCAKONG_DEBUG_KEY_ALIAS:-}" ] || [ -z "${LAZCAKONG_DEBUG_KEY_PASSWORD:-}" ]; then
+            echo "::error::Falta al menos uno de los cuatro secretos ANDROID_DEBUG_*; se rechaza la firma temporal."
+            exit 1
           fi
+          DEBUG_KS_TMP="${RUNNER_TEMP}/lazcakong-debug.keystore"
+          printf '%s' "$ANDROID_DEBUG_KEYSTORE_BASE64" | base64 -d > "$DEBUG_KS_TMP"
+          export LAZCAKONG_DEBUG_KEYSTORE_FILE="$DEBUG_KS_TMP"
+          if ! keytool -list -keystore "$DEBUG_KS_TMP" -storepass "$LAZCAKONG_DEBUG_KEYSTORE_PASSWORD" -alias "$LAZCAKONG_DEBUG_KEY_ALIAS" >/dev/null 2>&1; then
+            echo "::error::La firma debug no pudo validarse: comprueba alias, contraseña y archivo keystore de GitHub Secrets."
+            exit 1
+          fi
+          echo "Certificado debug privado validado (sin exponer contraseñas); compilando con la firma configurada."
           ./gradlew assembleDebug --no-daemon
 
       - name: Decode Existing Release Keystore & Build Signed Release APK
