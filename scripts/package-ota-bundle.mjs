@@ -167,7 +167,11 @@ function main() {
   }
 
   const rawVersion = (args.version || resolveFallbackVersion()).replace(/^v/i, '');
-  const cleanChannel = args.channel === 'staging' ? 'staging' : 'development';
+  const cleanChannel = args.channel;
+  if (!['development', 'staging', 'production'].includes(cleanChannel)) {
+    console.error('[OTA BLOCKED] Canal desconocido.');
+    process.exit(1);
+  }
   if (args.channel === 'production' && process.env.OTA_PRODUCTION_ENABLED !== 'true') {
     console.error('[OTA BLOCKED] El canal production requiere OTA_PRODUCTION_ENABLED=true bajo autorización explícita.');
     process.exit(1);
