@@ -16,13 +16,7 @@ import { LandingView } from './views/LandingView';
 import { TodayView } from './views/TodayView';
 import { RoutinesView } from './views/RoutinesView';
 import { ActiveWorkoutView } from './views/ActiveWorkoutView';
-import { ProgresoView } from './views/ProgresoView';
-import { BiometricsView } from './views/BiometricsView';
-import { SettingsCloudView } from './views/SettingsCloudView';
-import { AdminView } from './views/AdminView';
 import { LoginProfileSelectorView } from './views/LoginProfileSelectorView';
-import { ExerciseLibraryView } from './views/ExerciseLibraryView';
-import { MapaMuscularView } from './views/MapaMuscularView';
 import { RecoveryNotificationsModal } from './components/RecoveryNotificationsModal';
 import { useMuscleRecoveryNotifications } from './hooks/useMuscleRecoveryNotifications';
 import {
@@ -33,6 +27,25 @@ import {
 import { Exercise, Routine, CompletedWorkout, PersonalRecord } from './types';
 import { OPEN_ACTIVE_WORKOUT_EVENT } from './utils/nativeNotifications';
 import { markOtaBootReady } from './utils/otaUpdateEngine';
+
+const AdminView = React.lazy(() =>
+  import('./views/AdminView').then(module => ({ default: module.AdminView }))
+);
+const SettingsCloudView = React.lazy(() =>
+  import('./views/SettingsCloudView').then(module => ({ default: module.SettingsCloudView }))
+);
+const ProgresoView = React.lazy(() =>
+  import('./views/ProgresoView').then(module => ({ default: module.ProgresoView }))
+);
+const ExerciseLibraryView = React.lazy(() =>
+  import('./views/ExerciseLibraryView').then(module => ({ default: module.ExerciseLibraryView }))
+);
+const BiometricsView = React.lazy(() =>
+  import('./views/BiometricsView').then(module => ({ default: module.BiometricsView }))
+);
+const MapaMuscularView = React.lazy(() =>
+  import('./views/MapaMuscularView').then(module => ({ default: module.MapaMuscularView }))
+);
 
 export default function App() {
   useEffect(() => {
@@ -149,10 +162,12 @@ export default function App() {
   if (gym.sessionChecking) {
     return (
       <div className="min-h-dvh bg-[#090909] text-white flex flex-col items-center justify-center p-6 font-['Plus_Jakarta_Sans',sans-serif]">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-10 h-10 rounded-full border-2 border-[var(--accent-primary)] border-t-transparent animate-spin" />
+        <div role="status" className="flex flex-col items-center gap-3 text-center">
+          <img src="/assets/gorilla_full_logo.png" alt="" width="80" height="80" className="h-20 w-20 object-contain" />
+          <strong className="text-xl font-black tracking-tight">LAZCAKONG GYM</strong>
+          <div className="w-5 h-5 rounded-full border-2 border-[#CCFF00] border-t-transparent motion-safe:animate-spin" />
           <p className="text-xs font-mono font-bold tracking-widest uppercase text-[var(--accent-readable-text)]">
-            Cargando sesión…
+            Verificando tu sesión…
           </p>
         </div>
       </div>
@@ -303,6 +318,7 @@ export default function App() {
                 }`
           }`}
         >
+          <React.Suspense fallback={<p role="status" className="py-8 text-center text-sm text-[#F5F5F5]">Cargando pantalla…</p>}>
           {currentTab === 'hoy' && (
             <TodayView
               routines={gym.routines}
@@ -532,7 +548,8 @@ export default function App() {
             }}
           />
         )}
-      </main>
+      </React.Suspense>
+        </main>
 
       {/* Floating Rest Countdown Timer Widget / Rest Complete Notice */}
       {(currentTab !== 'activo' ||
