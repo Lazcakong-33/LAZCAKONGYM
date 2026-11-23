@@ -1,9 +1,0 @@
-node_modules/
-.git/
-.aistudio/
-coverage/
-*.log
-.env*
-!.env.example
-android/
-ios/
