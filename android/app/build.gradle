@@ -1,0 +1,106 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace = "com.lazcakong.gym"
+    compileSdk = rootProject.ext.compileSdkVersion
+    def ciVersionCode = System.getenv("LAZCAKONG_VERSION_CODE")?.trim()
+    def ciVersionName = System.getenv("LAZCAKONG_VERSION_NAME")?.trim()
+    defaultConfig {
+        applicationId "com.lazcakong.gym"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode (ciVersionCode && ciVersionCode.isInteger() ? ciVersionCode.toInteger() : 1)
+        versionName (ciVersionName ? ciVersionName : "1.0")
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    def ciDebugKeystorePath = System.getenv("LAZCAKONG_DEBUG_KEYSTORE_FILE")?.trim()
+    def ciDebugKeystorePass = System.getenv("LAZCAKONG_DEBUG_KEYSTORE_PASSWORD")
+    def ciDebugKeyAlias = System.getenv("LAZCAKONG_DEBUG_KEY_ALIAS")?.trim()
+    def ciDebugKeyPass = System.getenv("LAZCAKONG_DEBUG_KEY_PASSWORD")
+    def hasCiDebugSigning = (
+        ciDebugKeystorePath &&
+        new File(ciDebugKeystorePath).exists() &&
+        ciDebugKeystorePass &&
+        ciDebugKeyAlias &&
+        ciDebugKeyPass
+    )
+
+    def ciKeystorePath = System.getenv("LAZCAKONG_KEYSTORE_FILE")?.trim()
+    def ciKeystorePass = System.getenv("LAZCAKONG_KEYSTORE_PASSWORD")
+    def ciKeyAlias = System.getenv("LAZCAKONG_KEY_ALIAS")?.trim()
+    def ciKeyPass = System.getenv("LAZCAKONG_KEY_PASSWORD")
+    def hasCiReleaseSigning = (
+        ciKeystorePath &&
+        new File(ciKeystorePath).exists() &&
+        ciKeystorePass &&
+        ciKeyAlias &&
+        ciKeyPass
+    )
+    signingConfigs {
+        if (hasCiDebugSigning) {
+            debug {
+                storeFile file(ciDebugKeystorePath)
+                storePassword ciDebugKeystorePass
+                keyAlias ciDebugKeyAlias
+                keyPassword ciDebugKeyPass
+            }
+        }
+        if (hasCiReleaseSigning) {
+            release {
+                storeFile file(ciKeystorePath)
+                storePassword ciKeystorePass
+                keyAlias ciKeyAlias
+                keyPassword ciKeyPass
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            if (hasCiDebugSigning) {
+                signingConfig signingConfigs.debug
+            }
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasCiReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.core:core:$androidxCoreVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

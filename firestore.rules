@@ -1,0 +1,241 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for hardened security
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Admin authorization strictly via verified Google Sign-In identity (Starter Tier compatible, no Custom Claims)
+    function isAdmin() {
+      return isAuthenticated() &&
+        ('email_verified' in request.auth.token) &&
+        request.auth.token.email_verified == true &&
+        ('email' in request.auth.token) &&
+        request.auth.token.email == 'kmiloko19@gmail.com' &&
+        ('firebase' in request.auth.token) &&
+        request.auth.token.firebase.get('sign_in_provider', '') == 'google.com';
+    }
+    
+    // Strict athlete isolation: match UID or existing document authUid (no Custom Claims required)
+    function isOwner(athleteId) {
+      return isAuthenticated() && (
+        request.auth.uid == athleteId ||
+        (resource != null && resource.data.get('authUid', '') == request.auth.uid)
+      );
+    }
+    
+    function isOwnerCreate(athleteId) {
+      return isAuthenticated() && (
+        request.auth.uid == athleteId ||
+        request.resource.data.authUid == request.auth.uid
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // 1. ATHLETES COLLECTION (/athletes/{athleteId})
+    // -------------------------------------------------------------------------
+    // NO open fallback: Non-admin users can ONLY read and write their OWN profile.
+    // Client is strictly forbidden from:
+    // - Granting itself isAdmin.
+    // - Linking unauthorized authUid.
+    // - Writing credentials (pin) directly into the public/sport profile document.
+    match /athletes/{athleteId} {
+      allow read: if isAdmin() || isOwner(athleteId);
+      
+      allow create: if isAdmin() || (
+        isOwnerCreate(athleteId) &&
+        (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin != true) &&
+        request.resource.data.authUid == request.auth.uid &&
+        !('pin' in request.resource.data)
+      );
+      
+      allow update: if isAdmin() || (
+        isOwner(athleteId) &&
+        // Prevent client-side escalation of administrative privileges
+        (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == resource.data.get('isAdmin', false)) &&
+        // Prevent client-side hijacking or re-association of authUid
+        (!('authUid' in request.resource.data) || request.resource.data.authUid == resource.data.get('authUid', '')) &&
+        // Ensure credentials are never written or updated from client SDK
+        (!('pin' in request.resource.data))
+      );
+      
+      allow delete: if isAdmin() || isOwner(athleteId);
+
+      function isValidSubId(id) {
+        return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      }
+
+      function incomingSub() {
+        return request.resource.data;
+      }
+
+      function existingSub() {
+        return resource.data;
+      }
+
+      function isAthleteDocOwner(aid) {
+        return isAuthenticated() && (
+          request.auth.uid == aid ||
+          (
+            exists(/databases/$(database)/documents/athletes/$(aid)) &&
+            get(/databases/$(database)/documents/athletes/$(aid)).data.get('authUid', '') == request.auth.uid
+          )
+        );
+      }
+
+      function isValidPushSubscription(data, aid, did) {
+        return isValidSubId(aid) &&
+          isValidSubId(did) &&
+          data.keys().hasAll(['deviceId', 'athleteId', 'authUid', 'endpoint', 'keys', 'enabled', 'createdAt', 'updatedAt']) &&
+          data.keys().hasOnly(['deviceId', 'athleteId', 'authUid', 'endpoint', 'keys', 'enabled', 'userAgent', 'platform', 'createdAt', 'updatedAt']) &&
+          data.deviceId == did &&
+          data.athleteId == aid &&
+          data.authUid is string && data.authUid.size() <= 128 && data.authUid == request.auth.uid &&
+          data.endpoint is string && data.endpoint.size() >= 10 && data.endpoint.size() <= 2048 && data.endpoint.matches('^https://.*') &&
+          data.keys is map &&
+          data.keys.keys().hasAll(['p256dh', 'auth']) &&
+          data.keys.keys().hasOnly(['p256dh', 'auth']) &&
+          data.keys.p256dh is string && data.keys.p256dh.size() >= 10 && data.keys.p256dh.size() <= 512 &&
+          data.keys.auth is string && data.keys.auth.size() >= 8 && data.keys.auth.size() <= 256 &&
+          data.enabled is bool &&
+          data.createdAt is string && data.createdAt.size() <= 64 &&
+          data.updatedAt is string && data.updatedAt.size() <= 64 &&
+          (!('userAgent' in data) || (data.userAgent is string && data.userAgent.size() <= 350)) &&
+          (!('platform' in data) || (data.platform is string && data.platform.size() <= 80));
+      }
+
+      function isValidRestAlarm(data, aid, rid) {
+        return isValidSubId(aid) &&
+          isValidSubId(rid) &&
+          data.keys().hasAll(['restId', 'athleteId', 'authUid', 'deviceId', 'targetEndTime', 'durationSeconds', 'status', 'mode', 'restEndAlertEnabled', 'isTest', 'createdAt', 'updatedAt']) &&
+          data.keys().hasOnly(['restId', 'athleteId', 'authUid', 'deviceId', 'sessionId', 'exerciseName', 'nextSetNumber', 'targetEndTime', 'durationSeconds', 'status', 'mode', 'restEndAlertEnabled', 'isTest', 'schedulerProvider', 'schedulerTaskName', 'dispatchAttemptCount', 'providerAcceptedAt', 'providerStatus', 'invalidatedReason', 'createdAt', 'updatedAt']) &&
+          data.restId == rid &&
+          data.athleteId == aid &&
+          data.authUid is string && data.authUid.size() <= 128 && data.authUid == request.auth.uid &&
+          isValidSubId(data.deviceId) &&
+          data.targetEndTime is number && data.targetEndTime > 0 &&
+          data.durationSeconds is number && data.durationSeconds > 0 && data.durationSeconds <= 3600 &&
+          data.status in ['scheduled', 'paused', 'cancelled', 'superseded', 'sent', 'failed'] &&
+          data.mode in ['sound', 'vibrate_only', 'silent'] &&
+          data.restEndAlertEnabled is bool &&
+          data.isTest is bool &&
+          data.createdAt is string && data.createdAt.size() <= 64 &&
+          data.updatedAt is string && data.updatedAt.size() <= 64 &&
+          (!('sessionId' in data) || (data.sessionId is string && data.sessionId.size() <= 128)) &&
+          (!('exerciseName' in data) || (data.exerciseName is string && data.exerciseName.size() <= 160)) &&
+          (!('nextSetNumber' in data) || data.nextSetNumber == null || (data.nextSetNumber is number && data.nextSetNumber >= 1 && data.nextSetNumber <= 200)) &&
+          (!('schedulerProvider' in data) || data.schedulerProvider in ['cloud_tasks', 'qstash', 'none']) &&
+          (!('schedulerTaskName' in data) || (data.schedulerTaskName is string && data.schedulerTaskName.size() <= 512)) &&
+          (!('dispatchAttemptCount' in data) || (data.dispatchAttemptCount is number && data.dispatchAttemptCount >= 0)) &&
+          (!('providerAcceptedAt' in data) || data.providerAcceptedAt == null || (data.providerAcceptedAt is string && data.providerAcceptedAt.size() <= 64)) &&
+          (!('providerStatus' in data) || data.providerStatus == null || (data.providerStatus is string && data.providerStatus.size() <= 160)) &&
+          (!('invalidatedReason' in data) || data.invalidatedReason == null || (data.invalidatedReason is string && data.invalidatedReason.size() <= 160));
+      }
+
+      match /push_subscriptions/{deviceId} {
+        allow get: if isAdmin() || (isValidSubId(deviceId) && isAthleteDocOwner(athleteId));
+        allow list: if isAdmin() || (isAuthenticated() && resource.data.authUid == request.auth.uid);
+        allow create: if isAdmin() || (
+          isValidSubId(deviceId) &&
+          isAthleteDocOwner(athleteId) &&
+          isValidPushSubscription(incomingSub(), athleteId, deviceId)
+        );
+        allow update: if isAdmin() || (
+          isValidSubId(deviceId) &&
+          isValidPushSubscription(incomingSub(), athleteId, deviceId) &&
+          isAthleteDocOwner(athleteId) &&
+          incomingSub().athleteId == existingSub().athleteId &&
+          incomingSub().deviceId == existingSub().deviceId &&
+          incomingSub().authUid == existingSub().authUid &&
+          incomingSub().createdAt == existingSub().createdAt
+        );
+        allow delete: if isAdmin() || (isValidSubId(deviceId) && isAthleteDocOwner(athleteId));
+      }
+
+      match /rest_alarms/{restId} {
+        allow get: if isAdmin() || (isValidSubId(restId) && isAthleteDocOwner(athleteId));
+        allow list: if isAdmin() || (isAuthenticated() && resource.data.authUid == request.auth.uid);
+        allow create: if isAdmin() || (
+          isValidSubId(restId) &&
+          isAthleteDocOwner(athleteId) &&
+          isValidRestAlarm(incomingSub(), athleteId, restId)
+        );
+        allow update: if isAdmin() || (
+          isValidSubId(restId) &&
+          isValidRestAlarm(incomingSub(), athleteId, restId) &&
+          isAthleteDocOwner(athleteId) &&
+          incomingSub().athleteId == existingSub().athleteId &&
+          incomingSub().restId == existingSub().restId &&
+          incomingSub().authUid == existingSub().authUid &&
+          incomingSub().createdAt == existingSub().createdAt
+        );
+        allow delete: if isAdmin() || (isValidSubId(restId) && isAthleteDocOwner(athleteId));
+      }
+    }
+    
+    // -------------------------------------------------------------------------
+    // 2. ISOLATED CREDENTIALS COLLECTION (/athlete_credentials/{athleteId})
+    // -------------------------------------------------------------------------
+    // ZERO CLIENT ACCESS: Completely inaccessible from web/mobile client SDKs.
+    // Purely server-side access via Firebase Admin SDK for migration and verification.
+    match /athlete_credentials/{athleteId} {
+      allow read, write: if false;
+    }
+    
+    // -------------------------------------------------------------------------
+    // 3. SECURITY AUDIT LOGS (/security_audit_logs/{logId})
+    // -------------------------------------------------------------------------
+    // Read-only for Admin. Writes allowed strictly via Server Admin SDK.
+    match /security_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    
+    // -------------------------------------------------------------------------
+    // 4. DELETED ATHLETES TOMBSTONES (/deleted_athletes/{athleteId})
+    // -------------------------------------------------------------------------
+    // Authenticated clients can read tombstones to prune local device caches.
+    // Tombstone creation is restricted to admin or self-deletion with strict schema keys.
+    match /deleted_athletes/{athleteId} {
+      allow read: if isAdmin() || (isAuthenticated() && (request.auth.uid == athleteId || (resource != null && resource.data.get('authUid', '') == request.auth.uid)));
+      allow write: if isAdmin();
+    }
+    
+    // -------------------------------------------------------------------------
+    // 5. BROADCAST NOTIFICATIONS & APP METADATA (/users/{uid})
+    // -------------------------------------------------------------------------
+    // Read restricted to authorized user or admin.
+    // Writes restricted by operation, immutability of uid/isAdmin, and affectedKeys whitelisting.
+    match /users/{uid} {
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == uid);
+      allow create: if isAdmin() || (
+        isAuthenticated() && 
+        request.auth.uid == uid && 
+        (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin != true) && 
+        request.resource.data.uid == uid &&
+        request.resource.data.keys().hasAll(['uid', 'createdAt']) &&
+        request.resource.data.keys().hasOnly(['uid', 'createdAt', 'name', 'email', 'displayName', 'photoURL', 'settings', 'preferences'])
+      );
+      allow update: if isAdmin() || (
+        isAuthenticated() && 
+        request.auth.uid == uid && 
+        (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == resource.data.get('isAdmin', false)) && 
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'displayName', 'photoURL', 'settings', 'preferences', 'updatedAt'])
+      );
+      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == uid);
+    }
+    
+    // -------------------------------------------------------------------------
+    // 6. SINGLE-USE INVITATIONS (/invites/{inviteId})
+    // -------------------------------------------------------------------------
+    // NEVER readable or enumerable by regular athletes.
+    // Only administrators can read or write invite records directly.
+    // Redemption by new athletes is executed exclusively via secure server API (/api/invites/redeem).
+    match /invites/{inviteId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

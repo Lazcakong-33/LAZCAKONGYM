@@ -1,0 +1,20 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-lazcakongym-dedcb625-f047-4947-ace1-3fbed6d67760",
+      "rules": "firestore.rules"
+    }
+  ],
+  "emulators": {
+    "singleProjectMode": false,
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "ui": {
+      "enabled": false
+    }
+  }
+}
