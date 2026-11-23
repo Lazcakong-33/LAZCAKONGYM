@@ -7,7 +7,7 @@ import {
   evaluateOtaCompatibility,
   type OtaChannel,
   type OtaManifestPayload,
-} from '../utils/otaUpdateEngine.ts';
+} from '../utils/otaCompatibility.ts';
 
 const OTA_ROOT_DIR = path.resolve(process.cwd(), 'dist-ota');
 const SAFE_BUNDLE_FILENAME_REGEX = /^lazcakongym-ota-[a-zA-Z0-9._-]+\.zip$/;
