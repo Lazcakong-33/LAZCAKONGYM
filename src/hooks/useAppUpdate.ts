@@ -114,11 +114,16 @@ export function useAppUpdate(): AppUpdateState {
               });
 
               if (result.status === 'staged_for_background') {
-                setOtaPendingManifest(null);
-                setServerVersion(null);
-                setBroadcastMessage(null);
-                setHasUpdateAvailable(false);
-                return false;
+                // Keep the optional, user-requested ACTUALIZAR AHORA banner
+                // even though the bundle is already auto-downloaded and set
+                // for the next launch. Manual apply reuses the staged bundle.
+                setOtaPendingManifest(manifest);
+                setServerVersion(manifest.version);
+                setBroadcastMessage(
+                  'Actualización descargada automáticamente. Se instalará al volver a abrir LAZCAKONG GYM o puedes tocar Actualizar ahora.'
+                );
+                setHasUpdateAvailable(true);
+                return true;
               }
               if (result.status === 'deferred_unsafe') {
                 setOtaPendingManifest(manifest);
@@ -288,6 +293,10 @@ export function useAppUpdate(): AppUpdateState {
         applyImmediatelyWhenSafe: true,
       });
       if (otaResult.status === 'deferred_unsafe' || otaResult.status === 'blocked' || otaResult.status === 'error') {
+        if (otaResult.status === 'error') {
+          setBroadcastMessage('No se pudo aplicar la actualización. Tus datos permanecen intactos; inténtalo nuevamente.');
+          setHasUpdateAvailable(true);
+        }
         setIsUpdating(false);
         return;
       }
