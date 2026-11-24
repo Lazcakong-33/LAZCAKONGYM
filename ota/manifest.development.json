@@ -1,9 +1,9 @@
 {
-  "version": "6.4.7",
-  "buildId": "6.4.7-ota-0a6aaad9",
+  "version": "6.4.8",
+  "buildId": "6.4.8-ota-b00dc8a2",
   "channel": "development",
-  "url": "https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-dev-v6.4.7/lazcakongym-ota-6.4.7.zip",
-  "checksum": "0a6aaad96a60dbe45b8f1936b5b33ff15ce43cc738c01d5c737c02290ee5cc4a",
+  "url": "https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-dev-v6.4.8/lazcakongym-ota-6.4.8.zip",
+  "checksum": "b00dc8a2483999e404490e98bec2e16960e77bec70cc9dd9b2a82f26d63ee5c3",
   "contentsPolicy": "web_assets_only",
   "changedScopes": [
     "ui",
@@ -14,6 +14,6 @@
   "requiresApkUpdate": false,
   "minNativeVersionCode": 1,
   "capacitorMajor": 8,
-  "publishedAt": "2026-11-24T01:23:14.339Z",
+  "publishedAt": "2026-11-24T02:17:15.673Z",
   "releaseNotes": "LAZCAKONG GYM — actualización segura de interfaz y biblioteca, sin reinstalar APK."
 }
