@@ -51,13 +51,6 @@ export interface AppUpdateState {
 }
 
 export function useAppUpdate(): AppUpdateState {
-  // Immediately register current running build in localStorage so this client is recognized as updated
-  try {
-    localStorage.setItem('lazcakon_installed_version', APP_VERSION);
-    localStorage.setItem('lazcakon_installed_build_id', APP_BUILD_ID);
-    localStorage.setItem('lazcakon_app_version', APP_VERSION);
-  } catch {}
-
   const [hasUpdateAvailable, setHasUpdateAvailable] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [serverVersion, setServerVersion] = useState<string | null>(null);
@@ -120,7 +113,17 @@ export function useAppUpdate(): AppUpdateState {
             }
           }
           setOtaPendingManifest(null);
-        } catch {}
+        } catch (error) {
+          console.warn('[LAZCAKONGYM] No se pudo consultar OTA nativo:', error);
+        }
+
+        // An APK embeds its own web assets. A newer /api/version or Service Worker
+        // cannot update those assets; only a compatible OTA manifest can.
+        setOtaPendingManifest(null);
+        setServerVersion(null);
+        setBroadcastMessage(null);
+        setHasUpdateAvailable(false);
+        return false;
       }
 
       // 1. Check if a newer Service Worker is waiting on mobile/PWA
