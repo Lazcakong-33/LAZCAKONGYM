@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Clock, PlayCircle } from 'lucide-react';
 import type { LibraryExercise } from '../types';
 import { getExerciseFallbackAnimationUrl } from '../data/exerciseLibrary';
+import { getNeckMovementSpec } from '../utils/neckMovementSpec';
+import { NeckMovementDemo } from './NeckMovementDemo';
 
 export interface AssociatedExerciseCardData {
   key: string;
@@ -137,9 +139,11 @@ export const AssociatedExerciseCard: React.FC<AssociatedExerciseCardProps> = ({
   const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   // Build strict ID-bound media chain: primary animation -> fallback library animation -> static poster
+  const exercise = item.libraryExercise;
+  const neckDemoExercise = exercise && getNeckMovementSpec(exercise) ? exercise : null;
   const mediaChain = useMemo(() => {
-    const ex = item.libraryExercise;
-    if (!ex) return [] as { url: string; isAnimated: boolean }[];
+    const ex = exercise;
+    if (!ex || neckDemoExercise) return [] as { url: string; isAnimated: boolean }[];
 
     const chain: { url: string; isAnimated: boolean }[] = [];
     const seen = new Set<string>();
@@ -154,7 +158,7 @@ export const AssociatedExerciseCard: React.FC<AssociatedExerciseCardProps> = ({
     pushUrl(ex.thumbnailUrl, false);
 
     return chain;
-  }, [item.libraryExercise]);
+  }, [exercise, neckDemoExercise]);
 
   const staticPosterUrl = item.libraryExercise?.thumbnailUrl || null;
 
@@ -256,7 +260,9 @@ export const AssociatedExerciseCard: React.FC<AssociatedExerciseCardProps> = ({
           onOpenTechniquePro ? 'cursor-pointer group' : ''
         }`}
       >
-        {isPendingResource ? (
+        {neckDemoExercise ? (
+          <NeckMovementDemo exercise={neckDemoExercise} paused={!shouldPlayAnimation} className="w-full h-full" />
+        ) : isPendingResource ? (
           <div
             data-testid="associated-exercise-pending"
             className="w-full h-full flex flex-col items-center justify-center px-5 text-center gap-2.5 bg-[radial-gradient(circle_at_center,var(--accent-soft-bg)_0%,rgba(9,9,9,1)_72%)]"
