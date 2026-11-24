@@ -201,6 +201,33 @@ app.post('/api/workout/autoregulate-set', async (req, res) => {
   }
 });
 
+// Authenticated read-only diagnostics for Coach IA (no API keys or athlete data returned).
+app.post('/api/coach/status', async (req, res) => {
+  try {
+    const { verifyAuthTokenMiddleware } = await import('./src/server/firebaseAdminServer.ts');
+    const { handleCoachStatus } = await import('./src/server/coachController.ts');
+    await verifyAuthTokenMiddleware(req, res, () => {
+      Promise.resolve(handleCoachStatus(req, res)).catch((err: any) => {
+        console.error('[Coach IA status] Diagnostic error:', err?.message || err);
+        if (!res.headersSent) {
+          res.status(503).json({
+            success: false, code: 'coach/diagnostic-unavailable',
+            error: 'No se pudo verificar el estado del Coach IA.',
+          });
+        }
+      });
+    });
+  } catch (err: any) {
+    console.error('[Coach IA status] Server error:', err?.message || err);
+    if (!res.headersSent) {
+      res.status(503).json({
+        success: false, code: 'coach/diagnostic-unavailable',
+        error: 'No se pudo consultar el estado del Coach IA.',
+      });
+    }
+  }
+});
+
 // Coach LazcaKong IA Authenticated Chat Endpoint
 app.post('/api/coach/chat', async (req, res) => {
   try {
