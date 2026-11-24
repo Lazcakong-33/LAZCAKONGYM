@@ -1,6 +1,6 @@
 {
   "name": "lazcakong-gym-app-preview",
-  "main": "cloudflare/preview-worker.mjs",
+  "main": "cloudflare/app-preview-worker.ts",
   "compatibility_date": "2025-09-01",
   "workers_dev": true,
   "assets": {

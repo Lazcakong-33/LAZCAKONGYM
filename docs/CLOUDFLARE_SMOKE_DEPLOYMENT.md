@@ -25,7 +25,8 @@ Port and validate Express routes, Firebase Admin and database plan compatibility
 
 The app preview uses a separate Worker named `lazcakong-gym-app-preview`.
 Its static files serve the web app and the Worker returns the existing isolated
-health response. The application API routes still return 503 until ported.
+health response. The daily calorie report runs without external services.
+Other application API routes return 503 until ported.
 
 1. Create a separate Firebase test project and register a web app. Configure only synthetic users and data.
 2. Set `VITE_PREVIEW_FIREBASE_CONFIG` to the Firebase web SDK configuration JSON in the build environment or in an ignored `.env.cloudflare-preview.local` file.
