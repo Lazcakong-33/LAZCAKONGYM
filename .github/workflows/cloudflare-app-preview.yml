@@ -54,4 +54,5 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
-          npx --yes wrangler@4.168.0 deploy --config wrangler.app-preview.jsonc
+          preview_firebase_key="$(node -e 'const c=JSON.parse(process.env.VITE_PREVIEW_FIREBASE_CONFIG); if(c.projectId!=="lazcakong-zero-cost-test" || !c.apiKey) process.exit(1); process.stdout.write(c.apiKey)')"
+          npx --yes wrangler@4.168.0 deploy --config wrangler.app-preview.jsonc --var "PREVIEW_FIREBASE_API_KEY:$preview_firebase_key"

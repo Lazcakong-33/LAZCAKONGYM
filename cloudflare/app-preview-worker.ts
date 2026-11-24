@@ -1,11 +1,26 @@
 import smokeWorker from './preview-worker.mjs';
+import { initializePreviewSession } from './preview-session.ts';
 import { buildDailyCaloriesReport } from '../src/server/dailyCaloriesController.ts';
 
 const maxBodyBytes = 512 * 1024;
 
 export default {
-  async fetch(request: Request): Promise<Response> {
-    if (request.method !== 'POST' || new URL(request.url).pathname !== '/api/calories/daily-report') {
+  async fetch(request: Request, env: { PREVIEW_FIREBASE_API_KEY?: string } = {}): Promise<Response> {
+    const { pathname } = new URL(request.url);
+    if (request.method === 'GET' && (pathname === '/health' || pathname === '/api/health')) {
+      return Response.json({
+        ok: true,
+        service: 'lazcakong-gym-app-preview',
+        mode: 'isolated-preview',
+        productionAccess: false,
+        firebaseAccess: Boolean(env.PREVIEW_FIREBASE_API_KEY),
+        geminiAccess: false,
+      }, { headers: { 'Cache-Control': 'no-store' } });
+    }
+    if (request.method === 'POST' && pathname === '/api/auth/session-init') {
+      return initializePreviewSession(request, env.PREVIEW_FIREBASE_API_KEY);
+    }
+    if (request.method !== 'POST' || pathname !== '/api/calories/daily-report') {
       return smokeWorker.fetch(request);
     }
 
