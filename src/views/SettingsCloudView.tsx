@@ -45,7 +45,7 @@ import {
 } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { AVATAR_OPTIONS, GOAL_OPTIONS } from '../data/defaultProfiles';
-import { forceAppUpdate, APP_VERSION } from '../utils/updateApp';
+import { forceAppUpdate, getAppUpdateSafetyStatus, APP_VERSION } from '../utils/updateApp';
 import { useAppUpdate } from '../hooks/useAppUpdate';
 import {
   getNotificationPermissionStatus,
@@ -231,6 +231,7 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
 
   // App update lifecycle
   const { hasUpdateAvailable, isUpdating: isAppUpdating, triggerUpdate, checkUpdatesNow } = useAppUpdate();
+  const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
   const [checkMsg, setCheckMsg] = useState<string | null>(null);
   const [updateDeferredMsg, setUpdateDeferredMsg] = useState<string | null>(null);
   const [watchMsg, setWatchMsg] = useState<string | null>(null);
@@ -2433,6 +2434,36 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
             {APP_VERSION}
           </span>
         </div>
+
+        {import.meta.env.MODE === 'cloudflare-preview' && platformInfo.isCapacitorNative && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              disabled={isAppUpdating}
+              className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-bold text-slate-200"
+              onClick={async () => {
+                if (navigator.onLine) {
+                  setRollbackMessage('Desactiva Wi-Fi y datos móviles temporalmente para evitar que la OTA se vuelva a descargar.');
+                  return;
+                }
+                const safety = getAppUpdateSafetyStatus();
+                if (!safety.canUpdateSafely) {
+                  setRollbackMessage(safety.reason || 'Termina la sesión activa antes de revertir.');
+                  return;
+                }
+                try {
+                  const { CapacitorUpdater } = await import('@capgo/capacitor-updater');
+                  await CapacitorUpdater.reset({ toLastSuccessful: false });
+                } catch {
+                  setRollbackMessage('No se pudo volver a la versión de la APK.');
+                }
+              }}
+            >
+              Volver a la versión de la APK
+            </button>
+            {rollbackMessage && <p role="status" className="text-xs text-slate-300">{rollbackMessage}</p>}
+          </div>
+        )}
 
         {hasUpdateAvailable ? (
           <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/10 border border-amber-500/40 space-y-3">
