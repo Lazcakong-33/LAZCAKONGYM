@@ -77,8 +77,24 @@ export default {
     if (request.method === 'POST' && pathname === '/api/coach/chat') {
       return handlePreviewCoach(request, env);
     }
-    if (request.method === 'POST' && pathname === '/api/auth/session-init') {
-      return initializePreviewSession(request, env.PREVIEW_FIREBASE_API_KEY);
+    if (pathname === '/api/auth/session-init') {
+      const fromAndroid = request.headers.get('Origin') === 'https://localhost';
+      if (request.method === 'OPTIONS' && fromAndroid) {
+        return new Response(null, { status: 204, headers: {
+          'Access-Control-Allow-Origin': 'https://localhost',
+          'Access-Control-Allow-Methods': 'POST',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cache-Control',
+          'Cache-Control': 'no-store',
+          Vary: 'Origin',
+        } });
+      }
+      if (request.method === 'POST') {
+        const response = await initializePreviewSession(request, env.PREVIEW_FIREBASE_API_KEY);
+        const headers = new Headers(response.headers);
+        headers.append('Vary', 'Origin');
+        if (fromAndroid) headers.set('Access-Control-Allow-Origin', 'https://localhost');
+        return new Response(response.body, { status: response.status, headers });
+      }
     }
     if (request.method !== 'POST' || pathname !== '/api/calories/daily-report') {
       return smokeWorker.fetch(request);
