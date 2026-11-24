@@ -4,8 +4,8 @@
  * and automatically restart into the newest build without losing athlete local records.
  */
 
-export const APP_VERSION = 'v6.4.3';
-export const APP_BUILD_ID = '6.4.3-inicio';
+export const APP_VERSION = 'v6.4.4';
+export const APP_BUILD_ID = '6.4.4-ota-segura';
 export const BUILD_DATE = '2026-11-23';
 
 export const OFFLINE_SYNC_QUEUE_STORAGE_KEY = 'lazcakon_pending_offline_sync_queue';
