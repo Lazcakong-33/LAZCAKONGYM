@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { NeckMovementDemo } from './NeckMovementDemo';
+import { getNeckMovementSpec } from '../utils/neckMovementSpec';
 import { Dumbbell, Loader2, RefreshCw } from 'lucide-react';
 import {
   resolveLibraryExercise,
@@ -111,6 +113,7 @@ export const ExerciseThumbnail: React.FC<ExerciseThumbnailProps> = ({
   const [retryTick, setRetryTick] = useState(0);
 
   const libraryMatch = resolveLibraryExercise(exercise || alt);
+  const neckDemoAvailable = libraryMatch && getNeckMovementSpec(libraryMatch) !== null;
   const explicitSrc = src && !isObsoleteLibraryMedia(src) ? resolveMediaUrl(src) : null;
   const localSource = libraryMatch?.thumbnailUrl || explicitSrc || null;
   const resolvedSrc = localSource ? BLOB_URL_CACHE.get(localSource) || localSource : null;
@@ -212,6 +215,10 @@ export const ExerciseThumbnail: React.FC<ExerciseThumbnailProps> = ({
         onClick ? 'cursor-pointer' : ''
       } ${className}`}
     >
+      {neckDemoAvailable && libraryMatch ? (
+        <NeckMovementDemo exercise={libraryMatch} className="w-full h-full" />
+      ) : (
+      <>
       {(isLoading || hasError || !resolvedSrc) && (
         <div className="absolute inset-0 bg-[#0d1322] flex flex-col items-center justify-center text-slate-500 p-1.5 z-0">
           <Dumbbell className="w-5 h-5 text-amber-500/50 mb-0.5 shrink-0" />
@@ -256,6 +263,8 @@ export const ExerciseThumbnail: React.FC<ExerciseThumbnailProps> = ({
             isLoading ? 'opacity-0' : 'opacity-100'
           }`}
         />
+      )}
+      </>
       )}
     </div>
   );
