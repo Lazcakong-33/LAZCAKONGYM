@@ -415,6 +415,65 @@ function mapGeminiErrorResponse(err: any): {
 }
 
 /**
+ * POST /api/coach/status
+ * Authenticated, READ-ONLY diagnostic. Never returns keys, credentials,
+ * athlete records or raw tokens, and does not call the paid Gemini API.
+ */
+export async function handleCoachStatus(
+  req: Request,
+  res: Response,
+  deps?: CoachControllerDeps
+) {
+  res.setHeader('Cache-Control', 'private, no-store');
+  const user = (req as any).user as AuthenticatedUser | undefined;
+  if (!user?.uid) {
+    return res.status(401).json({
+      success: false, code: 'coach/unauthorized',
+      error: 'Debes iniciar sesión para diagnosticar Coach IA.',
+    });
+  }
+  const apiKey = deps?.getApiKey ? deps.getApiKey() : process.env.GEMINI_API_KEY;
+  const geminiConfigured = Boolean(apiKey?.trim() || deps?.geminiClient);
+  const athleteId = String(req.body?.athleteId || '').trim();
+  if (!athleteId || !/^[a-zA-Z0-9_-]{1,128}$/.test(athleteId)) {
+    return res.status(400).json({
+      success: false, code: 'coach/invalid-athlete-id',
+      error: 'No se pudo identificar el perfil de atleta activo.',
+    });
+  }
+  const verify = deps?.verifyOwnership || verifyAthleteOwnershipDefault;
+  let ownership: CoachOwnershipCheckResult;
+  try {
+    ownership = await verify({
+      athleteId,
+      user,
+      rawIdToken: (req as any).rawIdToken,
+    });
+  } catch {
+    ownership = {
+      authorized: false, status: 503,
+      error: 'No se pudo verificar el perfil del atleta en este momento.',
+    };
+  }
+  return res.status(200).json({
+    success: true,
+    authenticated: true,
+    athleteAuthorized: ownership.authorized,
+    ownershipCode: ownership.authorized ? 'ok' :
+      ownership.status === 503 ? 'temporarily-unavailable' : 'not-authorized',
+    geminiConfigured,
+    model: getGeminiModel(),
+    readyForLiveRequest: ownership.authorized && geminiConfigured,
+    // A configured key is NOT proof that Gemini accepts live requests.
+    message: !ownership.authorized
+      ? (ownership.error || 'No está autorizado este perfil de atleta.')
+      : !geminiConfigured
+      ? 'GEMINI_API_KEY no está configurada en el servidor. Debes agregarla como secreto privado en el alojamiento.'
+      : 'La sesión y la clave están configuradas. Usa Enviar para comprobar una respuesta real de Gemini.',
+  });
+}
+
+/**
  * POST /api/coach/chat
  * Authenticated server-side Gemini endpoint for Coach LazcaKong IA.
  */
