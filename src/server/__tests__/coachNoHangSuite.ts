@@ -55,6 +55,8 @@ async function main() {
     assert.ok(s.includes('tokenTimeoutMs: 6_000'));
     assert.ok(s.includes('data-testid="coach-cancel-pending"'));
     assert.ok(s.includes('data-testid="coach-pending-request"'));
+    assert.ok(s.includes('data-testid="coach-check-connection-after-error"'));
+    assert.ok(s.includes('data-testid="coach-check-result-after-error"'));
     assert.ok(s.includes("cancelActiveRequest('background_stale')"));
     assert.ok(s.includes("cancelActiveRequest('user_cancel')"));
     assert.ok(s.includes("code: 'coach/timeout'"));
