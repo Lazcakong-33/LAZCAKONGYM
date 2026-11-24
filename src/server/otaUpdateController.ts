@@ -78,13 +78,14 @@ export function handleGetOtaManifest(req: Request, res: Response): void {
       return;
     }
     const compat = evaluateOtaCompatibility(prodManifest, nativeVersionCode);
+    const channelMatches = prodManifest.channel === 'production';
     res.status(200).json({
       success: true,
       enabled: true,
       channel: 'production',
-      updateAvailable: compat.compatible && !compat.requiresApkUpdate,
-      manifest: compat.compatible ? prodManifest : null,
-      reason: compat.reason,
+      updateAvailable: channelMatches && compat.compatible && !compat.requiresApkUpdate,
+      manifest: channelMatches && compat.compatible ? prodManifest : null,
+      reason: channelMatches ? compat.reason : 'El manifiesto no corresponde al canal OTA solicitado.',
     });
     return;
   }
@@ -117,13 +118,14 @@ export function handleGetOtaManifest(req: Request, res: Response): void {
   }
 
   const compat = evaluateOtaCompatibility(manifest, nativeVersionCode);
+  const channelMatches = manifest.channel === channel;
   res.status(200).json({
     success: true,
     enabled: true,
     channel,
-    updateAvailable: compat.compatible && !compat.requiresApkUpdate,
-    manifest: compat.compatible ? manifest : null,
-    reason: compat.reason,
+    updateAvailable: channelMatches && compat.compatible && !compat.requiresApkUpdate,
+    manifest: channelMatches && compat.compatible ? manifest : null,
+    reason: channelMatches ? compat.reason : 'El manifiesto no corresponde al canal OTA solicitado.',
   });
 }
 
