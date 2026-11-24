@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /athletes/{athleteId} {
+      function isPreviewOwner() {
+        return request.auth != null && request.auth.uid == athleteId;
+      }
+
+      function validPreviewDocument() {
+        let data = request.resource.data;
+        return data.get('id', athleteId) == athleteId
+          && !data.keys().hasAny([
+            'authUid', 'isAdmin', 'pin', 'migrationStatus',
+            'legacyPinPurged', 'serverIdentityVerified'
+          ]);
+      }
+
+      allow get: if isPreviewOwner();
+      allow create, update: if isPreviewOwner() && validPreviewDocument();
+    }
+  }
+}

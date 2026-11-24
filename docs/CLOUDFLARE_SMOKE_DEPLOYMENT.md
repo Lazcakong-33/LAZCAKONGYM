@@ -26,7 +26,9 @@ Port and validate Express routes, Firebase Admin and database plan compatibility
 The app preview uses a separate Worker named `lazcakong-gym-app-preview`.
 Its static files serve the web app and the Worker returns the existing isolated
 health response. The daily calorie report runs without external services.
-Other application API routes return 503 until ported.
+The preview also supports email/password session initialization with Firebase
+Authentication and rate-limited Workers AI for open Coach questions. Other
+application API routes return 503 until ported.
 
 1. Create a separate Firebase test project and register a web app. Configure only synthetic users and data.
 2. Set `VITE_PREVIEW_FIREBASE_CONFIG` to the Firebase web SDK configuration JSON in the build environment or in an ignored `.env.cloudflare-preview.local` file.
@@ -37,3 +39,13 @@ The build requires an isolated Firebase web configuration and includes the local
 Coach by default. It writes to `dist-app-preview`. Existing production and native
 builds keep using their default build directory. The app preview must be used
 only for test data and does not replace the Express server.
+
+### Preview training synchronization
+
+Apply `firestore.preview.rules` only to the `(default)` database of the
+`lazcakong-zero-cost-test` Firebase project. The preview client can store its
+synthetic profile and training data under `athletes/{firebaseUid}` without
+sharing it across accounts. Production rules are managed separately.
+
+Run the isolated synchronization check with:
+`npx firebase-tools emulators:exec --only firestore --project demo-lazcakong-preview-sync 'node scripts/check-preview-sync.mjs'`

@@ -56,8 +56,8 @@ export async function initializePreviewSession(
     const user = users?.[0];
     if (user?.localId !== uid || user.disabled) return unauthorized();
 
-    // Preview profiles are synthetic and exist only in the browser's local data.
-    // Do not fetch or create athlete records or grant admin permissions.
+    // The Worker returns synthetic identity metadata. The web client syncs
+    // training records separately through the isolated Firestore rules.
     return sessionResponse({
       success: true,
       athleteId: uid,
