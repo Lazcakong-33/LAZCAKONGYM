@@ -245,6 +245,8 @@ jobs:
     steps:
       - name: Checkout current source (no production checkout)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -282,13 +284,14 @@ jobs:
           # The native APK has already passed CI. OTA contains ONLY dist/ assets.
           # Publishing a bundle with native changes would mislead the client.
           # Explicit native changes are blocked from OTA and require APK.
-          git fetch --no-tags --depth=2 origin "${GITHUB_SHA}" || true
-          if git rev-parse "${GITHUB_SHA}^1" >/dev/null 2>&1; then
-            CHANGED=$(git diff-tree --no-commit-id --name-only -r "${GITHUB_SHA}^1" "${GITHUB_SHA}" || true)
-            if printf '%s\n' "$CHANGED" | grep -E '^(android/|ios/|capacitor\.config\.|package(-lock)?\.json)' ; then
-              echo "::error::Native/package configuration changed. A full signed APK is required; refusing OTA publishing."
-              exit 1
-            fi
+          if ! git rev-parse "${GITHUB_SHA}^1" >/dev/null 2>&1; then
+            echo "::error::Cannot inspect previous commit. Refusing unchecked OTA publishing."
+            exit 1
+          fi
+          CHANGED=$(git diff --name-only "${GITHUB_SHA}^1" "${GITHUB_SHA}")
+          if printf '%s\n' "$CHANGED" | grep -E '^(android/|ios/|capacitor\.config\.|package(-lock)?\.json)' ; then
+            echo "::error::Native/package configuration changed. A full signed APK is required; refusing OTA publishing."
+            exit 1
           fi
 
       - name: Build OTA web assets at exact version
