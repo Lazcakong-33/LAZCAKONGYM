@@ -126,6 +126,9 @@ jobs:
             echo "::warning::GOOGLE_SERVICES_JSON_BASE64 no está configurado; verificar cliente OAuth Android y registro de huellas en Firebase antes de dar Google Sign-In por listo."
           fi
 
+      - name: Cache Gradle dependencies between builds
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Ensure Gradle Wrapper Executable
         run: chmod +x android/gradlew
 
@@ -154,7 +157,19 @@ jobs:
           echo "PUBLIC Android signing fingerprints for Firebase project configuration:"
           keytool -exportcert -rfc -keystore "$DEBUG_KS_TMP" -storepass "$LAZCAKONG_DEBUG_KEYSTORE_PASSWORD" -alias "$LAZCAKONG_DEBUG_KEY_ALIAS" | openssl x509 -noout -fingerprint -sha1
           keytool -exportcert -rfc -keystore "$DEBUG_KS_TMP" -storepass "$LAZCAKONG_DEBUG_KEYSTORE_PASSWORD" -alias "$LAZCAKONG_DEBUG_KEY_ALIAS" | openssl x509 -noout -fingerprint -sha256
-          ./gradlew assembleDebug --no-daemon
+          # Maven Central can temporarily rate limit GitHub runners (HTTP 429).
+          # Retry with backoff instead of treating it as an app code failure.
+          for attempt in 1 2 3; do
+            if ./gradlew assembleDebug --no-daemon; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Android Gradle build failed after 3 attempts."
+              exit 1
+            fi
+            echo "::warning::Gradle attempt $attempt failed; retrying after backoff."
+            sleep $((attempt * 30))
+          done
 
       - name: Decode Existing Release Keystore & Build Signed Release APK
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_type == 'release' }}
@@ -233,7 +248,7 @@ jobs:
   publish-development-ota:
     name: Publish verified DEVELOPMENT OTA (GitHub Releases)
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/ci/android-apk-ota' }}
-    needs: build-android-apk
+    # Do not block web-only OTA on transient Maven/Android build outages.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -272,10 +287,11 @@ jobs:
           echo "VITE_APP_VERSION=$OTA_VERSION" >> "$GITHUB_ENV"
           echo "Publishing development OTA version $OTA_VERSION"
 
-      - name: Install dependencies and verify types
+      - name: Install dependencies and verify OTA tests
         run: |
           npm install --no-audit --no-fund
           npm run lint
+          npx tsx src/server/__tests__/otaUpdateSystemSuite.ts
 
       - name: Validate release changes never include native files
         shell: bash
