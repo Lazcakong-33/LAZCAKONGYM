@@ -300,6 +300,8 @@ export async function downloadAndStageOtaUpdate(
     allowProduction?: boolean;
     forceNativeForTest?: boolean;
     applyImmediatelyWhenSafe?: boolean;
+    /** Automatic mode: wait until workout and offline changes are safe before downloading. */
+    skipDownloadWhenUnsafe?: boolean;
   }
 ): Promise<OtaApplyResult> {
   const { isCapacitorNative } = detectRuntimePlatform();
@@ -332,32 +334,89 @@ export async function downloadAndStageOtaUpdate(
         ? localStorage
         : null;
 
-  let downloadedBundle: BundleInfo;
-  try {
-    downloadedBundle = await adapter.download({
-      url: manifest.url,
-      version: manifest.version,
-      checksum: manifest.checksum,
-    });
-  } catch (err: any) {
+
+  // Staging for next launch avoids any forced restart during navigation.
+  // If a bundle is already downloaded, reuse it instead of downloading every
+  // 25 seconds. Revalidate compatibility above on every manifest poll.
+  const safetyBeforeDownload = getAppUpdateSafetyStatus(storage);
+  if (!safetyBeforeDownload.canUpdateSafely && options?.skipDownloadWhenUnsafe) {
+    try { storage?.setItem?.(DEFERRED_UPDATE_FLAG_KEY, String(Date.now())); } catch {}
     return {
-      status: 'error',
-      reason: err?.message || 'Error verificando o descargando el paquete OTA.',
+      status: 'deferred_unsafe',
+      safety: safetyBeforeDownload,
+      reason: safetyBeforeDownload.reason || 'Sesión de entrenamiento o sincronización pendientes.',
     };
   }
 
+  type PendingOtaRecord = {
+    bundleId: string;
+    version: string;
+    checksum: string;
+    channel: OtaChannel;
+    downloadedAt: number;
+    staged?: boolean;
+  };
+  let priorBundle: PendingOtaRecord | null = null;
   try {
-    storage?.setItem?.(
-      OTA_PENDING_BUNDLE_KEY,
-      JSON.stringify({
-        bundleId: downloadedBundle.id,
+    const raw = storage?.getItem(OTA_PENDING_BUNDLE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as PendingOtaRecord;
+      const isMatching =
+        parsed?.version === manifest.version &&
+        parsed?.checksum === manifest.checksum &&
+        parsed?.channel === manifest.channel &&
+        typeof parsed?.bundleId === 'string' &&
+        parsed.bundleId.length > 0 &&
+        Number.isFinite(parsed.downloadedAt) &&
+        Date.now() - parsed.downloadedAt >= 0 &&
+        Date.now() - parsed.downloadedAt < 6 * 60 * 60 * 1000;
+      if (isMatching) priorBundle = parsed;
+    }
+  } catch {}
+
+  if (priorBundle?.staged && !options?.applyImmediatelyWhenSafe) {
+    return {
+      status: 'staged_for_background',
+      bundleId: priorBundle.bundleId,
+      safety: safetyBeforeDownload,
+      reason: 'Paquete descargado y programado para el próximo inicio.',
+    };
+  }
+
+  let downloadedBundle: BundleInfo;
+  if (priorBundle) {
+    downloadedBundle = { id: priorBundle.bundleId } as BundleInfo;
+  } else {
+    try {
+      downloadedBundle = await adapter.download({
+        url: manifest.url,
         version: manifest.version,
         checksum: manifest.checksum,
-        channel: manifest.channel,
-        downloadedAt: Date.now(),
-      })
-    );
-  } catch {}
+      });
+    } catch (err: any) {
+      return {
+        status: 'error',
+        reason: err?.message || 'Error verificando o descargando el paquete OTA.',
+      };
+    }
+  }
+
+  const savePending = (staged: boolean): void => {
+    try {
+      storage?.setItem?.(
+        OTA_PENDING_BUNDLE_KEY,
+        JSON.stringify({
+          bundleId: downloadedBundle.id,
+          version: manifest.version,
+          checksum: manifest.checksum,
+          channel: manifest.channel,
+          downloadedAt: priorBundle?.downloadedAt || Date.now(),
+          staged,
+        } satisfies PendingOtaRecord)
+      );
+    } catch {}
+  };
+  savePending(false);
 
   const safety = getAppUpdateSafetyStatus(storage);
   if (!safety.canUpdateSafely) {
@@ -375,22 +434,34 @@ export async function downloadAndStageOtaUpdate(
     };
   }
 
-  if (options?.applyImmediatelyWhenSafe) {
-    await adapter.set({ id: downloadedBundle.id });
+  try {
+    if (options?.applyImmediatelyWhenSafe) {
+      await adapter.set({ id: downloadedBundle.id });
+      return {
+        status: 'applied',
+        bundleId: downloadedBundle.id,
+        safety,
+      };
+    }
+
+    await adapter.next({ id: downloadedBundle.id });
+    savePending(true);
+    try { storage?.removeItem?.(DEFERRED_UPDATE_FLAG_KEY); } catch {}
     return {
-      status: 'applied',
+      status: 'staged_for_background',
       bundleId: downloadedBundle.id,
       safety,
     };
+  } catch (err: any) {
+    return {
+      status: 'error',
+      bundleId: downloadedBundle.id,
+      safety,
+      reason: err?.message || 'No se pudo activar la actualización OTA descargada.',
+    };
   }
-
-  await adapter.next({ id: downloadedBundle.id });
-  return {
-    status: 'staged_for_background',
-    bundleId: downloadedBundle.id,
-    safety,
-  };
 }
+
 
 export async function rollbackOtaToPreviousBundle(
   adapter: OtaPluginAdapter = DEFAULT_OTA_PLUGIN_ADAPTER,
