@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from './firebase-applet-config.json' with { type: 'json' };
 
+export { firebaseConfig };
 const app = initializeApp(firebaseConfig);
 let dbInstance;
 try {

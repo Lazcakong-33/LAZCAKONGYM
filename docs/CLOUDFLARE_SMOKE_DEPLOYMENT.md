@@ -20,3 +20,19 @@ node --test scripts/zero-cost-cloudflare-smoke.test.mjs
 
 ## Remaining migration work
 Port and validate Express routes, Firebase Admin and database plan compatibility, background tasks, notifications and OTA. Only use test accounts and isolated data until cutover gates in docs/ZERO_COST_MIGRATION.md pass. This smoke deployment alone does not reduce current Cloud Run costs or replace LAZCAKONG GYM.
+
+## Separate web app preview
+
+The app preview uses a separate Worker named `lazcakong-gym-app-preview`.
+Its static files serve the web app and the Worker returns the existing isolated
+health response. The application API routes still return 503 until ported.
+
+1. Create a separate Firebase test project and register a web app. Configure only synthetic users and data.
+2. Set `VITE_PREVIEW_FIREBASE_CONFIG` to the Firebase web SDK configuration JSON in the build environment or in an ignored `.env.cloudflare-preview.local` file.
+3. Run `npm ci` and `npm run build -- --mode cloudflare-preview`.
+4. Deploy from the repository root with `npx wrangler deploy --config wrangler.app-preview.jsonc` on Workers Free.
+
+The build requires an isolated Firebase web configuration and includes the local
+Coach by default. It writes to `dist-app-preview`. Existing production and native
+builds keep using their default build directory. The app preview must be used
+only for test data and does not replace the Express server.

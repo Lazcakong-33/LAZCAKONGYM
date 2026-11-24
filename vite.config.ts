@@ -1,7 +1,8 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig, loadEnv, Plugin } from 'vite';
+import productionFirebaseConfig from './src/firebase-applet-config.json' with { type: 'json' };
 
 // Plugin to serve PWA headers and MIME types correctly
 function pwaHeadersPlugin(): Plugin {
@@ -159,12 +160,50 @@ function pwaHeadersPlugin(): Plugin {
   };
 }
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const isAppPreview = mode === 'cloudflare-preview';
+  let previewFirebaseConfig: (Partial<typeof productionFirebaseConfig> & { databaseURL?: string }) | undefined;
+  if (isAppPreview) {
+    const env = loadEnv(mode, process.cwd(), 'VITE_');
+    try {
+      previewFirebaseConfig = JSON.parse(env.VITE_PREVIEW_FIREBASE_CONFIG ?? '');
+    } catch {
+      throw new Error('Set VITE_PREVIEW_FIREBASE_CONFIG to the web configuration of an isolated Firebase test project.');
+    }
+    if (
+      !previewFirebaseConfig?.projectId ||
+      previewFirebaseConfig.projectId === productionFirebaseConfig.projectId ||
+      previewFirebaseConfig.apiKey === productionFirebaseConfig.apiKey ||
+      previewFirebaseConfig.authDomain !== `${previewFirebaseConfig.projectId}.firebaseapp.com` ||
+      !previewFirebaseConfig.apiKey ||
+      !previewFirebaseConfig.appId ||
+      previewFirebaseConfig.databaseURL ||
+      (previewFirebaseConfig.storageBucket &&
+        ![`${previewFirebaseConfig.projectId}.appspot.com`, `${previewFirebaseConfig.projectId}.firebasestorage.app`].includes(previewFirebaseConfig.storageBucket))
+    ) {
+      throw new Error('Cloudflare preview requires an isolated Firebase project with its own web credentials and default auth domain.');
+    }
+  }
+
   return {
     plugins: [
       react(),
       tailwindcss(),
       pwaHeadersPlugin(),
+      ...(isAppPreview ? [{
+        name: 'isolated-firebase-preview',
+        enforce: 'pre' as const,
+        resolveId(source: string, importer?: string) {
+          if (source === './firebase-applet-config.json' && importer?.endsWith('/src/firebase.ts')) {
+            return '\0isolated-firebase-preview';
+          }
+        },
+        load(id: string) {
+          if (id === '\0isolated-firebase-preview') {
+            return `export default ${JSON.stringify(previewFirebaseConfig)};`;
+          }
+        },
+      }] : []),
     ],
     resolve: {
       alias: {
@@ -175,7 +214,11 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
+    define: {
+      ...(isAppPreview ? { 'import.meta.env.VITE_COACH_LOCAL_ONLY': JSON.stringify('true') } : {}),
+    },
     build: {
+      outDir: isAppPreview ? 'dist-app-preview' : 'dist',
       sourcemap: false,
     },
   };

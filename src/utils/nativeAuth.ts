@@ -7,8 +7,7 @@ import {
   type User,
   type UserCredential,
 } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase.ts';
-import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
+import { auth, firebaseConfig, googleProvider } from '../firebase.ts';
 import { detectRuntimePlatform } from './capacitorPlatform.ts';
 
 let socialLoginInitialized = false;

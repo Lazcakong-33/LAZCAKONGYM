@@ -10,14 +10,13 @@ import {
   onSnapshot,
   type Firestore,
 } from 'firebase/firestore';
-import { auth, db } from '../firebase.ts';
+import { auth, db, firebaseConfig } from '../firebase.ts';
 import {
   Profile,
   PendingOfflineSyncOp,
   SyncOperationType,
   OfflineSyncQueueSummary,
 } from '../types/index.ts';
-import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
 import { safeApiFetchJson } from './safeApiFetch.ts';
 import { resolveApiUrl } from './apiUrl.ts';
 import { safeLocalStorageSetItem, type StorageAdapterLike } from './safeStorage.ts';
