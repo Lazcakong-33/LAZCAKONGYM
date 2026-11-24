@@ -1,4 +1,4 @@
-import { getGeminiModel } from './geminiModel.ts';
+import { getGeminiModel, getServerGeminiApiKey } from './geminiModel.ts';
 import { GoogleGenAI, Type } from '@google/genai';
 
 const ALLOWED_IMAGE_MIME_TYPES = new Set([
@@ -81,7 +81,7 @@ function stripBase64Prefix(rawData: string): string {
 }
 
 function getGeminiClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = getServerGeminiApiKey();
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY no está configurada en el servidor.');
   }
