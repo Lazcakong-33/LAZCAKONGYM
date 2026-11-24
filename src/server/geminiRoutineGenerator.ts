@@ -341,8 +341,8 @@ function buildSmartFallbackRoutine(params: RoutineGenerationParams): Routine {
   };
 
   return {
-    id: `rutina-ia-${Date.now()}`,
-    dayName: 'Rutina IA',
+    id: `rutina-local-${Date.now()}`,
+    dayName: 'Rutina local',
     title: titles[focus] || `Rutina IA: ${focus.toUpperCase()}`,
     tagline: `${goalInfo.name} · ${goalInfo.repRange} · Descanso ${goalInfo.restRange}`,
     banner: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80',
