@@ -241,6 +241,12 @@ export function useAppUpdate(): AppUpdateState {
 
     // If Capacitor native has a validated OTA bundle ready, download & apply via @capgo/capacitor-updater
     const { isCapacitorNative } = detectRuntimePlatform();
+    // Never refresh an APK's embedded assets as if they were PWA assets.
+    if (isCapacitorNative && !otaPendingManifest) {
+      setIsUpdating(false);
+      setHasUpdateAvailable(false);
+      return;
+    }
     if (isCapacitorNative && otaPendingManifest) {
       const otaResult = await downloadAndStageOtaUpdate(otaPendingManifest, {
         currentWebVersion: APP_VERSION,
