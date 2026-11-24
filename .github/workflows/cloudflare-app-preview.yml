@@ -1,0 +1,57 @@
+name: Cloudflare isolated app preview
+
+on:
+  push:
+    branches: [migration/zero-cost]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lazcakong-cloudflare-app-preview
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_PREVIEW_FIREBASE_CONFIG: '{"projectId":"demo-lazcakong","authDomain":"demo-lazcakong.firebaseapp.com","appId":"test-web","apiKey":"placeholder"}'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: node --test scripts/zero-cost-cloudflare-smoke.test.mjs scripts/zero-cost-guard.test.mjs
+      - run: npm run build -- --mode cloudflare-preview
+      - run: npx --yes wrangler@4.168.0 deploy --dry-run --config wrangler.app-preview.jsonc
+
+  deploy:
+    needs: validate
+    if: ${{ vars.LAZCAKONG_DEPLOY_ISOLATED_PREVIEW == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: cloudflare-app-preview
+    env:
+      VITE_PREVIEW_FIREBASE_CONFIG: ${{ vars.LAZCAKONG_PREVIEW_FIREBASE_CONFIG }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.LAZCAKONG_PREVIEW_CLOUDFLARE_ACCOUNT_ID }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build -- --mode cloudflare-preview
+      - name: Deploy isolated preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.LAZCAKONG_PREVIEW_CLOUDFLARE_API_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          npx --yes wrangler@4.168.0 deploy --config wrangler.app-preview.jsonc
