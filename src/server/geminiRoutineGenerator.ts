@@ -1,4 +1,4 @@
-import { getGeminiModel } from './geminiModel.ts';
+import { getGeminiModel, getServerGeminiApiKey } from './geminiModel.ts';
 import { GoogleGenAI, Type } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
@@ -133,7 +133,7 @@ export async function generateAIRoutine(params: RoutineGenerationParams): Promis
   const goalInfo = FITNESS_GOAL_GUIDELINES[goal] || FITNESS_GOAL_GUIDELINES.hipertrofia;
 
   // Attempt 1: Call Gemini API from server if API key is available
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = getServerGeminiApiKey();
   if (apiKey) {
     try {
       const ai = new GoogleGenAI({
