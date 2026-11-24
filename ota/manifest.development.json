@@ -1,0 +1,15 @@
+{
+  "channel": "development",
+  "version": "0.0.0",
+  "buildId": "unpublished",
+  "url": "",
+  "checksum": "",
+  "contentsPolicy": "web_assets_only",
+  "changedScopes": [
+    "ui"
+  ],
+  "requiresApkUpdate": false,
+  "minNativeVersionCode": 1,
+  "capacitorMajor": 8,
+  "releaseNotes": "Canal OTA de desarrollo aún sin actualización publicada."
+}
