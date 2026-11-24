@@ -212,14 +212,16 @@ export const AIRoutineGeneratorModal: React.FC<AIRoutineGeneratorModalProps> = (
       const data = response.data;
       if (response.ok && data?.success && data.routine) {
         const source = data.generationSource || (
-          data.routine.id?.startsWith('rutina-local-') ? 'local' : 'gemini'
+          data.routine.id?.startsWith('rutina-local-') ? 'local' : null
         );
         const fallback = generateLocalFallbackRoutine();
         setGenerationSource(source);
         setGenerationNotice(
           data.generationNotice || (source === 'local'
             ? 'El servidor utilizó el generador local, no Gemini.'
-            : 'Rutina generada con Gemini.')
+            : source === 'gemini'
+            ? 'Rutina generada con Gemini.'
+            : 'El servidor publicado no informa si esta rutina se generó con Gemini o con el motor local. Actualiza el backend para comprobarlo.')
         );
         setGeneratedRoutine({
           ...data.routine,
@@ -439,7 +441,7 @@ export const AIRoutineGeneratorModal: React.FC<AIRoutineGeneratorModalProps> = (
                   className={`rounded-xl border p-3 text-xs font-semibold ${generationSource === 'gemini'
                     ? 'bg-lime-500/10 border-lime-500/30 text-lime-100'
                     : 'bg-amber-500/10 border-amber-500/40 text-amber-200'}`}>
-                  {generationSource === 'gemini' ? 'IA GEMINI' : 'MODO LOCAL · NO ES RESPUESTA DE IA'} — {generationNotice}
+                  {generationSource === 'gemini' ? 'IA GEMINI' : generationSource === 'local' ? 'MODO LOCAL · NO ES RESPUESTA DE IA' : 'ORIGEN SIN VERIFICAR'} — {generationNotice}
                 </div>
               )}
               {/* Header card */}
