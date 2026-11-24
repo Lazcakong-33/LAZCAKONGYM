@@ -63,7 +63,15 @@ app.post('/api/gemini/generate-routine', async (req, res) => {
   try {
     const { generateAIRoutine } = await import('./src/server/geminiRoutineGenerator.ts');
     const routine = await generateAIRoutine(req.body);
-    res.status(200).json({ success: true, routine });
+    const generationSource = routine.id.startsWith('rutina-local-') ? 'local' : 'gemini';
+    res.status(200).json({
+      success: true,
+      routine,
+      generationSource,
+      generationNotice: generationSource === 'local'
+        ? 'Gemini no está disponible o no respondió. Se creó una rutina local del catálogo, sin generar una respuesta con IA.'
+        : 'Rutina generada por Gemini.',
+    });
   } catch (error: any) {
     console.error('Error generating AI routine:', error);
     res.status(500).json({ success: false, error: error.message || 'Error generating routine' });
