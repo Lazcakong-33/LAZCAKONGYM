@@ -6,7 +6,7 @@ android {
     def ciVersionCode = System.getenv("LAZCAKONG_VERSION_CODE")?.trim()
     def ciVersionName = System.getenv("LAZCAKONG_VERSION_NAME")?.trim()
     defaultConfig {
-        applicationId "com.lazcakong.gym"
+        applicationId "com.lazcakong.gym.otapreview"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode (ciVersionCode && ciVersionCode.isInteger() ? ciVersionCode.toInteger() : 1)

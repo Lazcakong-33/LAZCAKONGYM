@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.lazcakong.gym',
-  appName: 'LAZCAKONG GYM',
+  appId: 'com.lazcakong.gym.otapreview',
+  appName: 'LAZCAKONG OTA PRUEBA',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

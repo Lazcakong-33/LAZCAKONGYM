@@ -1,0 +1,54 @@
+name: Android OTA preview APK
+
+on:
+  push:
+    branches: [test/android-ota-preview]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: cloudflare-app-preview
+    env:
+      VITE_PREVIEW_FIREBASE_CONFIG: ${{ vars.LAZCAKONG_PREVIEW_FIREBASE_CONFIG }}
+      VITE_API_BASE_URL: https://lazcakong-gym-app-preview.kmiloko19.workers.dev
+      VITE_APP_VERSION: '6.4.10'
+      VITE_OTA_CHANNEL: development
+      VITE_OTA_PRODUCTION_ENABLED: 'false'
+      CAPACITOR_TELEMETRY: 'off'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - name: Build isolated web assets and sync Android
+        run: |
+          node -e 'const c = JSON.parse(process.env.VITE_PREVIEW_FIREBASE_CONFIG); if (c.projectId !== "lazcakong-zero-cost-test") process.exit(1)'
+          npm run build -- --mode cloudflare-preview
+          mv dist-app-preview dist
+          npx cap sync android
+      - name: Build and verify the test APK
+        run: |
+          sdk="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          "$sdk/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' 'build-tools;36.0.0'
+          bash android/gradlew -p android :app:assembleDebug --no-daemon
+          apk=android/app/build/outputs/apk/debug/app-debug.apk
+          "$sdk/build-tools/36.0.0/apksigner" verify "$apk"
+          "$sdk/build-tools/36.0.0/aapt" dump badging "$apk" | grep -m1 "^package: name='com.lazcakong.gym.otapreview'"
+          mkdir apk-output
+          cp "$apk" apk-output/LAZCAKONG-OTA-PRUEBA.apk
+          (cd apk-output && sha256sum LAZCAKONG-OTA-PRUEBA.apk > SHA256SUMS.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LAZCAKONG-OTA-PRUEBA
+          path: apk-output/
+          if-no-files-found: error

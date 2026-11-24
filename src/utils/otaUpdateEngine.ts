@@ -260,7 +260,7 @@ export async function fetchOtaManifestFromServer(options?: {
 
   // Independent distribution of *development* web bundles via GitHub Releases.
   // Production never falls back to a development channel or public manifest.
-  if (channel !== 'development') {
+  if (channel !== 'development' || import.meta.env.MODE === 'cloudflare-preview') {
     return apiResponse || emptyResponse;
   }
 
