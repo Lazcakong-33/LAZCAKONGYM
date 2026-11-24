@@ -380,7 +380,7 @@ async function runSuite() {
         json: async () => ({
           success: true, enabled: false, channel: 'development', updateAvailable: false, manifest: null,
         }),
-      })) as typeof fetch,
+      })) as unknown as typeof fetch,
     });
     assert.equal(noDev.updateAvailable, false);
     assert.equal(noDev.enabled, false);
