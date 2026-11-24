@@ -3,11 +3,66 @@ import { handlePreviewCoach, type PreviewCoachBindings } from './preview-coach.t
 import { initializePreviewSession } from './preview-session.ts';
 import { buildDailyCaloriesReport } from '../src/server/dailyCaloriesController.ts';
 
+import { evaluateOtaCompatibility, type OtaManifestPayload } from '../src/utils/otaCompatibility.ts';
+
+interface PreviewBindings extends PreviewCoachBindings {
+  ASSETS?: { fetch(request: Request): Promise<Response> };
+}
+
 const maxBodyBytes = 512 * 1024;
 
 export default {
-  async fetch(request: Request, env: PreviewCoachBindings = {}): Promise<Response> {
-    const { pathname } = new URL(request.url);
+  async fetch(request: Request, env: PreviewBindings = {}): Promise<Response> {
+    const url = new URL(request.url);
+    const { pathname } = url;
+    const otaHeaders = new Headers({ 'Cache-Control': 'no-store', Vary: 'Origin' });
+    if (request.headers.get('Origin') === 'https://localhost') {
+      otaHeaders.set('Access-Control-Allow-Origin', 'https://localhost');
+    }
+    if (request.method === 'OPTIONS' && pathname === '/api/ota/manifest' && otaHeaders.has('Access-Control-Allow-Origin')) {
+      otaHeaders.set('Access-Control-Allow-Methods', 'GET');
+      otaHeaders.set('Access-Control-Allow-Headers', 'Cache-Control');
+      return new Response(null, { status: 204, headers: otaHeaders });
+    }
+    if (request.method === 'GET' && pathname === '/api/ota/manifest') {
+      const channel = url.searchParams.get('channel') ?? 'development';
+      const nativeVersionCode = Number(url.searchParams.get('nativeVersionCode') ?? '1');
+      const headers = otaHeaders;
+      if (!Number.isSafeInteger(nativeVersionCode) || nativeVersionCode < 1) {
+        return Response.json({ error: 'Versión nativa inválida.' }, { status: 400, headers });
+      }
+
+      let manifest: OtaManifestPayload | null = null;
+      if (channel === 'development' && env.ASSETS) {
+        const response = await env.ASSETS.fetch(new Request(new URL('/_preview-ota/manifest.development.json', url)));
+        if (response.ok && response.headers.get('Content-Type')?.includes('application/json')) {
+          manifest = await response.json().catch(() => null) as OtaManifestPayload | null;
+        }
+      }
+      const eligible = manifest?.channel === 'development'
+        && /^\d+\.\d+\.\d+$/.test(manifest.version)
+        && /^[a-f0-9]{64}$/i.test(manifest.checksum)
+        && manifest.url === `${url.origin}/api/ota/bundles/lazcakongym-ota-${manifest.version}.zip`
+        && evaluateOtaCompatibility(manifest, nativeVersionCode).valid;
+
+      return Response.json({
+        success: true,
+        enabled: channel === 'development',
+        channel,
+        updateAvailable: Boolean(eligible),
+        manifest: eligible ? manifest : null,
+      }, { headers });
+    }
+    if (request.method === 'GET' && /^\/api\/ota\/bundles\/lazcakongym-ota-\d+\.\d+\.\d+\.zip$/.test(pathname) && env.ASSETS) {
+      const assetUrl = new URL(pathname.replace('/api/ota/bundles/', '/_preview-ota/'), url);
+      const response = await env.ASSETS.fetch(new Request(assetUrl, request));
+      if (response.ok && !response.headers.get('Content-Type')?.startsWith('text/html')) {
+        const headers = new Headers(response.headers);
+        otaHeaders.forEach((value, key) => headers.set(key, value));
+        return new Response(response.body, { status: response.status, headers });
+      }
+      return new Response(null, { status: 404 });
+    }
     if (request.method === 'GET' && (pathname === '/health' || pathname === '/api/health')) {
       return Response.json({
         ok: true,

@@ -38,6 +38,7 @@ jobs:
     environment: cloudflare-app-preview
     env:
       VITE_PREVIEW_FIREBASE_CONFIG: ${{ vars.LAZCAKONG_PREVIEW_FIREBASE_CONFIG }}
+      VITE_PREVIEW_OTA_VERSION: ${{ vars.LAZCAKONG_PREVIEW_OTA_VERSION }}
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.LAZCAKONG_PREVIEW_CLOUDFLARE_ACCOUNT_ID }}
       WRANGLER_SEND_METRICS: 'false'
     steps:
@@ -47,7 +48,30 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: npm run build -- --mode cloudflare-preview
+      - name: Build isolated preview and optional OTA bundle
+        run: |
+          set -euo pipefail
+          if [[ -n "$VITE_PREVIEW_OTA_VERSION" && ! "$VITE_PREVIEW_OTA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "LAZCAKONG_PREVIEW_OTA_VERSION must be a numeric version (major.minor.patch)."
+            exit 1
+          fi
+          export VITE_APP_VERSION="$VITE_PREVIEW_OTA_VERSION"
+          export VITE_API_BASE_URL=https://lazcakong-gym-app-preview.kmiloko19.workers.dev
+          npm run build -- --mode cloudflare-preview
+          if [[ -n "$VITE_PREVIEW_OTA_VERSION" ]]; then
+            work="$(mktemp -d)"
+            ln -s "$GITHUB_WORKSPACE/dist-app-preview" "$work/dist"
+            (
+              cd "$work"
+              node "$GITHUB_WORKSPACE/scripts/package-ota-bundle.mjs" \
+                --version "$VITE_PREVIEW_OTA_VERSION" --channel development \
+                --base-url "$VITE_API_BASE_URL"
+            )
+            zip="$work/dist-ota/lazcakongym-ota-$VITE_PREVIEW_OTA_VERSION.zip"
+            test "$(wc -c < "$zip")" -le 26214400
+            mkdir -p dist-app-preview/_preview-ota
+            cp "$zip" "$work/dist-ota/manifest.development.json" dist-app-preview/_preview-ota/
+          fi
       - name: Deploy isolated preview
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.LAZCAKONG_PREVIEW_CLOUDFLARE_API_TOKEN }}
