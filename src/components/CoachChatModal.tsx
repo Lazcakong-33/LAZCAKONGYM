@@ -54,7 +54,7 @@ import {
   SpeechRecognitionLike,
 } from '../utils/coachVoiceEngine.ts';
 import { checkCoachServiceStatus, type CoachServiceDiagnostic } from '../utils/coachServiceDiagnostics.ts';
-import { buildCoachLocalFallback } from '../utils/coachLocalFallback.ts';
+import { buildCoachLocalFallback, resolveCoachLocalIntent } from '../utils/coachLocalFallback.ts';
 
 const COACH_EQUIPMENT_FILTERS = [
   'Todos',
@@ -335,7 +335,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
     if (coachLocalOnly) {
       appendLocalSummaryIfAvailable(
         intent,
-        'En modo local puedes consultar tu rutina de hoy, el último peso registrado o alternativas de ejercicios desde los botones del Coach.'
+        'Esa pregunta está fuera de lo que puedo resolver en modo local. Prueba «¿Qué entreno hoy?», «¿Cuánto peso levanté la última vez?» o «¿Qué alternativa tengo si la máquina está ocupada?».'
       );
       return;
     }
@@ -1029,7 +1029,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       return;
     }
 
-    void sendToGemini(msg, activeIntent || 'freeform', true);
+    void sendToGemini(msg, coachLocalOnly ? resolveCoachLocalIntent(msg) : (activeIntent || 'freeform'), true);
   };
 
   return (

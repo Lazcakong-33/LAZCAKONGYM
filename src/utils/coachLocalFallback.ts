@@ -3,6 +3,23 @@ import type {
   CoachAlternativeOption,
 } from './coachContextEngine.ts';
 
+/** Resolve the topic of a typed message independently of the selected quick action. */
+export function resolveCoachLocalIntent(message: string): CoachQuickIntent {
+  const text = message.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/\b(alternativas?|reemplaz\w*|sustitu\w*|sustituc\w*|ocupad[ao])\b/.test(text)) {
+    return 'replace_exercise';
+  }
+  if (/\b(ultimo|ultima|anterior|pasad[ao]|levante|cargue|use|registre)\b/.test(text) &&
+      /\b(peso|kilos?|kg|cargas?|series?|rep(?:eticiones)?|levante|cargue)\b/.test(text)) {
+    return 'last_weight';
+  }
+  if (/\b(hoy|ahora)\b/.test(text) &&
+      /\b(rutina|entren\w*|ejercicios?|toca|hago)\b/.test(text)) {
+    return 'today_workout';
+  }
+  return 'freeform';
+}
+
 /**
  * A strictly deterministic LOCAL summary for when online Gemini is unavailable.
  * This is not an LLM reply and does not change athlete data or routine state.
