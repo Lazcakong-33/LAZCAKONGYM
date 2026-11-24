@@ -1,0 +1,9 @@
+{
+  "name": "lazcakong-gym-zero-cost-test",
+  "main": "cloudflare/preview-worker.mjs",
+  "compatibility_date": "2025-09-01",
+  "workers_dev": true,
+  "vars": {
+    "LAZCAKONG_ZERO_COST_MODE": "true"
+  }
+}
