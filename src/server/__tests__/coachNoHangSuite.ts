@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { handleCoachChat } from '../coachController.ts';
+import { buildCoachLocalFallback } from '../../utils/coachLocalFallback.ts';
 
 function response() {
   return {
@@ -66,7 +67,45 @@ async function main() {
     assert.ok(s.includes('clearTimeout(timer)'));
   });
 
-  console.log('COACH NO-HANG SUITE: 4/4 passed');
+  await test('Local workout summary always uses real programmed exercises; clearly not Gemini', () => {
+    const resolution: any = {
+      todayDayName: 'Lunes', hasRoutines: true, hasWeekdayAssignments: true,
+      requiresDaySelection: false, isRestDayFallback: false, hasActiveSession: false,
+      selectedRoutine: { id: 'mon', title: 'PIERNA A' },
+      todayMatchedRoutine: { id: 'mon' },
+      selectableRoutines: [],
+      exercises: [
+        { id:'hack', name:'Sentadilla Hack en Máquina', defaultSets:4, repRange:'6-8' },
+        { id:'press', name:'Prensa Inclinada 45°', defaultSets:3, repRange:'12' },
+      ],
+    };
+    const answer = buildCoachLocalFallback({
+      intent: 'today_workout', resolution, loadReport: null, alternatives: [],
+    });
+    assert.ok(answer?.includes('RESUMEN LOCAL (sin Gemini)'));
+    assert.ok(answer?.includes('Sentadilla Hack en Máquina: 4 series × 6-8'));
+    assert.ok(answer?.includes('Prensa Inclinada 45°: 3 series × 12'));
+    assert.ok(!answer?.includes('kg'));
+    const noDay = buildCoachLocalFallback({
+      intent:'today_workout', resolution: { ...resolution, isRestDayFallback:true }, loadReport:null, alternatives:[],
+    });
+    assert.ok(noDay?.includes('no hay entrenamiento asignado'));
+  });
+
+  await test('Local fallback does not invent a saved exercise load or answer freeform as Gemini', () => {
+    const resolution: any = { hasRoutines:false, selectedRoutine:null, exercises:[] };
+    const empty: any = { exerciseName:'Sentadilla Hack', hasRegisteredSets:false };
+    const answer = buildCoachLocalFallback({
+      intent:'last_weight', resolution, loadReport:empty, alternatives:[],
+    });
+    assert.ok(answer?.includes('no tienes series registradas'));
+    const freeform = buildCoachLocalFallback({
+      intent:'freeform', resolution, loadReport:null, alternatives:[],
+    });
+    assert.equal(freeform, null);
+  });
+
+  console.log('COACH NO-HANG SUITE: 6/6 passed');
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
