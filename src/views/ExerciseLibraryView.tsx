@@ -27,6 +27,8 @@ import {
 import { AddToRoutineModal } from '../components/AddToRoutineModal';
 import { MuscleGroupCardsGrid } from '../components/MuscleGroupCardsGrid';
 import { ExerciseThumbnail } from '../components/ExerciseThumbnail';
+import { NeckMovementDemo } from '../components/NeckMovementDemo';
+import { getNeckMovementSpec } from '../utils/neckMovementSpec';
 import { libraryItemToExercise } from '../utils/exerciseAlternatives';
 
 interface ExerciseLibraryViewProps {
@@ -348,6 +350,7 @@ const ExerciseCardItem: React.FC<ExerciseCardItemProps> = ({
   const visualStatus = resolveVisualResourceStatus(exercise);
   const canonicalGroupLabel = getCanonical16GroupLabel(resolveCanonical16MuscleGroup(exercise));
   const canonicalEqLabel = resolveCanonical9Equipment(exercise).label;
+  const hasNeckDemo = getNeckMovementSpec(exercise) !== null;
   const animUrl = exercise.animationUrl || exercise.videoUrl || null;
   const isMp4Video = Boolean(animUrl && /\.(mp4|webm)(\?|$)/i.test(animUrl));
   const isAnimatedImage = Boolean(animUrl && /\.(webp|gif)(\?|$)/i.test(animUrl));
@@ -401,6 +404,7 @@ const ExerciseCardItem: React.FC<ExerciseCardItemProps> = ({
   };
 
   const badgeText = (() => {
+    if (hasNeckDemo) return 'DEMO 4 S';
     if (visualStatus === 'pending_resource') {
       return exercise.thumbnailUrl ? 'IMAGEN · ANIM. PEND.' : 'PENDIENTE';
     }
@@ -427,7 +431,9 @@ const ExerciseCardItem: React.FC<ExerciseCardItemProps> = ({
         onClick={onOpenDetail}
         className="relative aspect-video w-full bg-[#090909] overflow-hidden cursor-pointer flex items-center justify-center"
       >
-        {visualStatus === 'pending_resource' ? (
+        {hasNeckDemo ? (
+          <NeckMovementDemo exercise={exercise} paused={!shouldAnimate} className="w-full h-full" />
+        ) : visualStatus === 'pending_resource' ? (
           exercise.thumbnailUrl ? (
             <ExerciseThumbnail
               src={exercise.thumbnailUrl}
@@ -513,7 +519,9 @@ const ExerciseCardItem: React.FC<ExerciseCardItemProps> = ({
               : 'text-amber-400'
           }`}
         >
-          {visualStatus === 'pending_resource' ? (
+          {hasNeckDemo ? (
+            <NeckMovementDemo exercise={exercise} className="w-full h-full" />
+          ) : visualStatus === 'pending_resource' ? (
             <Clock className="w-2.5 h-2.5" />
           ) : visualStatus === 'static_image' ? (
             <ImageIcon className="w-2.5 h-2.5" />
@@ -588,6 +596,7 @@ const ExerciseDetailQuickModal: React.FC<ExerciseDetailQuickModalProps> = ({
   const visualStatus = resolveVisualResourceStatus(exercise);
   const canonicalGroupLabel = getCanonical16GroupLabel(resolveCanonical16MuscleGroup(exercise));
   const canonicalEqLabel = resolveCanonical9Equipment(exercise).label;
+  const hasNeckDemo = getNeckMovementSpec(exercise) !== null;
   const mediaSrc = exercise.animationUrl || exercise.videoUrl || null;
   const isAnimatedImage = Boolean(mediaSrc && /\.(gif|webp)(\?|$)/i.test(mediaSrc));
   const directResourceUrl =

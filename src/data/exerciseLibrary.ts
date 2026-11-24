@@ -1,4 +1,6 @@
 import libraryData from './exerciseLibrary.json';
+import { NECK_EXERCISE_ADDITIONS } from './neckExerciseAdditions';
+import { getNeckMovementSpec } from '../utils/neckMovementSpec';
 import aliases from './exerciseAliases.json';
 import type {
   Canonical16MuscleGroupId,
@@ -77,13 +79,18 @@ export function getExerciseFallbackAnimationUrl(id?: string): string | null {
   return `${BASE_EXERCISE_MEDIA_URL}${id}.webp`;
 }
 
-const rawLibrary: LibraryExercise[] = libraryData as LibraryExercise[];
+// Existing records stay stable: append unique neck IDs without migrating or altering athlete history.
+const rawLibrary: LibraryExercise[] = [
+  ...(libraryData as LibraryExercise[]),
+  ...NECK_EXERCISE_ADDITIONS,
+];
 
 export const EXERCISE_LIBRARY: LibraryExercise[] = rawLibrary.map((ex) => {
   const resolvedVideo = resolveMediaUrl(ex.videoUrl);
   const resolvedAnim = resolveMediaUrl(ex.animationUrl) || undefined;
   const resolvedThumb = resolveMediaUrl(ex.thumbnailUrl);
   const resolvedSecondary = resolveMediaUrl(ex.secondaryThumbnailUrl);
+  const hasNeckMotionDemo = getNeckMovementSpec(ex) !== null;
   const isPendingWithoutMotion =
     ex.visualResourceStatus === 'pending_resource' && !resolvedVideo && !resolvedAnim;
   return {
@@ -92,10 +99,14 @@ export const EXERCISE_LIBRARY: LibraryExercise[] = rawLibrary.map((ex) => {
     animationUrl: resolvedAnim,
     thumbnailUrl: resolvedThumb,
     secondaryThumbnailUrl: resolvedSecondary,
+    // Render the actual animated SVG player; do NOT claim this is a verified GIF/MP4.
+    visualResourceStatus: hasNeckMotionDemo ? 'frame_sequence' : ex.visualResourceStatus,
+    frames: hasNeckMotionDemo ? 8 : ex.frames,
+    durationMs: hasNeckMotionDemo ? 4000 : ex.durationMs,
     url:
       resolveMediaUrl(ex.url) ||
       resolvedThumb ||
-      (isPendingWithoutMotion ? '' : `${BASE_EXERCISE_MEDIA_URL}${ex.id}.webp`),
+      (isPendingWithoutMotion || hasNeckMotionDemo ? '' : `${BASE_EXERCISE_MEDIA_URL}${ex.id}.webp`),
   };
 });
 

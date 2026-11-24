@@ -1,0 +1,91 @@
+/* LazcaKong cervical studio: original, light-weight, 4-second vector demonstrations. */
+.neck-demo { width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;background:#090909;isolation:isolate; }
+.neck-demo svg { display:block;width:100%;height:100%;object-fit:contain; }
+.neck-demo-head { transform-box:view-box;transform-origin:180px 135px;will-change:transform; }
+.neck-demo-tension,.neck-demo-resistance,.neck-demo-neon,.neck-demo-status {
+  will-change:opacity,transform;
+}
+.neck-demo--tuck .neck-demo-head,
+.neck-demo--wall-tuck .neck-demo-head,
+.neck-demo--supine-tuck .neck-demo-head {
+  animation: neck-tuck 4s ease-in-out infinite;
+}
+.neck-demo--rotation .neck-demo-head {animation:neck-rotate 4s ease-in-out infinite;}
+.neck-demo--lateral .neck-demo-head {animation:neck-lateral 4s ease-in-out infinite;}
+.neck-demo--flexion .neck-demo-head {animation:neck-flexion 4s ease-in-out infinite;}
+.neck-demo--extension .neck-demo-head {animation:neck-extension 4s ease-in-out infinite;}
+.neck-demo--iso-front .neck-demo-head,
+.neck-demo--iso-back .neck-demo-head,
+.neck-demo--iso-lateral .neck-demo-head,
+.neck-demo--iso-rotation .neck-demo-head,
+.neck-demo--iso-neutral .neck-demo-head { animation:none;transform:none; }
+.neck-demo--iso-front .neck-demo-tension,
+.neck-demo--iso-back .neck-demo-tension,
+.neck-demo--iso-lateral .neck-demo-tension,
+.neck-demo--iso-rotation .neck-demo-tension,
+.neck-demo--iso-neutral .neck-demo-tension { animation:neck-resistance 4s ease-in-out infinite;}
+.neck-demo-resistance {animation:neck-resistance 4s ease-in-out infinite;}
+.neck-demo-neon { animation:neck-resistance 4s ease-in-out infinite;}
+.neck-demo-status { animation: neck-status 4s ease-in-out infinite; }
+.neck-demo-supine-layout {transform-origin:180px 145px;transform:rotate(-75deg) translate(4px,28px);}
+.neck-demo[data-paused="true"] *,
+.neck-demo[data-paused="true"] *::before,
+.neck-demo[data-paused="true"] *::after { animation-play-state:paused !important; }
+@keyframes neck-tuck {
+  0%,100% {transform:translateX(0);}
+  12.5% {transform:translateX(-2px);}
+  25% {transform:translateX(-5px);}
+  37.5%,50% {transform:translateX(-8px);}
+  62.5% {transform:translateX(-6px);}
+  75% {transform:translateX(-3px);}
+  87.5% {transform:translateX(-1px);}
+}
+@keyframes neck-rotate {
+  0%,50%,100% {transform:perspective(160px) rotateY(0deg);}
+  12.5%,25% {transform:perspective(160px) rotateY(20deg);}
+  37.5% {transform:perspective(160px) rotateY(9deg);}
+  62.5%,75% {transform:perspective(160px) rotateY(-20deg);}
+  87.5% {transform:perspective(160px) rotateY(-8deg);}
+}
+@keyframes neck-lateral {
+  0%,50%,100% {transform:rotate(0deg);}
+  12.5%,25% {transform:rotate(10deg);}
+  37.5% {transform:rotate(5deg);}
+  62.5%,75% {transform:rotate(-10deg);}
+  87.5% {transform:rotate(-4deg);}
+}
+@keyframes neck-flexion {
+  0%,100% {transform:rotate(0deg);}
+  12.5% {transform:rotate(4deg);}
+  25%,37.5%,50% {transform:rotate(10deg);}
+  62.5% {transform:rotate(7deg);}
+  75% {transform:rotate(4deg);}
+  87.5% {transform:rotate(2deg);}
+}
+@keyframes neck-extension {
+  0%,100% {transform:rotate(0deg);}
+  12.5% {transform:rotate(-3deg);}
+  25%,37.5%,50% {transform:rotate(-8deg);}
+  62.5% {transform:rotate(-6deg);}
+  75% {transform:rotate(-3deg);}
+  87.5% {transform:rotate(-1deg);}
+}
+@keyframes neck-resistance {
+  0%,100% {opacity:.33;}
+  12.5% {opacity:.44;}
+  25%,37.5%,50% {opacity:1;}
+  62.5% {opacity:.85;}
+  75% {opacity:.52;}
+  87.5% {opacity:.38;}
+}
+@keyframes neck-status {
+  0%,100% {opacity:.36;}
+  25%,50% {opacity:1;}
+  75% {opacity:.6;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .neck-demo *, .neck-demo *::before, .neck-demo *::after {
+    animation:none !important;transition:none !important;
+  }
+}

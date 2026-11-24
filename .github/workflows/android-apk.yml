@@ -66,6 +66,7 @@ jobs:
           npx tsx src/server/__tests__/nativeCapacitorStage7aSuite.ts
           npx tsx src/server/__tests__/offlineProductionReadinessSuite.ts
           npx tsx src/server/__tests__/otaUpdateSystemSuite.ts
+          npx tsx src/server/__tests__/neckLibrarySuite.ts
 
       - name: Build Web Assets (Vite)
         env:
