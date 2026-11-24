@@ -8,7 +8,7 @@ import {
   isFirestorePermissionDeniedError,
   parseConfiguredServiceAccount,
 } from './firebaseAdminServer.ts';
-import { getGeminiModel } from './geminiModel.ts';
+import { getGeminiModel, getServerGeminiApiKey } from './geminiModel.ts';
 
 export interface CoachConversationTurn {
   role: 'user' | 'assistant';
@@ -432,7 +432,7 @@ export async function handleCoachStatus(
       error: 'Debes iniciar sesión para diagnosticar Coach IA.',
     });
   }
-  const apiKey = deps?.getApiKey ? deps.getApiKey() : process.env.GEMINI_API_KEY;
+  const apiKey = deps?.getApiKey ? deps.getApiKey() : getServerGeminiApiKey();
   const geminiConfigured = Boolean(apiKey?.trim() || deps?.geminiClient);
   const athleteId = String(req.body?.athleteId || '').trim();
   if (!athleteId || !/^[a-zA-Z0-9_-]{1,128}$/.test(athleteId)) {
@@ -554,7 +554,7 @@ export async function handleCoachChat(
     });
   }
 
-  const apiKey = deps?.getApiKey ? deps.getApiKey() : process.env.GEMINI_API_KEY;
+  const apiKey = deps?.getApiKey ? deps.getApiKey() : getServerGeminiApiKey();
   if (!apiKey && !deps?.geminiClient) {
     return res.status(503).json({
       success: false,
