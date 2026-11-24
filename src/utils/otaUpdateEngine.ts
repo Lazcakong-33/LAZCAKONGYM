@@ -40,6 +40,10 @@ const DEFAULT_OTA_PLUGIN_ADAPTER: OtaPluginAdapter = {
 const SHA256_HEX_REGEX = /^[a-f0-9]{64}$/i;
 const TEMPORARY_PREVIEW_HOST_REGEX = /^ais-(dev|pre)-[a-z0-9-]+\./i;
 const OTA_PENDING_BUNDLE_KEY = 'lazcakon_ota_pending_bundle_v1';
+/** Public, development-only OTA index; never used by production builds/channels. */
+export const DEV_GITHUB_OTA_MANIFEST_URL =
+  'https://raw.githubusercontent.com/Lazcakong-33/LAZCAKONGYM/ota-development/ota/manifest.development.json';
+
 
 export function compareSemver(candidateVersion: string, currentVersion: string): number {
   const parse = (v: string) =>
@@ -216,31 +220,74 @@ export async function fetchOtaManifestFromServer(options?: {
   const nativeVersionCode = options?.nativeVersionCode ?? DEFAULT_NATIVE_VERSION_CODE;
   const fetcher = options?.fetcher || fetch;
 
+  const emptyResponse: OtaManifestResponse = {
+    success: false,
+    enabled: false,
+    channel,
+    updateAvailable: false,
+    manifest: null,
+  };
+
   const endpoint = resolveApiUrl(
     `/api/ota/manifest?channel=${encodeURIComponent(channel)}&nativeVersionCode=${encodeURIComponent(
       String(nativeVersionCode)
     )}&t=${Date.now()}`
   );
 
-  const response = await fetcher(endpoint, {
-    method: 'GET',
-    cache: 'no-store',
-    headers: { 'Cache-Control': 'no-cache' },
-  });
-
-  if (!response.ok) {
-    return {
-      success: false,
-      enabled: false,
-      channel,
-      updateAvailable: false,
-      manifest: null,
-      reason: `Error HTTP ${response.status} consultando manifiesto OTA.`,
-    };
+  // Existing Cloud Run endpoint remains authoritative, including an explicit
+  // enabled:false response (remote kill switch). Do not bypass it.
+  let apiResponse: OtaManifestResponse | null = null;
+  try {
+    const response = await fetcher(endpoint, {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+      signal: typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(6500) : undefined,
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.channel === channel && typeof data.enabled === 'boolean') {
+        apiResponse = data as OtaManifestResponse;
+        if (!apiResponse.enabled || (apiResponse.updateAvailable && apiResponse.manifest)) {
+          return apiResponse;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[LAZCAKONGYM] Servidor OTA no disponible:', err);
   }
 
-  const data = (await response.json()) as OtaManifestResponse;
-  return data;
+  // Independent distribution of *development* web bundles via GitHub Releases.
+  // Production never falls back to a development channel or public manifest.
+  if (channel !== 'development') {
+    return apiResponse || emptyResponse;
+  }
+
+  try {
+    const response = await fetcher(`${DEV_GITHUB_OTA_MANIFEST_URL}?t=${Date.now()}`, {
+      method: 'GET',
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+      signal: typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(6500) : undefined,
+    });
+    if (!response.ok) return apiResponse || emptyResponse;
+    const manifest = await response.json() as OtaManifestPayload;
+    if (manifest?.channel !== 'development') return apiResponse || emptyResponse;
+    // Compatibility and version checks still run in useAppUpdate before showing
+    // any update button; do not trust the index simply because it is HTTP 200.
+    return {
+      success: true,
+      enabled: true,
+      channel: 'development',
+      updateAvailable: Boolean(manifest.url && manifest.checksum),
+      manifest: manifest.url && manifest.checksum ? manifest : null,
+    };
+  } catch (err) {
+    console.warn('[LAZCAKONGYM] Manifiesto OTA de GitHub no disponible:', err);
+    return apiResponse || emptyResponse;
+  }
 }
 
 export async function downloadAndStageOtaUpdate(
