@@ -336,7 +336,9 @@ async function runSuite() {
     const hook = fs.readFileSync(path.resolve(process.cwd(), 'src/hooks/useAppUpdate.ts'), 'utf8');
     const banner = fs.readFileSync(path.resolve(process.cwd(), 'src/components/UpdateBanner.tsx'), 'utf8');
     const version = fs.readFileSync(path.resolve(process.cwd(), 'src/utils/updateApp.ts'), 'utf8');
-    assert.ok(hook.includes('only a compatible OTA manifest can.'));
+    assert.ok(hook.includes('A native APK cannot be updated by a PWA Service Worker or /api/version.'));
+    assert.ok(hook.includes('applyImmediatelyWhenSafe: false'), 'Native OTA must stage without forced app reload');
+    assert.ok(hook.includes('skipDownloadWhenUnsafe: true'), 'Never download/activate while a workout is active');
     assert.ok(hook.includes('setOtaPendingManifest(null);\n        setServerVersion(null);'));
     assert.ok(!hook.includes('Immediately register current running build in localStorage'));
     assert.ok(!banner.includes('!isVersionGreater(serverVersion, currentVersion)'));
@@ -395,6 +397,84 @@ async function runSuite() {
     });
     assert.equal(staging.updateAvailable, false);
     assert.equal(stagingCalls.length, 1, 'Staging cannot leak into the development release channel');
+  });
+
+  // 10. Automatic deployment must not require tapping UPDATE NOW.
+  await check('10. Automatic native OTA stages once, waits for idle, and protects existing records', async () => {
+    const storage = createMemoryStorage();
+    const calls: string[] = [];
+    const adapter: OtaPluginAdapter = {
+      async notifyAppReady() { calls.push('ready'); },
+      async download(options) {
+        calls.push('download');
+        return {
+          id: 'neck-bundle',
+          version: options.version,
+          checksum: options.checksum || '',
+          downloaded: new Date().toISOString(),
+          status: 'success',
+        };
+      },
+      async set(options) { calls.push('set:' + options.id); },
+      async next(options) {
+        calls.push('next:' + options.id);
+        return {
+          id: options.id,
+          version: '6.4.8',
+          checksum: '',
+          downloaded: new Date().toISOString(),
+          status: 'pending',
+        };
+      },
+      async reset() { calls.push('reset'); },
+      async current() {
+        return { bundle: { id: 'builtin', version: '1.0', checksum: '', downloaded: '', status: 'success' }, native: '1.0' };
+      },
+    };
+
+    const manifest = makeValidDevManifest({ version: '6.4.8', buildId: '6.4.8-ota-test' });
+    storage.setItem('lazcakon_test_active_session', JSON.stringify({ id: 'session-no-force', sets: [] }));
+    const delayed = await downloadAndStageOtaUpdate(manifest, {
+      adapter, storage, currentWebVersion: '6.4.7', forceNativeForTest: true,
+      skipDownloadWhenUnsafe: true, applyImmediatelyWhenSafe: false,
+    });
+    assert.equal(delayed.status, 'deferred_unsafe');
+    assert.deepEqual(calls, [], 'No download or native activation during active workout');
+    storage.removeItem('lazcakon_test_active_session');
+
+    const first = await downloadAndStageOtaUpdate(manifest, {
+      adapter, storage, currentWebVersion: '6.4.7', forceNativeForTest: true,
+      skipDownloadWhenUnsafe: true, applyImmediatelyWhenSafe: false,
+    });
+    assert.equal(first.status, 'staged_for_background');
+    assert.deepEqual(calls, ['download', 'next:neck-bundle']);
+    const repeated = await downloadAndStageOtaUpdate(manifest, {
+      adapter, storage, currentWebVersion: '6.4.7', forceNativeForTest: true,
+      skipDownloadWhenUnsafe: true, applyImmediatelyWhenSafe: false,
+    });
+    assert.equal(repeated.status, 'staged_for_background');
+    assert.deepEqual(calls, ['download', 'next:neck-bundle'], 'Never download/stage same OTA on every 25s poll');
+    const wrongVersion = await downloadAndStageOtaUpdate(manifest, {
+      adapter, storage, currentWebVersion: '6.4.8', forceNativeForTest: true,
+      skipDownloadWhenUnsafe: true, applyImmediatelyWhenSafe: false,
+    });
+    assert.equal(wrongVersion.status, 'blocked', 'Installed release must not download itself');
+    assert.equal(storage.getItem('lazcakon_test_active_session'), null);
+  });
+
+  await check('11. Automatic OTA bundle version is actually stamped by the build and never loops', () => {
+    const version = fs.readFileSync(path.resolve(process.cwd(), 'src/utils/updateApp.ts'), 'utf8');
+    assert.ok(version.includes(String.raw`/^v?\d+\.\d+\.\d+$/`),
+      'Vite version regex must match real semver, not double-escaped \\d');
+    assert.ok(!version.includes(String.raw`/^v?\\d+\\.\\d+\\.\\d+$/`));
+    const hook = fs.readFileSync(path.resolve(process.cwd(), 'src/hooks/useAppUpdate.ts'), 'utf8');
+    assert.ok(hook.includes('skipDownloadWhenUnsafe: true'));
+    assert.ok(hook.includes('setHasUpdateAvailable(false);'));
+    assert.ok(hook.includes('await forceAppUpdate();'), 'PWA update must install automatically when safe');
+    assert.ok(!hook.includes('dismissedVer !== otaResp.manifest.version'),
+      'Automatic updates must not be blocked by old user dismissals');
+    const native = fs.readFileSync(path.resolve(process.cwd(), 'capacitor.config.ts'), 'utf8');
+    assert.ok(native.includes('autoUpdate: false'), 'Keep Capgo cloud updater off when using first-party self-hosted OTA');
   });
 
   console.log(`\n🎉 ALL ${passed} CI APK & OTA SYSTEM CHECKS PASSED!`);

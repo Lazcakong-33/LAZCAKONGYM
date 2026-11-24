@@ -7,7 +7,7 @@
 // Dev OTA releases inject the actual bundle version during Vite build so that
 // the installed JS never redownloads its own release on the next launch.
 const buildVersion = (import.meta as unknown as { env?: Record<string, string> })?.env?.VITE_APP_VERSION || '';
-export const APP_VERSION = /^v?\\d+\\.\\d+\\.\\d+$/.test(buildVersion)
+export const APP_VERSION = /^v?\d+\.\d+\.\d+$/.test(buildVersion)
   ? `v${buildVersion.replace(/^v/i, '')}`
   : 'v6.4.4';
 export const APP_BUILD_ID = `${APP_VERSION.replace(/^v/, '')}-ota-segura`;

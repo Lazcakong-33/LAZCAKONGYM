@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   APP_VERSION,
   APP_BUILD_ID,
@@ -57,6 +57,9 @@ export function useAppUpdate(): AppUpdateState {
   const [broadcastMessage, setBroadcastMessage] = useState<string | null>(null);
   const [latestBroadcastId, setLatestBroadcastId] = useState<string | null>(null);
   const [otaPendingManifest, setOtaPendingManifest] = useState<OtaManifestPayload | null>(null);
+  // Multiple 25-second/visibility checks must never race to download or stage a bundle.
+  const isNativeOtaCheckRunning = useRef(false);
+  const lastAutomaticPollAt = useRef(0);
 
   const dismissUpdate = useCallback(() => {
     try {
@@ -80,45 +83,66 @@ export function useAppUpdate(): AppUpdateState {
     try {
       const { hasServiceWorkerSupport, isCapacitorNative } = detectRuntimePlatform();
 
-      // 0. On Capacitor native shells, check self-hosted OTA manifest (development channel unless prod explicitly enabled)
+      // 0. Installed Android/iOS application: self-hosted OTA, no manual button.
+      // Our first-party client owns the poller. The native Capgo autoUpdate flag
+      // stays false because this is not an external Capgo-hosted channel.
       if (isCapacitorNative) {
+        if (isNativeOtaCheckRunning.current) return false;
+        isNativeOtaCheckRunning.current = true;
         try {
           const channel = resolveOtaChannel();
           const otaResp = await fetchOtaManifestFromServer({
             channel,
             nativeVersionCode: DEFAULT_NATIVE_VERSION_CODE,
           });
+
           if (otaResp.enabled && otaResp.updateAvailable && otaResp.manifest) {
-            const validation = validateOtaManifest(otaResp.manifest, {
+            const manifest = otaResp.manifest;
+            const validation = validateOtaManifest(manifest, {
               currentWebVersion: APP_VERSION,
               currentNativeVersionCode: DEFAULT_NATIVE_VERSION_CODE,
               expectedChannel: channel,
             });
-            const dismissedVer = localStorage.getItem('lazcakongym_dismissed_version');
-            const dismissedBuild = localStorage.getItem('lazcakongym_dismissed_update');
-            if (
-              validation.valid &&
-              dismissedVer !== otaResp.manifest.version &&
-              dismissedBuild !== otaResp.manifest.buildId
-            ) {
-              setOtaPendingManifest(otaResp.manifest);
-              setServerVersion(otaResp.manifest.version);
-              setBroadcastMessage(
-                otaResp.manifest.releaseNotes ||
-                  `Actualización OTA (${otaResp.manifest.channel}) lista para descargar.`
-              );
-              setHasUpdateAvailable(true);
-              window.dispatchEvent(new CustomEvent('app-update-available'));
-              return true;
+            if (validation.valid) {
+              // Download once, verify checksum, then activate on the NEXT safe
+              // application launch. No interaction, forced reload, or data wipe.
+              const result = await downloadAndStageOtaUpdate(manifest, {
+                currentWebVersion: APP_VERSION,
+                currentNativeVersionCode: DEFAULT_NATIVE_VERSION_CODE,
+                applyImmediatelyWhenSafe: false,
+                skipDownloadWhenUnsafe: true,
+              });
+
+              if (result.status === 'staged_for_background') {
+                setOtaPendingManifest(null);
+                setServerVersion(null);
+                setBroadcastMessage(null);
+                setHasUpdateAvailable(false);
+                return false;
+              }
+              if (result.status === 'deferred_unsafe') {
+                setOtaPendingManifest(manifest);
+                setServerVersion(manifest.version);
+                setBroadcastMessage('Actualización automática pendiente: se descargará al terminar el entrenamiento y sincronizar los datos.');
+                setHasUpdateAvailable(true);
+                return true;
+              }
+              if (result.status === 'error') {
+                console.warn('[LAZCAKONGYM] Actualización automática reintentable:', result.reason);
+              } else if (result.status === 'blocked') {
+                console.warn('[LAZCAKONGYM] Manifiesto OTA bloqueado:', result.reason);
+              }
+            } else if (validation.requiresApkUpdate) {
+              console.info('[LAZCAKONGYM] Esta versión requiere una nueva APK firmada:', validation.reason);
             }
           }
-          setOtaPendingManifest(null);
         } catch (error) {
-          console.warn('[LAZCAKONGYM] No se pudo consultar OTA nativo:', error);
+          console.warn('[LAZCAKONGYM] No se pudo consultar OTA automático:', error);
+        } finally {
+          isNativeOtaCheckRunning.current = false;
         }
 
-        // An APK embeds its own web assets. A newer /api/version or Service Worker
-        // cannot update those assets; only a compatible OTA manifest can.
+        // A native APK cannot be updated by a PWA Service Worker or /api/version.
         setOtaPendingManifest(null);
         setServerVersion(null);
         setBroadcastMessage(null);
@@ -132,8 +156,15 @@ export function useAppUpdate(): AppUpdateState {
         if (registration) {
           await registration.update().catch(() => {});
           if (registration.waiting) {
+            const safety = getAppUpdateSafetyStatus();
+            if (safety.canUpdateSafely) {
+              // Web/PWA: automatically activate the waiting worker ONLY when safe.
+              // forceAppUpdate rechecks safety before reloading.
+              await forceAppUpdate();
+              return false;
+            }
             setHasUpdateAvailable(true);
-            window.dispatchEvent(new CustomEvent('app-update-available'));
+            window.dispatchEvent(new CustomEvent('app-update-deferred', { detail: safety }));
             return true;
           }
         }
@@ -195,10 +226,20 @@ export function useAppUpdate(): AppUpdateState {
   }, []);
 
   useEffect(() => {
-    // Initial check on mount
-    checkUpdatesNow();
+    const isNative = detectRuntimePlatform().isCapacitorNative;
+    // Scalable fleet polling: no 25-second API storm for thousands of athletes.
+    const pollingIntervalMs = isNative ? 15 * 60_000 : 5 * 60_000;
+    const checkIfDue = () => {
+      if (document.visibilityState === 'hidden') return;
+      const now = Date.now();
+      if (now - lastAutomaticPollAt.current < 2 * 60_000) return;
+      lastAutomaticPollAt.current = now;
+      void checkUpdatesNow();
+    };
 
-    // Listen to custom events to keep all hook instances synchronized
+    // At startup and after returning from background when stale.
+    checkIfDue();
+
     const onSwUpdate = () => {
       setHasUpdateAvailable(true);
     };
@@ -208,16 +249,9 @@ export function useAppUpdate(): AppUpdateState {
     window.addEventListener('app-update-available', onSwUpdate);
     window.addEventListener('app-update-dismissed', onDismissed);
 
-    // Periodically poll server every 25 seconds on mobile
-    const interval = setInterval(() => {
-      checkUpdatesNow();
-    }, 25000);
-
-    // Poll whenever user switches back to the app on mobile
+    const interval = setInterval(checkIfDue, pollingIntervalMs);
     const onVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        checkUpdatesNow();
-      }
+      if (document.visibilityState === 'visible') checkIfDue();
     };
     document.addEventListener('visibilitychange', onVisibility);
 
