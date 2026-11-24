@@ -59,6 +59,7 @@ export function useAppUpdate(): AppUpdateState {
   const [otaPendingManifest, setOtaPendingManifest] = useState<OtaManifestPayload | null>(null);
   // Multiple 25-second/visibility checks must never race to download or stage a bundle.
   const isNativeOtaCheckRunning = useRef(false);
+  const lastAutomaticPollAt = useRef(0);
 
   const dismissUpdate = useCallback(() => {
     try {
@@ -225,10 +226,20 @@ export function useAppUpdate(): AppUpdateState {
   }, []);
 
   useEffect(() => {
-    // Initial check on mount
-    checkUpdatesNow();
+    const isNative = detectRuntimePlatform().isCapacitorNative;
+    // Scalable fleet polling: no 25-second API storm for thousands of athletes.
+    const pollingIntervalMs = isNative ? 15 * 60_000 : 5 * 60_000;
+    const checkIfDue = () => {
+      if (document.visibilityState === 'hidden') return;
+      const now = Date.now();
+      if (now - lastAutomaticPollAt.current < 2 * 60_000) return;
+      lastAutomaticPollAt.current = now;
+      void checkUpdatesNow();
+    };
 
-    // Listen to custom events to keep all hook instances synchronized
+    // At startup and after returning from background when stale.
+    checkIfDue();
+
     const onSwUpdate = () => {
       setHasUpdateAvailable(true);
     };
@@ -238,16 +249,9 @@ export function useAppUpdate(): AppUpdateState {
     window.addEventListener('app-update-available', onSwUpdate);
     window.addEventListener('app-update-dismissed', onDismissed);
 
-    // Periodically poll server every 25 seconds on mobile
-    const interval = setInterval(() => {
-      checkUpdatesNow();
-    }, 25000);
-
-    // Poll whenever user switches back to the app on mobile
+    const interval = setInterval(checkIfDue, pollingIntervalMs);
     const onVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        checkUpdatesNow();
-      }
+      if (document.visibilityState === 'visible') checkIfDue();
     };
     document.addEventListener('visibilitychange', onVisibility);
 
