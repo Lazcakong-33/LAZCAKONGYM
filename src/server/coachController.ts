@@ -259,9 +259,15 @@ function createDefaultGeminiClient(apiKey: string): CoachGeminiClient {
       const isGemini4 = model.startsWith('gemini-4');
       const config: Record<string, any> = {
         systemInstruction,
-        maxOutputTokens: 700,
+        // Hydrogen uses output tokens for both thinking and final answer.
+        // A 700-token cap with default HIGH reasoning can yield empty text.
+        maxOutputTokens: isGemini4 ? 1_400 : 700,
       };
-      if (!isGemini4) {
+      if (isGemini4) {
+        // Google's Gemini 4 Hydrogen guidance: HIGH is the default, LOW is
+        // supported and appropriate for a concise fitness-assistant reply.
+        config.thinkingConfig = { thinkingLevel: 'LOW' };
+      } else {
         config.temperature = 0.25;
       }
 
@@ -394,6 +400,19 @@ function mapGeminiErrorResponse(err: any): {
       code: 'coach/gemini-auth-error',
       retryable: false,
       message: 'No se pudo autenticar la solicitud con el servicio Gemini en el servidor.',
+    };
+  }
+
+  if (
+    rawStatus === 404 ||
+    lower.includes('model not found') ||
+    lower.includes('not found for api version')
+  ) {
+    return {
+      status: 502,
+      code: 'coach/gemini-model-unavailable',
+      retryable: false,
+      message: 'El modelo configurado para Coach IA no está disponible con la cuenta o API actual. Revisa GEMINI_MODEL y los permisos del proveedor en el servidor.',
     };
   }
 

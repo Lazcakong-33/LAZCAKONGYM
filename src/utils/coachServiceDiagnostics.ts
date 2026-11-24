@@ -19,14 +19,29 @@ export async function checkCoachServiceStatus(athleteId: string): Promise<CoachS
     };
   }
   let token: string;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    token = await user.getIdToken();
-  } catch {
+    // Firebase Auth may hang on mobile WebViews with an interrupted connection.
+    // The status check must not become another infinite spinner.
+    token = await Promise.race([
+      user.getIdToken(),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('Tiempo de espera de autenticación excedido.')),
+          8_000
+        );
+      }),
+    ]);
+  } catch (err: any) {
     return {
       status: 'login_required',
-      message: 'No se pudo obtener una sesión válida de Firebase. Vuelve a iniciar sesión.',
+      message: String(err?.message || '').includes('Tiempo de espera')
+        ? 'Firebase demoró demasiado en validar la sesión. Revisa internet y usa Comprobar conexión nuevamente.'
+        : 'No se pudo obtener una sesión válida de Firebase. Vuelve a iniciar sesión.',
       readyForLiveRequest: false,
     };
+  } finally {
+    if (timer) clearTimeout(timer);
   }
   const res = await safeApiFetchJson<{
     success?: boolean;

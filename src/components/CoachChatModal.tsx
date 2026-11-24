@@ -54,6 +54,7 @@ import {
   SpeechRecognitionLike,
 } from '../utils/coachVoiceEngine.ts';
 import { checkCoachServiceStatus, type CoachServiceDiagnostic } from '../utils/coachServiceDiagnostics.ts';
+import { buildCoachLocalFallback } from '../utils/coachLocalFallback.ts';
 
 const COACH_EQUIPMENT_FILTERS = [
   'Todos',
@@ -146,6 +147,8 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [inputText, setInputText] = useState<string>('');
   const [isLoadingAI, setIsLoadingAI] = useState<boolean>(false);
+  const [coachWaitSeconds, setCoachWaitSeconds] = useState(0);
+  const COACH_MAX_WAIT_MS = 27_000;
   const [serviceDiagnostic, setServiceDiagnostic] = useState<CoachServiceDiagnostic | null>(null);
   const [isCheckingService, setIsCheckingService] = useState(false);
   const [geminiError, setGeminiError] = useState<{
@@ -180,6 +183,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
   const latestRequestIdRef = useRef<number>(0);
   const isRequestInFlightRef = useRef<boolean>(false);
   const requestStartedAtRef = useRef<number>(0);
+  const requestWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSubmittedRequestRef = useRef<{ message: string; intent: CoachQuickIntent } | null>(null);
   const abortReasonRef = useRef<'none' | 'user_cancel' | 'background_stale' | 'offline'>('none');
   const isMountedRef = useRef<boolean>(true);
@@ -269,6 +273,11 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       activeAbortControllerRef.current = null;
       isRequestInFlightRef.current = false;
       requestStartedAtRef.current = 0;
+      if (requestWatchdogRef.current !== null) {
+        clearTimeout(requestWatchdogRef.current);
+        requestWatchdogRef.current = null;
+      }
+      setCoachWaitSeconds(0);
       if (controller) {
         try {
           controller.abort();
@@ -282,6 +291,25 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
     },
     []
   );
+
+  const appendLocalSummaryIfAvailable = (intent: CoachQuickIntent) => {
+    const summary = buildCoachLocalFallback({
+      intent,
+      resolution,
+      loadReport,
+      alternatives: filteredAlternativesResult.alternatives,
+    });
+    if (!summary) return;
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        role: 'assistant',
+        text: summary,
+        model: 'local-deterministic',
+      },
+    ]);
+  };
 
   const sendToGemini = async (
     promptText: string,
@@ -298,7 +326,25 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       typeof AbortController !== 'undefined' ? new AbortController() : null;
     activeAbortControllerRef.current = controller;
     requestStartedAtRef.current = Date.now();
+    setCoachWaitSeconds(0);
     lastSubmittedRequestRef.current = { message: cleanPrompt, intent };
+    if (requestWatchdogRef.current !== null) clearTimeout(requestWatchdogRef.current);
+    // Global wall-clock limit for token acquisition + HTTP + SDK retries.
+    // A WebView can suspend fetch timers; always free the submit control.
+    requestWatchdogRef.current = setTimeout(() => {
+      if (requestId !== latestRequestIdRef.current || !isRequestInFlightRef.current) return;
+      const lastReq = lastSubmittedRequestRef.current;
+      cancelActiveRequest('background_stale');
+      if (lastReq && isMountedRef.current) {
+        setGeminiError({
+          message: 'El Coach no respondió dentro de 27 segundos. Puede haber un problema de conexión, autenticación o disponibilidad de Gemini. Comprueba la conexión e inténtalo de nuevo.',
+          code: 'coach/timeout',
+          retryable: true,
+          lastRequest: lastReq,
+        });
+        appendLocalSummaryIfAvailable(lastReq.intent);
+      }
+    }, COACH_MAX_WAIT_MS);
 
     setGeminiError(null);
 
@@ -327,7 +373,10 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
         history: priorTurns,
         context: minimizedPayload,
         signal: controller?.signal,
-        timeoutMs: 22_000,
+        timeoutMs: 20_000,
+        tokenTimeoutMs: 6_000,
+        // Avoid 2 x 22s wait; give the athlete an explicit retry control.
+        maxTransientRetries: 0,
       });
 
       if (!isMountedRef.current || requestId !== latestRequestIdRef.current) {
@@ -347,6 +396,11 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
           retryable: result.retryable !== false,
           lastRequest: { message: cleanPrompt, intent },
         });
+        // Do not reveal locally cached athlete training data when the
+        // session is invalid or the user is not authorized for this profile.
+        const mayUseLocalSummary =
+          result.status === 0 || result.status >= 500;
+        if (mayUseLocalSummary) appendLocalSummaryIfAvailable(intent);
         return;
       }
 
@@ -374,6 +428,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
         retryable: true,
         lastRequest: { message: cleanPrompt, intent },
       });
+      appendLocalSummaryIfAvailable(intent);
     } finally {
       if (activeAbortControllerRef.current === controller) {
         activeAbortControllerRef.current = null;
@@ -381,8 +436,13 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       if (requestId === latestRequestIdRef.current) {
         isRequestInFlightRef.current = false;
         requestStartedAtRef.current = 0;
+        if (requestWatchdogRef.current !== null) {
+          clearTimeout(requestWatchdogRef.current);
+          requestWatchdogRef.current = null;
+        }
         if (isMountedRef.current) {
           setIsLoadingAI(false);
+          setCoachWaitSeconds(0);
         }
       }
     }
@@ -715,6 +775,21 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
     });
     return () => { cancelled = true; };
   }, [isOpen, activeProfile.id]);
+
+  // A visible, finite counter means the athlete can see the timeout approaching.
+  // The independent watchdog above owns cancellation when the network stalls.
+  useEffect(() => {
+    if (!isOpen || !isLoadingAI) return;
+    const update = () => {
+      if (!requestStartedAtRef.current) return;
+      setCoachWaitSeconds(Math.min(27, Math.floor(
+        (Date.now() - requestStartedAtRef.current) / 1000
+      )));
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [isOpen, isLoadingAI]);
 
   // Stop voice, cancel stalled requests when modal closes, and guard Android screen-lock / offline hangs
   useEffect(() => {
@@ -1789,10 +1864,32 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
             })}
 
             {isLoadingAI && (
-              <div className="flex justify-start">
-                <div className="px-3.5 py-2.5 rounded-2xl bg-[#171717] border border-[#303030] text-xs text-zinc-300 flex items-center gap-2">
-                  <RefreshCw className="w-3.5 h-3.5 text-accent-text animate-spin" />
-                  <span>Coach LazcaKong IA está revisando tus registros...</span>
+              <div data-testid="coach-pending-request" className="flex justify-start">
+                <div className="w-full px-3.5 py-3 rounded-2xl bg-[#171717] border border-[#303030] text-xs text-zinc-300 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-3.5 h-3.5 text-accent-text animate-spin shrink-0" />
+                    <span>Consultando Coach IA… {coachWaitSeconds} s / 27 s máximo</span>
+                  </div>
+                  <div className="h-1 rounded-full overflow-hidden bg-[#303030]">
+                    <div className="h-full bg-accent transition-[width] duration-300"
+                      style={{ width: `${Math.min(100, coachWaitSeconds / 27 * 100)}%` }} />
+                  </div>
+                  <button type="button" data-testid="coach-cancel-pending"
+                    onClick={() => {
+                      const lastReq = lastSubmittedRequestRef.current;
+                      cancelActiveRequest('user_cancel');
+                      if (lastReq) {
+                        setGeminiError({
+                          message: 'Consulta cancelada. Puedes volver a intentarlo sin perder tus registros.',
+                          code: 'coach/user-cancelled',
+                          retryable: true,
+                          lastRequest: lastReq,
+                        });
+                      }
+                    }}
+                    className="min-h-[36px] px-3 py-1.5 bg-[#272727] border border-[#555] rounded-lg text-zinc-100 font-bold">
+                    Cancelar consulta
+                  </button>
                 </div>
               </div>
             )}
@@ -1839,6 +1936,28 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
                     <RefreshCw className="w-3.5 h-3.5" />
                     Reintentar
                   </button>
+                )}
+                <button type="button"
+                  data-testid="coach-check-connection-after-error"
+                  disabled={isCheckingService}
+                  onClick={() => {
+                    setIsCheckingService(true);
+                    void checkCoachServiceStatus(activeProfile.id).then(setServiceDiagnostic)
+                      .catch(() => setServiceDiagnostic({
+                        status: 'server_unavailable',
+                        message: 'No se pudo contactar el servidor del Coach.',
+                        readyForLiveRequest: false,
+                      })).finally(() => setIsCheckingService(false));
+                  }}
+                  className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#222] hover:bg-[#303030] border border-[#666] text-xs font-bold text-[#F5F5F5] disabled:opacity-50"
+                >
+                  {isCheckingService ? 'Verificando…' : 'Comprobar conexión'}
+                </button>
+                {serviceDiagnostic && (
+                  <p data-testid="coach-check-result-after-error"
+                    className="text-xs text-zinc-200 border-t border-red-400/25 pt-2">
+                    {serviceDiagnostic.message}
+                  </p>
                 )}
               </div>
             )}
