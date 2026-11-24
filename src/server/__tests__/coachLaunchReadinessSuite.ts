@@ -60,7 +60,7 @@ async function main() {
     assert.equal(res.body.geminiConfigured, true);
     assert.ok(!JSON.stringify(res.body).includes('server-secret-never-leak'));
     assert.equal(res.headers['Cache-Control'], 'private, no-store');
-    assert.match(res.body.message, /Envía una pregunta/);
+    assert.match(res.body.message, /comprobar una respuesta real de Gemini/);
   });
 
   await check('5. Wrong athlete owner: no access even with Gemini credentials', async () => {
