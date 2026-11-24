@@ -67,6 +67,8 @@ jobs:
           npx tsx src/server/__tests__/offlineProductionReadinessSuite.ts
           npx tsx src/server/__tests__/otaUpdateSystemSuite.ts
           npx tsx src/server/__tests__/neckLibrarySuite.ts
+          npx tsx src/server/__tests__/coachChatRecoverySuite.ts
+          npx tsx src/server/__tests__/coachLaunchReadinessSuite.ts
 
       - name: Build Web Assets (Vite)
         env:
