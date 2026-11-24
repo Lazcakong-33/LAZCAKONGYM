@@ -54,6 +54,7 @@ import {
   SpeechRecognitionLike,
 } from '../utils/coachVoiceEngine.ts';
 import { checkCoachServiceStatus, type CoachServiceDiagnostic } from '../utils/coachServiceDiagnostics.ts';
+import { buildCoachLocalFallback } from '../utils/coachLocalFallback.ts';
 
 const COACH_EQUIPMENT_FILTERS = [
   'Todos',
@@ -291,6 +292,25 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
     []
   );
 
+  const appendLocalSummaryIfAvailable = (intent: CoachQuickIntent) => {
+    const summary = buildCoachLocalFallback({
+      intent,
+      resolution,
+      loadReport,
+      alternatives: filteredAlternativesResult.alternatives,
+    });
+    if (!summary) return;
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        role: 'assistant',
+        text: summary,
+        model: 'local-deterministic',
+      },
+    ]);
+  };
+
   const sendToGemini = async (
     promptText: string,
     intent: CoachQuickIntent,
@@ -322,6 +342,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
           retryable: true,
           lastRequest: lastReq,
         });
+        appendLocalSummaryIfAvailable(lastReq.intent);
       }
     }, COACH_MAX_WAIT_MS);
 
@@ -375,6 +396,11 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
           retryable: result.retryable !== false,
           lastRequest: { message: cleanPrompt, intent },
         });
+        // Do not reveal locally cached athlete training data when the
+        // session is invalid or the user is not authorized for this profile.
+        const mayUseLocalSummary =
+          result.status === 0 || result.status >= 500;
+        if (mayUseLocalSummary) appendLocalSummaryIfAvailable(intent);
         return;
       }
 
@@ -402,6 +428,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
         retryable: true,
         lastRequest: { message: cleanPrompt, intent },
       });
+      appendLocalSummaryIfAvailable(intent);
     } finally {
       if (activeAbortControllerRef.current === controller) {
         activeAbortControllerRef.current = null;
