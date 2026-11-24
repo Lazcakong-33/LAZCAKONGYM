@@ -288,6 +288,20 @@ async function runSuite() {
       assert.equal(devRes.body.enabled, true);
       assert.equal(devRes.body.channel, 'development');
 
+      // Fail closed if a misconfigured server exposes a production manifest in development.
+      const prevDevManifest = process.env.OTA_MANIFEST_DEV_JSON;
+      try {
+        process.env.OTA_MANIFEST_DEV_JSON = JSON.stringify(makeValidDevManifest({ channel: 'production' }));
+        const mismatchRes = createMockRes();
+        handleGetOtaManifest({ query: { channel: 'development' } } as any, mismatchRes);
+        assert.equal(mismatchRes.body.channel, 'development');
+        assert.equal(mismatchRes.body.updateAvailable, false);
+        assert.equal(mismatchRes.body.manifest, null);
+      } finally {
+        if (prevDevManifest === undefined) delete process.env.OTA_MANIFEST_DEV_JSON;
+        else process.env.OTA_MANIFEST_DEV_JSON = prevDevManifest;
+      }
+
       // Attempt path traversal in bundle zip filename
       for (const badName of ['../server.ts', '..%2Fpackage.json', 'evil.sh']) {
         const zipRes = createMockRes();
@@ -313,6 +327,18 @@ async function runSuite() {
       'utf8'
     );
     assert.ok(mainJava.includes('RestTimerNotificationPlugin.class'));
+  });
+
+  // 8. Native clients must not display web-only update prompts that cannot change APK assets.
+  await check('8. Native update prompt requires a real OTA manifest and retains the 6.4.4 upgrade path', () => {
+    const hook = fs.readFileSync(path.resolve(process.cwd(), 'src/hooks/useAppUpdate.ts'), 'utf8');
+    const banner = fs.readFileSync(path.resolve(process.cwd(), 'src/components/UpdateBanner.tsx'), 'utf8');
+    const version = fs.readFileSync(path.resolve(process.cwd(), 'src/utils/updateApp.ts'), 'utf8');
+    assert.ok(hook.includes('only a compatible OTA manifest can.'));
+    assert.ok(hook.includes('setOtaPendingManifest(null);\n        setServerVersion(null);'));
+    assert.ok(!hook.includes('Immediately register current running build in localStorage'));
+    assert.ok(!banner.includes('!isVersionGreater(serverVersion, currentVersion)'));
+    assert.ok(version.includes("APP_VERSION = 'v6.4.4'"));
   });
 
   console.log(`\n🎉 ALL ${passed} CI APK & OTA SYSTEM CHECKS PASSED!`);
