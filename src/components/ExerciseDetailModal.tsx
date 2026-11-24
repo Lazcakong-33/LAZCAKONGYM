@@ -53,6 +53,9 @@ import {
 } from '../utils/coachVoiceEngine';
 import { findPreviousExerciseSessions } from '../utils/progressionEngine';
 import { ExerciseThumbnail } from './ExerciseThumbnail';
+import { NeckMovementDemo } from './NeckMovementDemo';
+import { resolveLibraryExercise } from '../data/exerciseLibrary';
+import { getNeckMovementSpec } from '../utils/neckMovementSpec';
 
 const TEMPO_STORAGE_PREFIX = 'lazcakon_technique_tempo_v1_';
 
@@ -176,6 +179,14 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
 
   // Si no estamos en preview, respetar la variante activa seleccionada para la multimedia
   const mediaExercise = activeDisplayExercise;
+  const neckTechniqueExercise = mediaExercise
+    ? resolveLibraryExercise({
+        libraryExerciseId: mediaExercise.libraryExerciseId,
+        name: mediaExercise.name,
+        equipment: mediaExercise.equipment,
+      })
+    : undefined;
+  const hasNeckTechniqueMotion = getNeckMovementSpec(neckTechniqueExercise) !== null;
 
   // Cálculo de alternativa recomendada y lista de otras alternativas usando motor biomecánico
   const alternativesResult = useMemo(() => {
@@ -935,7 +946,16 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
           </div>
 
           {/* Ilustración o animación correspondiente al ejercicio exacto */}
-          {mediaExercise.defaultVideoUrl &&
+          {hasNeckTechniqueMotion && neckTechniqueExercise ? (
+            <div className="rounded-2xl overflow-hidden bg-[#090909] border border-[#303030]">
+              <div className="aspect-video">
+                <NeckMovementDemo exercise={neckTechniqueExercise} className="w-full h-full" />
+              </div>
+              <p className="text-center text-[11px] font-mono text-accent-text py-1.5 border-t border-[#303030]">
+                LAZCAKONG GYM · Demostración cervical animada · 4 segundos
+              </p>
+            </div>
+          ) : mediaExercise.defaultVideoUrl &&
           /\.(webp|gif)(?:\?|$)/i.test(mediaExercise.defaultVideoUrl) &&
           !/\-poster\.webp(?:\?|$)/i.test(mediaExercise.defaultVideoUrl) ? (
             <div className="rounded-2xl overflow-hidden bg-[#090909] border border-[#303030]">
