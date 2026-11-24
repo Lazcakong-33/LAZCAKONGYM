@@ -1937,6 +1937,28 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
                     Reintentar
                   </button>
                 )}
+                <button type="button"
+                  data-testid="coach-check-connection-after-error"
+                  disabled={isCheckingService}
+                  onClick={() => {
+                    setIsCheckingService(true);
+                    void checkCoachServiceStatus(activeProfile.id).then(setServiceDiagnostic)
+                      .catch(() => setServiceDiagnostic({
+                        status: 'server_unavailable',
+                        message: 'No se pudo contactar el servidor del Coach.',
+                        readyForLiveRequest: false,
+                      })).finally(() => setIsCheckingService(false));
+                  }}
+                  className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#222] hover:bg-[#303030] border border-[#666] text-xs font-bold text-[#F5F5F5] disabled:opacity-50"
+                >
+                  {isCheckingService ? 'Verificando…' : 'Comprobar conexión'}
+                </button>
+                {serviceDiagnostic && (
+                  <p data-testid="coach-check-result-after-error"
+                    className="text-xs text-zinc-200 border-t border-red-400/25 pt-2">
+                    {serviceDiagnostic.message}
+                  </p>
+                )}
               </div>
             )}
 
