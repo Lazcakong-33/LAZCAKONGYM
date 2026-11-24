@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw, X, ShieldAlert } from 'lucide-react';
-import { useAppUpdate, isVersionGreater } from '../hooks/useAppUpdate';
+import { useAppUpdate } from '../hooks/useAppUpdate';
 import { APP_BUILD_ID, getAppUpdateSafetyStatus, UpdateSafetyCheck } from '../utils/updateApp';
 
 export const CURRENT_APP_VERSION = APP_BUILD_ID;
@@ -37,11 +37,8 @@ export const UpdateBanner: React.FC = () => {
 
   if (!hasUpdateAvailable) return null;
 
-  // Strict Semver safety guard: if server/candidate version is NOT greater than current running version, do not render
-  if (serverVersion && !isVersionGreater(serverVersion, currentVersion)) {
-    return null;
-  }
-
+  // The hook has already confirmed an available update. Do not hide a pending
+  // Service Worker/broadcast update because the API reports the same app version.
   const isUpdateBlocked = !safetyStatus.canUpdateSafely;
   const blockedBadgeText = safetyStatus.hasActiveWorkout
     ? 'Entrenamiento en curso'
