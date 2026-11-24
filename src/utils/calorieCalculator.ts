@@ -421,6 +421,17 @@ export function areWorkoutsSameSessionRetry(
     if (volA > 0 && volA === volB && setsA === setsB) return true;
   }
 
+  // Stable IDs and distinct recorded times distinguish separate workouts.
+  const hasRecordedTime = (workout: Partial<CompletedWorkout>) =>
+    Number(workout.endTime) > 0 || Number(workout.startTime) > 0;
+  if (
+    idA && idB &&
+    !idA.startsWith('recovered-') && !idB.startsWith('recovered-') &&
+    hasRecordedTime(a) && hasRecordedTime(b) && timeDiffMins > 20
+  ) {
+    return false;
+  }
+
   // Copia recuperada / sincronizada del mismo día con idéntico contenido de ejercicios, series y carga/calorías
   if (
     sameExSig &&

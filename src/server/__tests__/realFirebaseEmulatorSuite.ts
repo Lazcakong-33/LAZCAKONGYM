@@ -33,12 +33,17 @@ import {
 import {
   handleMigrateLegacyAuth,
   handleRedeemInvite,
-  handleConfirmMigration,
   handleAdminRecoverAthlete,
 } from '../authMigrationController.ts';
 import { CompletedWorkout, Profile } from '../../types/index.ts';
 
 const PROJECT_ID = 'demo-lazcakongym-test';
+const RULES_ADMIN_EMAIL = 'kmiloko19@gmail.com';
+const RULES_ADMIN_TOKEN = {
+  email: RULES_ADMIN_EMAIL,
+  email_verified: true,
+  firebase: { sign_in_provider: 'google.com' as const, identities: {} },
+};
 
 function assert(condition: boolean, message: string) {
   if (!condition) {
@@ -90,9 +95,7 @@ async function runRealEmulatorTestSuite() {
     const unauthedContext = testEnv.unauthenticatedContext();
 
     const adminContext = testEnv.authenticatedContext('auth-admin', {
-      email: 'admin@example.invalid',
-      email_verified: true,
-      admin: true,
+      ...RULES_ADMIN_TOKEN,
       athleteId: 'perfil_1',
     });
 
@@ -161,7 +164,7 @@ async function runRealEmulatorTestSuite() {
 
     // 1.7 Administrador accediendo a supervisar perfil B
     await assertSucceeds(getDoc(doc(adminContext.firestore(), 'athletes', 'perfil-b')));
-    assert(true, 'Administrador con Custom Claim admin: true puede supervisar atletas');
+    assert(true, 'Administrador con cuenta Google verificada puede supervisar atletas');
 
     // 1.8 Atleta regular intentando leer la colección de invitaciones
     await assertFails(getDoc(doc(atletaAContext.firestore(), 'invites', 'INVITE-SECRET-123')));
@@ -227,7 +230,9 @@ async function runRealEmulatorTestSuite() {
     };
 
     // 2.1 Intento con PIN incorrecto
+    const caller = { uid: 'test-migration-athlete', email: syntheticEmail, signInProvider: 'password', emailVerified: true };
     const reqWrongPin: any = {
+      user: caller,
       body: { email: syntheticEmail, pin: '0000' },
       ip: '10.0.0.99',
       socket: {},
@@ -251,6 +256,7 @@ async function runRealEmulatorTestSuite() {
 
     // 2.3 Migración exitosa con PIN correcto
     const reqCorrect: any = {
+      user: caller,
       body: { email: syntheticEmail, pin: correctPin },
       ip: '10.0.0.99',
       socket: {},
@@ -260,22 +266,18 @@ async function runRealEmulatorTestSuite() {
 
     assert(resCorrect.statusCode === 200, 'Migración exitosa devuelve HTTP 200');
     assert(resCorrect.body.success === true, 'Respuesta confirma success: true');
-    assert(typeof resCorrect.body.customToken === 'string', 'Retorna Custom Token criptográfico para Firebase Auth');
+    assert(resCorrect.body.authUid === caller.uid, 'Conserva el UID de la sesión Firebase autenticada');
+    assert(!resCorrect.body.customToken, 'La migración no emite tokens personalizados');
     assert(resCorrect.body.athleteId === syntheticDocId, 'Vincula exactamente el ID del perfil de atleta existente');
 
-    // Verificar en base de datos que el documento del atleta fue actualizado a provisional_claimed
+    // Verificar en base de datos que el documento del atleta fue actualizado a confirmed
     const updatedSnap = await db.collection('athletes').doc(syntheticDocId).get();
     const updatedData = updatedSnap.data() || {};
-    assert(updatedData.migrationStatus === 'provisional_claimed', 'Estampa estado migrationStatus: provisional_claimed en la base de datos');
+    assert(updatedData.migrationStatus === 'confirmed', 'Estampa estado migrationStatus: confirmed en la base de datos');
     assert(typeof updatedData.authUid === 'string', 'Asocia authUid generado sin exponer secretos');
     assert(updatedData.pin === undefined, 'Campo pin legado fue completamente eliminado del perfil del atleta');
 
-    // Verificar que la credencial legacy fue aislada en /athlete_credentials con scrypt KDF
-    const isolatedCredSnap = await db.collection('athlete_credentials').doc(syntheticDocId).get();
-    assert(isolatedCredSnap.exists, 'Credencial legacy protegida y aislada en /athlete_credentials/{id}');
-    assert(typeof isolatedCredSnap.data()?.pinHash === 'string', 'PIN almacenado únicamente como hash');
-    assert(isolatedCredSnap.data()?.pinHash.startsWith('scrypt$'), 'PIN actualizado progresivamente a scrypt KDF (N=16384, r=8, p=1) resistente a ataques offline');
-    assert(isolatedCredSnap.data()?.kdfAlgorithm === 'scrypt', 'Algoritmo registrado como scrypt con sal aleatoria de 16 bytes');
+    assert(updatedData.authUid === caller.uid, 'Asocia exactamente el UID autenticado');
 
     // 2.3.1 Prueba de derivación criptográfica scrypt offline
     const testPinCandidate = '4321';
@@ -286,10 +288,9 @@ async function runRealEmulatorTestSuite() {
     const invalidVerify = await verifyPinHardened('9999', scryptHash);
     assert(invalidVerify.matches === false, 'Candidato inválido rechazado en tiempo constante');
 
-    // 2.4 Prueba Anti-Hijacking: Intentar re-reclamar un perfil que ya fue migrado
     const resAlreadyClaimed = createMockRes();
     await handleMigrateLegacyAuth(reqCorrect, resAlreadyClaimed);
-    // Nota: provisional_claimed permite al usuario re-intentar si falla la sesión, pero cuando pasa a confirmed se bloquea (409)
+    assert(resAlreadyClaimed.statusCode === 409, 'Bloquea una nueva migración tras confirmar el vínculo');
 
     // 2.5 Prueba con PIN almacenado como hash SHA-256 (Atleta con esquema hasheado)
     const hashedPinAthleteEmail = 'hashed.pin@lazcakon.test';
@@ -307,6 +308,7 @@ async function runRealEmulatorTestSuite() {
     });
 
     const reqHashedMigrate: any = {
+      user: { ...caller, uid: 'test-hashed-athlete', email: hashedPinAthleteEmail },
       body: { email: hashedPinAthleteEmail, pin: plainSecretPin },
       ip: '10.0.0.98',
       socket: {},
@@ -315,9 +317,8 @@ async function runRealEmulatorTestSuite() {
     await handleMigrateLegacyAuth(reqHashedMigrate, resHashedMigrate);
     assert(resHashedMigrate.statusCode === 200, 'Migración exitosa de perfil con PIN almacenado en formato SHA-256');
 
-    // Comprobar que en la migración el hash SHA-256 fue progresivamente actualizado a scrypt
-    const migratedHashedSnap = await db.collection('athlete_credentials').doc(hashedPinDocId).get();
-    assert(migratedHashedSnap.data()?.pinHash.startsWith('scrypt$'), 'Retiro progresivo: Hash legacy SHA-256 fue actualizado automáticamente a scrypt');
+    const migratedHashedSnap = await db.collection('athletes').doc(hashedPinDocId).get();
+    assert(migratedHashedSnap.data()?.pin === undefined, 'Elimina el PIN SHA-256 legado después de vincular el perfil');
 
     // 2.6 Canje de invitación única con Hashing SHA-256 y transacción atómica
     const rawInviteCode = 'LZK-SYNTH-9988';
@@ -355,89 +356,8 @@ async function runRealEmulatorTestSuite() {
     await handleRedeemInvite(reqRedeem2, resRedeem2);
     assert(resRedeem2.statusCode === 409, 'Segundo canje de invitación rechazado con HTTP 409 (Uso único garantizado)');
 
-    // 2.7 Confirmación de sesión y ceroización definitiva con verificación profunda en Firebase Admin SDK
-    const { auth } = getAdminServices();
-
-    const mockCustomTokenUser = {
-      uid: updatedData.authUid,
-      email: syntheticEmail,
-      isAdmin: false,
-      emailVerified: false,
-      signInProvider: 'custom',
-    };
-
-    // 2.7.1 Intento con UID falso/no existente en Firebase Auth debe ser rechazado
-    const reqConfirmFakeUser: any = {
-      user: { uid: 'non_existent_fake_uid', email: syntheticEmail, isAdmin: false, signInProvider: 'google.com', emailVerified: true },
-      body: { persistentAuthVerified: true },
-    };
-    const resConfirmFakeUser = createMockRes();
-    await handleConfirmMigration(reqConfirmFakeUser, resConfirmFakeUser);
-    assert(resConfirmFakeUser.statusCode === 401, 'Rechazo HTTP 401 si la identidad no existe en Firebase Auth');
-
-    // 2.7.2 Intento con Custom Token + persistentAuthVerified: true debe ser rechazado (422) y NO purgar PIN
-    const reqConfirmCustomOnly: any = {
-      user: mockCustomTokenUser,
-      body: { persistentAuthVerified: true },
-    };
-    const resConfirmCustomOnly = createMockRes();
-    await handleConfirmMigration(reqConfirmCustomOnly, resConfirmCustomOnly);
-    assert(resConfirmCustomOnly.statusCode === 422, 'Rechazo HTTP 422: Custom Token + persistentAuthVerified no purga credencial legacy');
-    const credStillIntact = await db.collection('athlete_credentials').doc(syntheticDocId).get();
-    assert(credStillIntact.exists, 'Credencial legacy intacta tras rechazo de Custom Token');
-
-    // Vincular correo verificado y contraseña controlada por el usuario para la prueba
-    await auth.updateUser(updatedData.authUid, {
-      emailVerified: true,
-      password: 'UserChosenStrongPassword!2026',
-    });
-
-    const mockVerifiedPasswordUser = {
-      uid: updatedData.authUid,
-      email: syntheticEmail,
-      isAdmin: false,
-      emailVerified: true,
-      signInProvider: 'password',
-      authTime: Math.floor(Date.now() / 1000),
-    };
-
-    // 2.7.3 Intento con discrepancia de email respecto al perfil
-    const reqConfirmEmailMismatch: any = {
-      user: { ...mockVerifiedPasswordUser, email: 'impostor@lazcakon.test' },
-      body: { persistentAuthVerified: true },
-    };
-    const resConfirmMismatch = createMockRes();
-    await handleConfirmMigration(reqConfirmEmailMismatch, resConfirmMismatch);
-    assert(resConfirmMismatch.statusCode === 403, 'Rechazo HTTP 403 si el email de Firebase Auth discrepa del perfil de atleta');
-
-    // 2.7.4 Intento sin persistencia verificada explícitamente en false debe ser rechazado
-    const reqConfirmNoPersist: any = { user: mockVerifiedPasswordUser, body: { persistentAuthVerified: false } };
-    const resConfirmNoPersist = createMockRes();
-    await handleConfirmMigration(reqConfirmNoPersist, resConfirmNoPersist);
-    assert(resConfirmNoPersist.statusCode === 400, 'Confirmación con persistentAuthVerified: false rechazada con HTTP 400');
-
-    // 2.7.5 Confirmación legítima: Firebase Admin SDK verifica sesión real (password/google), email verificado y no-autogenerado
-    const reqConfirm: any = { user: mockVerifiedPasswordUser, body: { persistentAuthVerified: true } };
-    const resConfirm = createMockRes();
-    await handleConfirmMigration(reqConfirm, resConfirm);
-    assert(resConfirm.statusCode === 200, 'Confirmación de migración exitosa devuelve HTTP 200 con verificación efectiva en servidor');
-
-    const confirmedSnap = await db.collection('athletes').doc(syntheticDocId).get();
-    const confirmedData = confirmedSnap.data() || {};
-    assert(confirmedData.migrationStatus === 'confirmed', 'Estado actualizado a confirmed en base de datos');
-    assert(confirmedData.legacyPinPurged === true, 'legacyPinPurged marcado true tras confirmación');
-    assert(confirmedData.serverIdentityVerified === true, 'serverIdentityVerified confirmado por Firebase Admin SDK');
-
-    // Verificar que el documento en /athlete_credentials fue totalmente eliminado (Ceroización)
-    const deletedCredSnap = await db.collection('athlete_credentials').doc(syntheticDocId).get();
-    assert(!deletedCredSnap.exists, 'Documento en /athlete_credentials eliminado definitivamente (Ceroización total)');
-
-    // Anti-Hijacking tras confirmación: no puede ser vuelto a reclamar
-    const resHijackAfterConfirm = createMockRes();
-    await handleMigrateLegacyAuth(reqCorrect, resHijackAfterConfirm);
-    assert(resHijackAfterConfirm.statusCode === 409, 'Anti-Hijacking: Perfil con confirmed bloquea cualquier re-migración con HTTP 409');
-
-    // 2.8 Recuperación de Emergencia por el Administrador Master (admin@example.invalid)
+    // Probar la recuperación con una lista administrativa sintética.
+    process.env.ADMIN_EMAILS = 'admin@example.invalid';
     const adminUserContext = {
       uid: 'admin_test_uid',
       email: 'admin@example.invalid',
@@ -488,8 +408,8 @@ async function runRealEmulatorTestSuite() {
       routineId: 'leg-hypertrophy',
       routineTitle: 'Pierna Pesada',
       date: '2026-11-12',
-      startTime: 1731402000000, // 09:00 AM
-      endTime: 1731405600000,
+      startTime: Date.parse('2026-11-12T09:00:00-03:00'), // 09:00 AM
+      endTime: Date.parse('2026-11-12T10:00:00-03:00'),
       durationSeconds: 3600,
       totalVolumeKg: 2400,
       completedSetsCount: 8,
@@ -505,8 +425,8 @@ async function runRealEmulatorTestSuite() {
       routineId: 'leg-hypertrophy',
       routineTitle: 'Pierna Pesada',
       date: '2026-11-12',
-      startTime: 1731434400000, // 18:00 PM
-      endTime: 1731438000000,
+      startTime: Date.parse('2026-11-12T18:00:00-03:00'), // 18:00 PM
+      endTime: Date.parse('2026-11-12T19:00:00-03:00'),
       durationSeconds: 3600,
       totalVolumeKg: 2400,
       completedSetsCount: 8,
@@ -721,8 +641,7 @@ async function runRealEmulatorTestSuite() {
       athleteId: 'ath-999',
     });
     const adminContingency = contingencyEnv.authenticatedContext('admin-uid', {
-      email: 'admin@example.invalid',
-      admin: true,
+      ...RULES_ADMIN_TOKEN,
       athleteId: 'perfil_1',
     });
     const anonContext = contingencyEnv.unauthenticatedContext();
@@ -751,20 +670,20 @@ async function runRealEmulatorTestSuite() {
     await assertFails(updateDoc(doc(athContext.firestore(), 'athletes', 'ath-123'), { name: 'Hack' }));
     assert(true, 'Contingencia: Escrituras de atletas congeladas para proteger integridad');
 
-    // 6.5 Autorización administrativa basada estrictamente en Custom Claim
-    // Usuario con correo coincidente pero SIN claim admin: true DEBE SER RECHAZADO
+    // 6.5 El correo por sí solo no autoriza operaciones administrativas
     const emailOnlyNoClaimContext = contingencyEnv.authenticatedContext('fake-admin-uid', {
-      email: 'admin@example.invalid',
-      // admin claim NOT present
+      email: RULES_ADMIN_EMAIL,
+      email_verified: true,
+      firebase: { sign_in_provider: 'password', identities: {} },
     });
     await assertFails(updateDoc(doc(emailOnlyNoClaimContext.firestore(), 'athletes', 'ath-123'), { name: 'Escalada No Autorizada' }));
-    assert(true, 'Contingencia: Coincidencia de email sin Custom Claim admin: true es RECHAZADA (No hay escalada por email)');
+    assert(true, 'Contingencia: Correo coincidente con proveedor password es rechazado');
 
-    // Usuario con Custom Claim admin: true SÍ es autorizado para lectura y escrituras de rescate
+    // La cuenta autorizada mediante Google verificado puede realizar el rescate.
     await assertSucceeds(getDoc(doc(adminContingency.firestore(), 'athletes', 'ath-123')));
-    assert(true, 'Contingencia: Administrador con Custom Claim admin: true puede leer perfiles en contingencia');
+    assert(true, 'Contingencia: Administrador con cuenta Google verificada puede leer perfiles en contingencia');
     await assertSucceeds(updateDoc(doc(adminContingency.firestore(), 'athletes', 'ath-123'), { name: 'Rescate Admin' }));
-    assert(true, 'Contingencia: Administrador con Custom Claim admin: true puede realizar escrituras administrativas de rescate');
+    assert(true, 'Contingencia: Administrador con cuenta Google verificada puede realizar escrituras administrativas de rescate');
 
     // 6.6 /athlete_credentials totalmente inaccesible
     await assertFails(getDoc(doc(athContext.firestore(), 'athlete_credentials', 'ath-123')));
