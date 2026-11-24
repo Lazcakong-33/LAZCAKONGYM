@@ -292,7 +292,8 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
     []
   );
 
-  const coachLocalOnly = import.meta.env.VITE_COACH_LOCAL_ONLY === 'true';
+  const coachWorkersAi = import.meta.env.VITE_COACH_WORKERS_AI === 'true';
+  const useLocalCoachActions = coachWorkersAi || import.meta.env.VITE_COACH_LOCAL_ONLY === 'true';
 
   const appendLocalSummaryIfAvailable = (intent: CoachQuickIntent, defaultReply?: string) => {
     const summary = buildCoachLocalFallback({
@@ -332,7 +333,8 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       ]);
     }
 
-    if (coachLocalOnly) {
+    if (useLocalCoachActions && (!coachWorkersAi || intent !== 'freeform')) {
+      setGeminiError(null);
       appendLocalSummaryIfAvailable(
         intent,
         'Esa pregunta está fuera de lo que puedo resolver en modo local. Prueba «¿Qué entreno hoy?», «¿Cuánto peso levanté la última vez?» o «¿Qué alternativa tengo si la máquina está ocupada?».'
@@ -380,8 +382,8 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
         athleteId: activeProfile.id,
         message: cleanPrompt,
         intent,
-        history: priorTurns,
-        context: minimizedPayload,
+        history: coachWorkersAi ? [] : priorTurns,
+        context: coachWorkersAi ? {} : minimizedPayload,
         signal: controller?.signal,
         timeoutMs: 20_000,
         tokenTimeoutMs: 6_000,
@@ -768,7 +770,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
   // deployed backend has no Gemini credential, the route is missing, or the
   // Firebase account does not own the selected athlete.
   useEffect(() => {
-    if (!isOpen || coachLocalOnly) return;
+    if (!isOpen || useLocalCoachActions) return;
     let cancelled = false;
     setIsCheckingService(true);
     setServiceDiagnostic(null);
@@ -784,7 +786,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       if (!cancelled) setIsCheckingService(false);
     });
     return () => { cancelled = true; };
-  }, [isOpen, activeProfile.id, coachLocalOnly]);
+  }, [isOpen, activeProfile.id, useLocalCoachActions]);
 
   // A visible, finite counter means the athlete can see the timeout approaching.
   // The independent watchdog above owns cancellation when the network stalls.
@@ -1029,7 +1031,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       return;
     }
 
-    void sendToGemini(msg, coachLocalOnly ? resolveCoachLocalIntent(msg) : (activeIntent || 'freeform'), true);
+    void sendToGemini(msg, useLocalCoachActions ? resolveCoachLocalIntent(msg) : (activeIntent || 'freeform'), true);
   };
 
   return (
@@ -1793,8 +1795,10 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
 
           {/* AI Conversation Thread */}
           <div className="space-y-2.5 pt-1">
-            {coachLocalOnly ? (
-              <p className="text-xs text-zinc-200">Coach local · rutina, cargas registradas y alternativas</p>
+            {useLocalCoachActions ? (
+              <p className="text-xs text-zinc-200">
+                {coachWorkersAi ? 'Coach IA · preguntas generales y consultas locales' : 'Coach local · rutina, cargas registradas y alternativas'}
+              </p>
             ) : (
               <div
                 data-testid="coach-service-diagnostic"
@@ -1926,7 +1930,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
                         : geminiError.code === 'coach/timeout' ||
                           geminiError.code === 'coach/token-timeout'
                         ? 'Tiempo de espera agotado'
-                        : 'Error al consultar a Gemini'}
+                        : 'Error al consultar al Coach IA'}
                     </span>
                     <p className="mt-0.5 leading-snug">{geminiError.message}</p>
                     <p className="text-[11px] text-zinc-300 mt-1">

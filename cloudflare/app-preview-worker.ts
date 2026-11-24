@@ -1,11 +1,12 @@
 import smokeWorker from './preview-worker.mjs';
+import { handlePreviewCoach, type PreviewCoachBindings } from './preview-coach.ts';
 import { initializePreviewSession } from './preview-session.ts';
 import { buildDailyCaloriesReport } from '../src/server/dailyCaloriesController.ts';
 
 const maxBodyBytes = 512 * 1024;
 
 export default {
-  async fetch(request: Request, env: { PREVIEW_FIREBASE_API_KEY?: string } = {}): Promise<Response> {
+  async fetch(request: Request, env: PreviewCoachBindings = {}): Promise<Response> {
     const { pathname } = new URL(request.url);
     if (request.method === 'GET' && (pathname === '/health' || pathname === '/api/health')) {
       return Response.json({
@@ -15,7 +16,11 @@ export default {
         productionAccess: false,
         firebaseAccess: Boolean(env.PREVIEW_FIREBASE_API_KEY),
         geminiAccess: false,
+        workersAiConfigured: Boolean(env.AI && env.COACH_USER_LIMIT && env.COACH_TOTAL_LIMIT),
       }, { headers: { 'Cache-Control': 'no-store' } });
+    }
+    if (request.method === 'POST' && pathname === '/api/coach/chat') {
+      return handlePreviewCoach(request, env);
     }
     if (request.method === 'POST' && pathname === '/api/auth/session-init') {
       return initializePreviewSession(request, env.PREVIEW_FIREBASE_API_KEY);

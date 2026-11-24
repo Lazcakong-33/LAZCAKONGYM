@@ -215,7 +215,10 @@ export default defineConfig(({ mode }) => {
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
     define: {
-      ...(isAppPreview ? { 'import.meta.env.VITE_COACH_LOCAL_ONLY': JSON.stringify('true') } : {}),
+      ...(isAppPreview ? {
+        'import.meta.env.VITE_COACH_LOCAL_ONLY': JSON.stringify('true'),
+        'import.meta.env.VITE_COACH_WORKERS_AI': JSON.stringify('true'),
+      } : {}),
     },
     build: {
       outDir: isAppPreview ? 'dist-app-preview' : 'dist',
