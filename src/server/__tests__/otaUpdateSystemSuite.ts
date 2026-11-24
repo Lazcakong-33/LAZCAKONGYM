@@ -16,6 +16,8 @@ import {
   markOtaBootReady,
   rollbackOtaToPreviousBundle,
   validateOtaManifest,
+  fetchOtaManifestFromServer,
+  DEV_GITHUB_OTA_MANIFEST_URL,
   type OtaManifestPayload,
   type OtaPluginAdapter,
 } from '../../utils/otaUpdateEngine.ts';
@@ -338,7 +340,61 @@ async function runSuite() {
     assert.ok(hook.includes('setOtaPendingManifest(null);\n        setServerVersion(null);'));
     assert.ok(!hook.includes('Immediately register current running build in localStorage'));
     assert.ok(!banner.includes('!isVersionGreater(serverVersion, currentVersion)'));
-    assert.ok(version.includes("APP_VERSION = 'v6.4.4'"));
+    assert.ok(version.includes("VITE_APP_VERSION"), 'OTA build must embed actual release version');
+  });
+
+  // 9. Development CDN fallback must work when the backend is not configured.
+  await check('9. GitHub Releases fallback only for development; keeps explicit server kill switch', async () => {
+    const calls: string[] = [];
+    const request = async (url: RequestInfo | URL): Promise<Response> => {
+      const target = String(url);
+      calls.push(target);
+      if (target.includes('/api/ota/manifest')) {
+        return {
+          ok: true,
+          async json() {
+            return { success: true, enabled: true, channel: 'development', updateAvailable: false, manifest: null };
+          },
+        } as Response;
+      }
+      if (target.startsWith(DEV_GITHUB_OTA_MANIFEST_URL)) {
+        return {
+          ok: true,
+          async json() { return makeValidDevManifest(); },
+        } as Response;
+      }
+      throw new Error('Unexpected request: ' + target);
+    };
+    const dev = await fetchOtaManifestFromServer({
+      channel: 'development',
+      fetcher: request as typeof fetch,
+    });
+    assert.equal(dev.updateAvailable, true);
+    assert.equal(dev.manifest?.version, '6.4.3');
+    assert.equal(calls.length, 2);
+
+    const noDev = await fetchOtaManifestFromServer({
+      channel: 'development',
+      fetcher: (async () => ({
+        ok: true,
+        json: async () => ({
+          success: true, enabled: false, channel: 'development', updateAvailable: false, manifest: null,
+        }),
+      })) as unknown as typeof fetch,
+    });
+    assert.equal(noDev.updateAvailable, false);
+    assert.equal(noDev.enabled, false);
+
+    const stagingCalls: string[] = [];
+    const staging = await fetchOtaManifestFromServer({
+      channel: 'staging',
+      fetcher: (async (url) => {
+        stagingCalls.push(String(url));
+        return { ok: false, status: 503 } as Response;
+      }) as typeof fetch,
+    });
+    assert.equal(staging.updateAvailable, false);
+    assert.equal(stagingCalls.length, 1, 'Staging cannot leak into the development release channel');
   });
 
   console.log(`\n🎉 ALL ${passed} CI APK & OTA SYSTEM CHECKS PASSED!`);

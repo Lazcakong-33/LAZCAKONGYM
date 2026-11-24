@@ -226,3 +226,149 @@ jobs:
           rm -f "${RUNNER_TEMP}/lazcakong-debug.keystore" || true
           rm -f "${RUNNER_TEMP}/lazcakong-release.keystore" || true
           rm -f android/app/google-services.json || true
+
+
+  # Independent development-only OTA hosting on GitHub Releases.
+  # No Cloud Run deploy, no Firebase changes, no credentials beyond scoped GITHUB_TOKEN.
+  publish-development-ota:
+    name: Publish verified DEVELOPMENT OTA (GitHub Releases)
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/ci/android-apk-ota' }}
+    needs: build-android-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    concurrency:
+      group: lazcakong-ota-development
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout current source (no production checkout)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Determine next unique development SemVer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Only prereleases tagged ota-dev-v6.4.N count. First OTA is 6.4.5,
+          # newer than the native 6.4.4 bootstrap APK.
+          LATEST_PATCH=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName \
+            --jq '[.[].tagName | select(startswith("ota-dev-v6.4.")) | ltrimstr("ota-dev-v6.4.") | tonumber] | max // 4')
+          NEXT_PATCH=$((LATEST_PATCH + 1))
+          if [ "$NEXT_PATCH" -lt 5 ]; then NEXT_PATCH=5; fi
+          OTA_VERSION="6.4.$NEXT_PATCH"
+          echo "OTA_VERSION=$OTA_VERSION" >> "$GITHUB_ENV"
+          echo "OTA_TAG=ota-dev-v$OTA_VERSION" >> "$GITHUB_ENV"
+          echo "VITE_APP_VERSION=$OTA_VERSION" >> "$GITHUB_ENV"
+          echo "Publishing development OTA version $OTA_VERSION"
+
+      - name: Install dependencies and verify types
+        run: |
+          npm install --no-audit --no-fund
+          npm run lint
+
+      - name: Validate release changes never include native files
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The native APK has already passed CI. OTA contains ONLY dist/ assets.
+          # Publishing a bundle with native changes would mislead the client.
+          # Explicit native changes are blocked from OTA and require APK.
+          if ! git rev-parse "${GITHUB_SHA}^1" >/dev/null 2>&1; then
+            echo "::error::Cannot inspect previous commit. Refusing unchecked OTA publishing."
+            exit 1
+          fi
+          CHANGED=$(git diff --name-only "${GITHUB_SHA}^1" "${GITHUB_SHA}")
+          if printf '%s\n' "$CHANGED" | grep -E '^(android/|ios/|capacitor\.config\.|package(-lock)?\.json)' ; then
+            echo "::error::Native/package configuration changed. A full signed APK is required; refusing OTA publishing."
+            exit 1
+          fi
+
+      - name: Build OTA web assets at exact version
+        env:
+          VITE_API_BASE_URL: https://lazcakongym.ai.studio
+          VITE_GOOGLE_WEB_CLIENT_ID: 13537846485-8j7931cki5gtlpq2eklsru35765sv3pq.apps.googleusercontent.com
+          VITE_OTA_CHANNEL: development
+          VITE_OTA_PRODUCTION_ENABLED: 'false'
+        run: npm run build
+
+      - name: Package, verify and set immutable GitHub release URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run ota:package -- --channel development --version "$OTA_VERSION"
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          const tag = process.env.OTA_TAG;
+          const version = process.env.OTA_VERSION;
+          const zipName = `lazcakongym-ota-${version}.zip`;
+          const zipPath = path.resolve('dist-ota', zipName);
+          const manifestPath = path.resolve('dist-ota/manifest.development.json');
+          const bundle = fs.readFileSync(zipPath);
+          const checksum = crypto.createHash('sha256').update(bundle).digest('hex');
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          if (manifest.version !== version || manifest.checksum !== checksum || manifest.channel !== 'development') {
+            throw new Error('Manifest/package mismatch; refusing development publication');
+          }
+          manifest.url = `https://github.com/${process.env.GITHUB_REPOSITORY}/releases/download/${tag}/${zipName}`;
+          manifest.releaseNotes = 'LAZCAKONG GYM — actualización segura de interfaz y biblioteca, sin reinstalar APK.';
+          fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+          console.log(`Verified web-only OTA ${version} (SHA-256 ${checksum.slice(0, 12)}...)`);
+          NODE
+
+      - name: Publish development pre-release with permanent versioned ZIP
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Never use --clobber: immutable versioned releases are safer for checksums.
+          gh release create "$OTA_TAG" "dist-ota/lazcakongym-ota-$OTA_VERSION.zip" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "LAZCAKONG GYM development OTA $OTA_VERSION" \
+            --notes "Web-only development OTA. Not a production rollout. Android native changes require a separate APK." \
+            --prerelease --latest=false
+
+      - name: Download release asset and validate SHA-256 before publishing index
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ota-verified"
+          gh release download "$OTA_TAG" --repo "$GITHUB_REPOSITORY" \
+            -p "lazcakongym-ota-$OTA_VERSION.zip" -D "$RUNNER_TEMP/ota-verified"
+          sha256sum "dist-ota/lazcakongym-ota-$OTA_VERSION.zip"
+          cmp "dist-ota/lazcakongym-ota-$OTA_VERSION.zip" \
+            "$RUNNER_TEMP/ota-verified/lazcakongym-ota-$OTA_VERSION.zip"
+          unzip -tq "$RUNNER_TEMP/ota-verified/lazcakongym-ota-$OTA_VERSION.zip"
+
+      - name: Atomically update development manifest index (never main or production)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          INDEX_PATH="ota/manifest.development.json"
+          INDEX_SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/$INDEX_PATH?ref=ota-development" --jq '.sha')
+          MANIFEST_BASE64=$(base64 -w0 dist-ota/manifest.development.json)
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/$INDEX_PATH" \
+            -f "branch=ota-development" \
+            -f "sha=$INDEX_SHA" \
+            -f "message=publish: verified development OTA $OTA_VERSION" \
+            -f "content=$MANIFEST_BASE64" \
+            --jq '.commit.sha'
+          echo "Development manifest index points to $OTA_TAG"
