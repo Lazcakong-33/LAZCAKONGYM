@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { resolveApiUrl } from '../utils/apiUrl';
+import { safeApiFetchJson } from '../utils/safeApiFetch.ts';
 import {
   Sparkles,
   X,
@@ -55,6 +55,8 @@ export const AIRoutineGeneratorModal: React.FC<AIRoutineGeneratorModalProps> = (
   const [isLoading, setIsLoading] = useState(false);
   const [generatedRoutine, setGeneratedRoutine] = useState<Routine | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [generationNotice, setGenerationNotice] = useState<string | null>(null);
+  const [generationSource, setGenerationSource] = useState<'gemini' | 'local' | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   if (!isOpen) return null;
@@ -182,11 +184,20 @@ export const AIRoutineGeneratorModal: React.FC<AIRoutineGeneratorModalProps> = (
   const handleGenerate = async () => {
     setIsLoading(true);
     setErrorMessage(null);
+    setGenerationNotice(null);
+    setGenerationSource(null);
     setSavedSuccess(false);
 
     try {
-      const response = await fetch(resolveApiUrl('/api/gemini/generate-routine'), {
+      const response = await safeApiFetchJson<{
+        success: boolean;
+        routine?: Routine;
+        generationSource?: 'gemini' | 'local';
+        generationNotice?: string;
+        error?: string;
+      }>('/api/gemini/generate-routine', {
         method: 'POST',
+        timeoutMs: 20_000,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           experienceLevel: level,
@@ -198,9 +209,20 @@ export const AIRoutineGeneratorModal: React.FC<AIRoutineGeneratorModalProps> = (
         }),
       });
 
-      const data = await response.json();
-      if (data.success && data.routine) {
+      const data = response.data;
+      if (response.ok && data?.success && data.routine) {
+        const source = data.generationSource || (
+          data.routine.id?.startsWith('rutina-local-') ? 'local' : null
+        );
         const fallback = generateLocalFallbackRoutine();
+        setGenerationSource(source);
+        setGenerationNotice(
+          data.generationNotice || (source === 'local'
+            ? 'El servidor utilizó el generador local, no Gemini.'
+            : source === 'gemini'
+            ? 'Rutina generada con Gemini.'
+            : 'El servidor publicado no informa si esta rutina se generó con Gemini o con el motor local. Actualiza el backend para comprobarlo.')
+        );
         setGeneratedRoutine({
           ...data.routine,
           modality: data.routine.modality || goal,
@@ -214,13 +236,18 @@ export const AIRoutineGeneratorModal: React.FC<AIRoutineGeneratorModalProps> = (
           })),
         });
       } else {
-        const localRoutine = generateLocalFallbackRoutine();
-        setGeneratedRoutine(localRoutine);
+        setGenerationSource('local');
+        setGenerationNotice(
+          `No se pudo usar Gemini (${response.status ? 'HTTP ' + response.status : 'sin conexión'}). ${response.error || data?.error || 'El servidor no respondió.'} Se ofrece una rutina LOCAL como alternativa, no generada por IA.`
+        );
+        setGeneratedRoutine(generateLocalFallbackRoutine());
       }
     } catch (err: any) {
-      console.warn('Network error calling AI route, generating locally:', err);
-      const localRoutine = generateLocalFallbackRoutine();
-      setGeneratedRoutine(localRoutine);
+      setGenerationSource('local');
+      setGenerationNotice(
+        `No se pudo conectar con Gemini. Se muestra una rutina LOCAL, no generada por IA. ${err?.message || ''}`
+      );
+      setGeneratedRoutine(generateLocalFallbackRoutine());
     } finally {
       setIsLoading(false);
     }
@@ -409,6 +436,14 @@ export const AIRoutineGeneratorModal: React.FC<AIRoutineGeneratorModalProps> = (
           ) : (
             /* GENERATED ROUTINE PREVIEW */
             <div className="space-y-4">
+              {generationNotice && (
+                <div data-testid="ai-routine-source"
+                  className={`rounded-xl border p-3 text-xs font-semibold ${generationSource === 'gemini'
+                    ? 'bg-lime-500/10 border-lime-500/30 text-lime-100'
+                    : 'bg-amber-500/10 border-amber-500/40 text-amber-200'}`}>
+                  {generationSource === 'gemini' ? 'IA GEMINI' : generationSource === 'local' ? 'MODO LOCAL · NO ES RESPUESTA DE IA' : 'ORIGEN SIN VERIFICAR'} — {generationNotice}
+                </div>
+              )}
               {/* Header card */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/20 via-slate-900 to-orange-500/15 border border-amber-500/40 space-y-1.5">
                 <div className="flex items-center justify-between">

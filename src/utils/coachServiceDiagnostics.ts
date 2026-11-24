@@ -1,0 +1,75 @@
+import { auth } from '../firebase.ts';
+import { safeApiFetchJson } from './safeApiFetch.ts';
+
+export interface CoachServiceDiagnostic {
+  status: 'ready' | 'login_required' | 'missing_key' | 'forbidden' | 'server_unavailable';
+  message: string;
+  model?: string;
+  /** True only means the key is configured, not that Gemini was contacted. */
+  readyForLiveRequest: boolean;
+}
+
+export async function checkCoachServiceStatus(athleteId: string): Promise<CoachServiceDiagnostic> {
+  const user = auth.currentUser;
+  if (!user) {
+    return {
+      status: 'login_required',
+      message: 'Inicia sesión con Firebase Authentication para que el Coach IA pueda usar tu perfil.',
+      readyForLiveRequest: false,
+    };
+  }
+  let token: string;
+  try {
+    token = await user.getIdToken();
+  } catch {
+    return {
+      status: 'login_required',
+      message: 'No se pudo obtener una sesión válida de Firebase. Vuelve a iniciar sesión.',
+      readyForLiveRequest: false,
+    };
+  }
+  const res = await safeApiFetchJson<{
+    success?: boolean;
+    athleteAuthorized?: boolean;
+    geminiConfigured?: boolean;
+    readyForLiveRequest?: boolean;
+    model?: string;
+    message?: string;
+    error?: string;
+  }>('/api/coach/status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ athleteId }),
+    timeoutMs: 12_000,
+  });
+  if (!res.ok || !res.data?.success) {
+    return {
+      status: res.status === 401 ? 'login_required' : 'server_unavailable',
+      message: res.status === 404
+        ? 'El servidor publicado aún no tiene el diagnóstico del Coach. Falta desplegar el backend actualizado.'
+        : res.data?.error || res.error || 'No responde el servidor del Coach IA.',
+      readyForLiveRequest: false,
+    };
+  }
+  const data = res.data;
+  if (!data.athleteAuthorized) {
+    return {
+      status: 'forbidden',
+      message: data.message || 'Tu cuenta todavía no está vinculada correctamente con este perfil de atleta.',
+      readyForLiveRequest: false,
+    };
+  }
+  if (!data.geminiConfigured) {
+    return {
+      status: 'missing_key',
+      message: 'Falta configurar GEMINI_API_KEY o GOOGLE_API_KEY como secreto privado del servidor. El Coach no puede responder todavía.',
+      readyForLiveRequest: false,
+    };
+  }
+  return {
+    status: 'ready',
+    message: 'Sesión y clave configuradas. Envía una pregunta para comprobar que Gemini responde.',
+    model: data.model,
+    readyForLiveRequest: true,
+  };
+}

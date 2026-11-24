@@ -53,6 +53,7 @@ import {
   selectNextAutoSpeechMessage,
   SpeechRecognitionLike,
 } from '../utils/coachVoiceEngine.ts';
+import { checkCoachServiceStatus, type CoachServiceDiagnostic } from '../utils/coachServiceDiagnostics.ts';
 
 const COACH_EQUIPMENT_FILTERS = [
   'Todos',
@@ -145,6 +146,8 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [inputText, setInputText] = useState<string>('');
   const [isLoadingAI, setIsLoadingAI] = useState<boolean>(false);
+  const [serviceDiagnostic, setServiceDiagnostic] = useState<CoachServiceDiagnostic | null>(null);
+  const [isCheckingService, setIsCheckingService] = useState(false);
   const [geminiError, setGeminiError] = useState<{
     message: string;
     code?: string;
@@ -690,6 +693,28 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       lastAutoTriggeredKeyRef.current = null;
     }
   }, [activeProfile.id, cancelActiveRequest]);
+
+  // An explicit readiness check prevents a blank Coach experience when the
+  // deployed backend has no Gemini credential, the route is missing, or the
+  // Firebase account does not own the selected athlete.
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setIsCheckingService(true);
+    setServiceDiagnostic(null);
+    void checkCoachServiceStatus(activeProfile.id).then((status) => {
+      if (!cancelled) setServiceDiagnostic(status);
+    }).catch(() => {
+      if (!cancelled) setServiceDiagnostic({
+        status: 'server_unavailable',
+        message: 'No fue posible comprobar el servidor de Coach IA.',
+        readyForLiveRequest: false,
+      });
+    }).finally(() => {
+      if (!cancelled) setIsCheckingService(false);
+    });
+    return () => { cancelled = true; };
+  }, [isOpen, activeProfile.id]);
 
   // Stop voice, cancel stalled requests when modal closes, and guard Android screen-lock / offline hangs
   useEffect(() => {
@@ -1683,6 +1708,39 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
 
           {/* AI Conversation Thread */}
           <div className="space-y-2.5 pt-1">
+            <div
+              data-testid="coach-service-diagnostic"
+              className={`p-3 rounded-2xl border text-xs space-y-1.5 ${serviceDiagnostic?.status === 'ready'
+                ? 'bg-[#131b10] border-[#ccff00]/35 text-lime-100'
+                : 'bg-[#171717] border-[#303030] text-zinc-200'}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold">
+                  {isCheckingService ? 'Comprobando Coach IA…' :
+                    serviceDiagnostic?.status === 'ready' ? 'Coach IA · servidor configurado' :
+                    'Coach IA · revisar conexión'}
+                </span>
+                <button type="button" onClick={() => {
+                  setIsCheckingService(true);
+                  void checkCoachServiceStatus(activeProfile.id).then(setServiceDiagnostic).catch(() => {
+                    setServiceDiagnostic({
+                      status: 'server_unavailable',
+                      message: 'No fue posible comprobar el servidor de Coach IA.',
+                      readyForLiveRequest: false,
+                    });
+                  }).finally(() => setIsCheckingService(false));
+                }} disabled={isCheckingService}
+                  className="px-2.5 py-1.5 rounded-lg bg-[#222] border border-[#444] text-[11px] font-bold disabled:opacity-50"
+                >
+                  {isCheckingService ? 'Revisando…' : 'Comprobar conexión'}
+                </button>
+              </div>
+              {serviceDiagnostic && (
+                <p data-testid="coach-service-status-message" className="text-[11px] leading-relaxed">
+                  {serviceDiagnostic.message}
+                </p>
+              )}
+            </div>
             {messages.map((m) => {
               const isPlayingThis = speakingMessageId === m.id;
               return (

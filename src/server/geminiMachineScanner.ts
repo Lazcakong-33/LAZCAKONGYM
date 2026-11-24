@@ -1,4 +1,4 @@
-import { getGeminiModel } from './geminiModel.ts';
+import { getGeminiModel, getServerGeminiApiKey } from './geminiModel.ts';
 import { GoogleGenAI, Type } from '@google/genai';
 
 export interface ScanMachineParams {
@@ -61,7 +61,7 @@ export async function scanGymMachineWithGemini(
   }
 
   const { data: base64Data, mimeType } = cleanBase64Data(imageBase64);
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = getServerGeminiApiKey();
 
   if (apiKey) {
     try {

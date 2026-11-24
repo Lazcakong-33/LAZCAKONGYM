@@ -63,7 +63,15 @@ app.post('/api/gemini/generate-routine', async (req, res) => {
   try {
     const { generateAIRoutine } = await import('./src/server/geminiRoutineGenerator.ts');
     const routine = await generateAIRoutine(req.body);
-    res.status(200).json({ success: true, routine });
+    const generationSource = routine.id.startsWith('rutina-local-') ? 'local' : 'gemini';
+    res.status(200).json({
+      success: true,
+      routine,
+      generationSource,
+      generationNotice: generationSource === 'local'
+        ? 'Gemini no está disponible o no respondió. Se creó una rutina local del catálogo, sin generar una respuesta con IA.'
+        : 'Rutina generada por Gemini.',
+    });
   } catch (error: any) {
     console.error('Error generating AI routine:', error);
     res.status(500).json({ success: false, error: error.message || 'Error generating routine' });
@@ -198,6 +206,33 @@ app.post('/api/workout/autoregulate-set', async (req, res) => {
   } catch (error: any) {
     console.error('[RPE Autoregulation] Server error:', error);
     res.status(500).json({ success: false, error: error.message || 'Error processing RPE autoregulation' });
+  }
+});
+
+// Authenticated read-only diagnostics for Coach IA (no API keys or athlete data returned).
+app.post('/api/coach/status', async (req, res) => {
+  try {
+    const { verifyAuthTokenMiddleware } = await import('./src/server/firebaseAdminServer.ts');
+    const { handleCoachStatus } = await import('./src/server/coachController.ts');
+    await verifyAuthTokenMiddleware(req, res, () => {
+      Promise.resolve(handleCoachStatus(req, res)).catch((err: any) => {
+        console.error('[Coach IA status] Diagnostic error:', err?.message || err);
+        if (!res.headersSent) {
+          res.status(503).json({
+            success: false, code: 'coach/diagnostic-unavailable',
+            error: 'No se pudo verificar el estado del Coach IA.',
+          });
+        }
+      });
+    });
+  } catch (err: any) {
+    console.error('[Coach IA status] Server error:', err?.message || err);
+    if (!res.headersSent) {
+      res.status(503).json({
+        success: false, code: 'coach/diagnostic-unavailable',
+        error: 'No se pudo consultar el estado del Coach IA.',
+      });
+    }
   }
 });
 
