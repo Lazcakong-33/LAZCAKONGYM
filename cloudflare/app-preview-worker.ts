@@ -1,7 +1,7 @@
 import smokeWorker from './preview-worker.mjs';
 import { handlePreviewCoach, type PreviewCoachBindings } from './preview-coach.ts';
 import { initializePreviewSession } from './preview-session.ts';
-import { buildDailyCaloriesReport } from '../src/server/dailyCaloriesController.ts';
+import { buildDailyCaloriesReport, calculateCompletedRoutineCalories } from '../src/server/dailyCaloriesController.ts';
 
 import { evaluateOtaCompatibility, type OtaManifestPayload } from '../src/utils/otaCompatibility.ts';
 
@@ -96,11 +96,21 @@ export default {
         return new Response(response.body, { status: response.status, headers });
       }
     }
-    if (request.method !== 'POST' || pathname !== '/api/calories/daily-report') {
+    const isSessionCalories = pathname === '/api/calories/calculate-session';
+    const isDailyCalories = pathname === '/api/calories/daily-report';
+    if ((!isSessionCalories && !isDailyCalories) || !['POST', 'OPTIONS'].includes(request.method)) {
       return smokeWorker.fetch(request);
     }
 
-    const headers = { 'Cache-Control': 'no-store' };
+    const headers = new Headers({ 'Cache-Control': 'no-store', Vary: 'Origin' });
+    const fromAndroid = request.headers.get('Origin') === 'https://localhost';
+    if (fromAndroid) headers.set('Access-Control-Allow-Origin', 'https://localhost');
+    if (request.method === 'OPTIONS') {
+      if (!fromAndroid) return smokeWorker.fetch(request);
+      headers.set('Access-Control-Allow-Methods', 'POST');
+      headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control');
+      return new Response(null, { status: 204, headers });
+    }
     if (!request.headers.get('Content-Type')?.split(';')[0].trim().match(/^application\/json$/i)) {
       return Response.json({ success: false, error: 'Se requiere un cuerpo JSON.' }, { status: 415, headers });
     }
@@ -124,7 +134,13 @@ export default {
         }
         body += decoder.decode(value, { stream: true });
       }
-      const { athlete, workouts, targetDate, timezoneOffsetMinutes } = JSON.parse(body + decoder.decode());
+      const payload = JSON.parse(body + decoder.decode());
+      if (isSessionCalories) {
+        const { workout, athleteWeightKg } = payload ?? {};
+        const detail = calculateCompletedRoutineCalories(workout, athleteWeightKg);
+        return Response.json({ success: true, caloriesBurned: detail?.caloriesBurned ?? 0, detail }, { headers });
+      }
+      const { athlete, workouts, targetDate, timezoneOffsetMinutes } = payload;
       return Response.json(buildDailyCaloriesReport({
         athlete: athlete || { id: 'default', weightKg: 95 },
         workouts: Array.isArray(workouts) ? workouts : [],
@@ -132,7 +148,10 @@ export default {
         timezoneOffsetMinutes,
       }), { headers });
     } catch {
-      return Response.json({ success: false, error: 'No se pudo procesar el reporte de calorías.' }, { status: 400, headers });
+      const error = isSessionCalories
+        ? { success: false, error: 'No se pudieron calcular las calorías de la sesión.', caloriesBurned: 0 }
+        : { success: false, error: 'No se pudo procesar el reporte de calorías.' };
+      return Response.json(error, { status: 400, headers });
     } finally {
       reader.releaseLock();
     }
