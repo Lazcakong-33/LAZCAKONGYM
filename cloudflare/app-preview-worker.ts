@@ -3,6 +3,7 @@ import { handlePreviewCoach, type PreviewCoachBindings } from './preview-coach.t
 import { initializePreviewSession } from './preview-session.ts';
 import { buildDailyCaloriesReport, calculateCompletedRoutineCalories } from '../src/server/dailyCaloriesController.ts';
 
+import { evaluateRpeAutoregulationOnServer } from '../src/server/rpeAutoregulationController.ts';
 import { evaluateOtaCompatibility, type OtaManifestPayload } from '../src/utils/otaCompatibility.ts';
 
 interface PreviewBindings extends PreviewCoachBindings {
@@ -75,10 +76,9 @@ export default {
         workersAiConfigured: Boolean(env.AI && env.COACH_USER_LIMIT && env.COACH_TOTAL_LIMIT),
       }, { headers: { 'Cache-Control': 'no-store' } });
     }
-    if (request.method === 'POST' && pathname === '/api/coach/chat') {
-      return handlePreviewCoach(request, env);
-    }
-    if (pathname === '/api/auth/session-init') {
+    const coachChat = pathname === '/api/coach/chat';
+    const coachStatus = pathname === '/api/coach/status';
+    if (pathname === '/api/auth/session-init' || coachChat || coachStatus) {
       const fromAndroid = request.headers.get('Origin') === 'https://localhost';
       if (request.method === 'OPTIONS' && fromAndroid) {
         return new Response(null, { status: 204, headers: {
@@ -90,7 +90,9 @@ export default {
         } });
       }
       if (request.method === 'POST') {
-        const response = await initializePreviewSession(
+        const response = coachChat || coachStatus
+          ? await handlePreviewCoach(request, env, coachStatus)
+          : await initializePreviewSession(
           request, env.PREVIEW_FIREBASE_API_KEY, fetch, env.PREVIEW_RESOLVE_LINKED_ATHLETE === 'true'
         );
         const headers = new Headers(response.headers);
@@ -101,7 +103,8 @@ export default {
     }
     const isSessionCalories = pathname === '/api/calories/calculate-session';
     const isDailyCalories = pathname === '/api/calories/daily-report';
-    if ((!isSessionCalories && !isDailyCalories) || !['POST', 'OPTIONS'].includes(request.method)) {
+    const isAutoregulation = pathname === '/api/workout/autoregulate-set';
+    if ((!isSessionCalories && !isDailyCalories && !isAutoregulation) || !['POST', 'OPTIONS'].includes(request.method)) {
       return smokeWorker.fetch(request);
     }
 
@@ -138,6 +141,9 @@ export default {
         body += decoder.decode(value, { stream: true });
       }
       const payload = JSON.parse(body + decoder.decode());
+      if (isAutoregulation) {
+        return Response.json(evaluateRpeAutoregulationOnServer(payload ?? {}), { headers });
+      }
       if (isSessionCalories) {
         const { workout, athleteWeightKg } = payload ?? {};
         const detail = calculateCompletedRoutineCalories(workout, athleteWeightKg);
@@ -151,6 +157,7 @@ export default {
         timezoneOffsetMinutes,
       }), { headers });
     } catch {
+      if (isAutoregulation) return Response.json({ success: false, error: 'Solicitud de serie inválida.' }, { status: 400, headers });
       const error = isSessionCalories
         ? { success: false, error: 'No se pudieron calcular las calorías de la sesión.', caloriesBurned: 0 }
         : { success: false, error: 'No se pudo procesar el reporte de calorías.' };

@@ -1156,7 +1156,7 @@ export async function askCoachAI(params: AskCoachAIParams): Promise<CoachChatApi
   let idToken = tokenResult.token;
   let serializedBody = '';
   try {
-    serializedBody = JSON.stringify({
+    serializedBody = JSON.stringify(import.meta.env?.MODE === 'cloudflare-preview' ? { message: params.message } : {
       athleteId: params.athleteId,
       message: params.message,
       intent: params.intent,

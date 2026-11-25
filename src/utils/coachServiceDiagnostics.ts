@@ -47,6 +47,7 @@ export async function checkCoachServiceStatus(athleteId: string): Promise<CoachS
     success?: boolean;
     athleteAuthorized?: boolean;
     geminiConfigured?: boolean;
+    provider?: string;
     readyForLiveRequest?: boolean;
     model?: string;
     message?: string;
@@ -72,6 +73,15 @@ export async function checkCoachServiceStatus(athleteId: string): Promise<CoachS
       status: 'forbidden',
       message: data.message || 'Tu cuenta todavía no está vinculada correctamente con este perfil de atleta.',
       readyForLiveRequest: false,
+    };
+  }
+  if (data.provider === 'workers-ai') {
+    const ready = data.readyForLiveRequest === true;
+    return {
+      status: ready ? 'ready' : 'server_unavailable',
+      message: ready ? 'Sesión verificada. Puedes enviar una pregunta al Coach.' : 'La IA de Cloudflare no está disponible.',
+      model: data.model,
+      readyForLiveRequest: ready,
     };
   }
   if (!data.geminiConfigured) {

@@ -26,7 +26,7 @@ function respond(body: object, status = 200, retryAfter?: number) {
   return Response.json(body, { status, headers });
 }
 
-async function readMessage(request: Request) {
+async function readField(request: Request, field: string) {
   const reader = request.body?.getReader();
   if (!reader) return '';
   const decoder = new TextDecoder();
@@ -44,7 +44,7 @@ async function readMessage(request: Request) {
       data += decoder.decode(value, { stream: true });
     }
     const parsed = JSON.parse(data + decoder.decode());
-    return typeof parsed?.message === 'string' ? parsed.message.trim() : '';
+    return typeof parsed?.[field] === 'string' ? parsed[field].trim() : '';
   } catch {
     return '';
   } finally {
@@ -52,21 +52,30 @@ async function readMessage(request: Request) {
   }
 }
 
-export async function handlePreviewCoach(request: Request, env: PreviewCoachBindings) {
+export async function handlePreviewCoach(request: Request, env: PreviewCoachBindings, statusOnly = false) {
   const { AI, COACH_USER_LIMIT, COACH_TOTAL_LIMIT } = env;
   const unavailable = () => respond({
     success: false,
     error: 'La IA gratuita está temporalmente indisponible o alcanzó su cuota. Puedes seguir usando las consultas locales del Coach.',
   }, 503);
 
-  if (!AI || !COACH_USER_LIMIT || !COACH_TOTAL_LIMIT) return unavailable();
+
 
   try {
     const session = await initializePreviewSession(request, env.PREVIEW_FIREBASE_API_KEY);
     if (!session.ok) return session;
-    const { authUid } = await session.json() as { authUid: string };
+    const { authUid, athleteId } = await session.json() as { authUid: string; athleteId: string };
+    if (statusOnly) {
+      const requestedId = await readField(request, 'athleteId');
+      if (!requestedId) return respond({ success: false, error: 'Falta el perfil activo.' }, 400);
+      const athleteAuthorized = requestedId === athleteId;
+      const configured = Boolean(AI && COACH_USER_LIMIT && COACH_TOTAL_LIMIT);
+      return respond({ success: true, athleteAuthorized, provider: 'workers-ai', model,
+        readyForLiveRequest: athleteAuthorized && configured });
+    }
+    if (!AI || !COACH_USER_LIMIT || !COACH_TOTAL_LIMIT) return unavailable();
 
-    const message = await readMessage(request);
+    const message = await readField(request, 'message');
     if (!message || message.length > maxMessageChars) {
       return respond({ success: false, error: `Escribe una pregunta de hasta ${maxMessageChars} caracteres.` }, 400);
     }
