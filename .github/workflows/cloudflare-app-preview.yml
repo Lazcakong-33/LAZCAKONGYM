@@ -27,6 +27,16 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: node --test scripts/zero-cost-cloudflare-smoke.test.mjs scripts/zero-cost-guard.test.mjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify linked profiles with two local accounts
+        run: >-
+          npx --yes firebase-tools@15.37.0 emulators:exec
+          --config firebase.preview-emulators.json --only auth,firestore
+          --project lazcakong-zero-cost-test
+          "node scripts/check-linked-session.mjs"
       - run: npm run build -- --mode cloudflare-preview
       - run: npx --yes wrangler@4.168.0 deploy --dry-run --config wrangler.app-preview.jsonc
 
