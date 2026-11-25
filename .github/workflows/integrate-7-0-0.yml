@@ -18,16 +18,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Download and verify pinned package
+      - name: Verify uploaded package
         run: |
           set -euo pipefail
-          curl --fail --location --max-time 90 --proto '=https' -o /tmp/incremental.zip 'https://ais-dev-56i2tt63sua7ovhyxwpgjs-888570249716.us-east1.run.app/LAZCAKONG_GYM_7.0.0_OTA_INCREMENTAL.zip'
+          cp LAZCAKONG_GYM_7.0.0_OTA_INCREMENTAL.zip /tmp/incremental.zip
           echo '89eeeeabe87e7194d0e5a086a1187c87f9bf63649e4d40175d50b748aea81ff8  /tmp/incremental.zip' | sha256sum -c -
           unzip -tq /tmp/incremental.zip
           unzip -q /tmp/incremental.zip -d /tmp/incremental
           (cd /tmp/incremental && sha256sum -c SHA256SUMS.txt)
           test "$(find /tmp/incremental/payload -type f | wc -l)" -eq 33
           cp -a /tmp/incremental/payload/. .
+          git diff --quiet -- firestore.rules firestore.preview.rules cloudflare/ wrangler.jsonc wrangler.app-preview.jsonc public/exercise-library/ src/data/ .github/workflows/cloudflare-app-preview.yml
           git add -A
           git diff --cached --binary > /tmp/integration.patch
           test -s /tmp/integration.patch
