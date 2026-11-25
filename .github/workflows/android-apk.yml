@@ -27,7 +27,7 @@ on:
         default: ''
         type: string
   push:
-    branches: [ "main", "master", "dev", "ci/**" ]
+    branches: [ "main", "master", "dev", "ci/**", "release/7.0.0-ota" ]
   pull_request:
     branches: [ "main", "master", "dev", "ci/**" ]
 
@@ -75,7 +75,8 @@ jobs:
         env:
           VITE_API_BASE_URL: https://lazcakongym.ai.studio
           VITE_GOOGLE_WEB_CLIENT_ID: 13537846485-8j7931cki5gtlpq2eklsru35765sv3pq.apps.googleusercontent.com
-          VITE_OTA_CHANNEL: development
+          VITE_APP_VERSION: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && '7.0.0' || inputs.version_name || '' }}
+          VITE_OTA_CHANNEL: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && 'staging' || 'development' }}
           VITE_OTA_PRODUCTION_ENABLED: 'false'
         run: npm run build
 
@@ -137,7 +138,7 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build Debug APK (Default Testing Build)
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_type == 'debug' }}
+        if: ${{ github.ref != 'refs/heads/release/7.0.0-ota' && (github.event_name != 'workflow_dispatch' || inputs.build_type == 'debug') }}
         working-directory: android
         env:
           ANDROID_DEBUG_KEYSTORE_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
@@ -176,15 +177,15 @@ jobs:
           done
 
       - name: Decode Existing Release Keystore & Build Signed Release APK
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_type == 'release' }}
+        if: ${{ github.ref == 'refs/heads/release/7.0.0-ota' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'release') }}
         working-directory: android
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           LAZCAKONG_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           LAZCAKONG_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           LAZCAKONG_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          LAZCAKONG_VERSION_CODE: ${{ inputs.version_code }}
-          LAZCAKONG_VERSION_NAME: ${{ inputs.version_name }}
+          LAZCAKONG_VERSION_CODE: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && '70000' || inputs.version_code }}
+          LAZCAKONG_VERSION_NAME: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && '7.0.0' || inputs.version_name }}
         run: |
           set -euo pipefail
           if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ] || [ -z "${LAZCAKONG_KEYSTORE_PASSWORD:-}" ] || [ -z "${LAZCAKONG_KEY_ALIAS:-}" ] || [ -z "${LAZCAKONG_KEY_PASSWORD:-}" ]; then
@@ -201,7 +202,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts-apk
-          if [ "${{ inputs.build_type }}" = "release" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "$GITHUB_REF" = "refs/heads/release/7.0.0-ota" ] || { [ "${{ inputs.build_type }}" = "release" ] && [ "${{ github.event_name }}" = "workflow_dispatch" ]; }; then
             APK_SRC=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           else
             APK_SRC=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -n 1)
@@ -222,7 +223,7 @@ jobs:
       - name: Upload APK as Downloadable Artifact (No Auto-Publish)
         uses: actions/upload-artifact@v4
         with:
-          name: lazcakong-gym-apk-${{ github.event_name == 'workflow_dispatch' && inputs.build_type || 'debug' }}
+          name: lazcakong-gym-apk-${{ github.ref == 'refs/heads/release/7.0.0-ota' && 'release' || github.event_name == 'workflow_dispatch' && inputs.build_type || 'debug' }}
           path: artifacts-apk/
           retention-days: 14
 
