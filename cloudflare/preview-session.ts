@@ -23,16 +23,19 @@ export async function initializePreviewSession(
 
   // The project claims only route the request. Google validates the token before use.
   let uid: string;
+  let signInProvider: 'password' | 'google.com';
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return unauthorized();
     const claims = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const provider = claims.firebase?.sign_in_provider;
     if (
       claims.aud !== projectId || claims.iss !== issuer ||
-      claims.firebase?.sign_in_provider !== 'password' ||
+      (provider !== 'password' && provider !== 'google.com') ||
       typeof claims.sub !== 'string' || !/^[\w-]{1,128}$/.test(claims.sub)
     ) return unauthorized();
     uid = claims.sub;
+    signInProvider = provider;
   } catch {
     return unauthorized();
   }
@@ -55,6 +58,7 @@ export async function initializePreviewSession(
     };
     const user = users?.[0];
     if (user?.localId !== uid || user.disabled) return unauthorized();
+    if (signInProvider === 'google.com' && user.emailVerified !== true) return unauthorized();
 
     // The Worker returns synthetic identity metadata. The web client syncs
     // training records separately through the isolated Firestore rules.
@@ -63,7 +67,7 @@ export async function initializePreviewSession(
       athleteId: uid,
       authUid: uid,
       isAdmin: false,
-      signInProvider: 'password',
+      signInProvider,
       emailVerified: user.emailVerified === true,
       adminRequiresGoogleSignIn: false,
       claimsUpdated: false,
