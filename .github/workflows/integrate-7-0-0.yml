@@ -2,7 +2,7 @@ name: Validate and integrate 7.0.0 staging package
 on:
   push:
     branches: ['release/7.0.0-ota']
-    paths: ['.github/workflows/integrate-7-0-0.yml']
+    paths: ['.github/workflows/integrate-7-0-0.yml', 'src/components/CoachChatModal.tsx']
   workflow_dispatch:
 permissions:
   contents: read
