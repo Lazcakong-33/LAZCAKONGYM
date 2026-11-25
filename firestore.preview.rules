@@ -6,17 +6,26 @@ service cloud.firestore {
         return request.auth != null && request.auth.uid == athleteId;
       }
 
+      function isLinkedOwner() {
+        return request.auth != null && resource.data.authUid == request.auth.uid;
+      }
+
       function validPreviewDocument() {
         let data = request.resource.data;
         return data.get('id', athleteId) == athleteId
           && !data.keys().hasAny([
-            'authUid', 'isAdmin', 'pin', 'migrationStatus',
+            'isAdmin', 'pin', 'migrationStatus',
             'legacyPinPurged', 'serverIdentityVerified'
           ]);
       }
 
-      allow get: if isPreviewOwner();
-      allow create, update: if isPreviewOwner() && validPreviewDocument();
+      allow get: if isLinkedOwner() || (isPreviewOwner() && (resource == null || !resource.data.keys().hasAny(['authUid'])));
+      allow list: if isLinkedOwner() && request.query.limit <= 2;
+      allow create: if isPreviewOwner() && validPreviewDocument()
+        && !request.resource.data.keys().hasAny(['authUid']);
+      allow update: if (isLinkedOwner() || (isPreviewOwner() && !resource.data.keys().hasAny(['authUid'])))
+        && validPreviewDocument()
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authUid']);
     }
   }
 }
