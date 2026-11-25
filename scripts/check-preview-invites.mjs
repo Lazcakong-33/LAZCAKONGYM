@@ -10,10 +10,10 @@ const env = await initializeTestEnvironment({ projectId: project, firestore: { r
 const adminEmail = 'kmiloko19@gmail.com';
 
 // The emulator accepts unsigned fixtures only on loopback.
-function fixture(email, provider = 'google.com') {
+function fixture(email, provider = 'google.com', verified = true) {
   const now = Math.floor(Date.now()/1000);
   const claims = { aud:project, iss:'https://securetoken.google.com/'+project, sub:'fixture', user_id:'fixture',
-    email_verified:true,email,iat:now,exp:now+3600,auth_time:now,firebase:{sign_in_provider:provider,identities:{}} };
+    email_verified:verified,email,iat:now,exp:now+3600,auth_time:now,firebase:{sign_in_provider:provider,identities:{}} };
   return Buffer.from('{"alg":"none","typ":"JWT"}').toString('base64url') + '.' + Buffer.from(JSON.stringify(claims)).toString('base64url') + '.';
 }
 const admin = fixture(adminEmail);
@@ -29,6 +29,12 @@ try {
   assert.equal((await call('GET','',regular)).status,403);
   assert.equal((await call('POST','',regular,{})).status,403);
   assert.equal((await call('GET','',fixture(adminEmail,'password'))).status,403);
+  assert.equal((await call('GET','',fixture(adminEmail,'google.com',false))).status,403);
+  assert.equal((await call('GET','','invalid token')).status,401);
+  assert.equal((await call('POST','/batch',admin,{count:0})).status,400);
+  assert.equal((await call('POST','/batch',admin,{count:51})).status,400);
+  assert.equal((await call('POST','/batch',admin,{count:1.5})).status,400);
+  assert.equal((await call('POST','/batch',regular,{count:2})).status,403);
   const single = await call('POST','',admin,{note:'fixture'});
   assert.equal(single.status,201);
   const {invite} = await single.json();
