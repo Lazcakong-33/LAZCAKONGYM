@@ -38,6 +38,37 @@ async function findLinkedAthlete(
   return id;
 }
 
+async function ensurePreviewAthlete(
+  uid: string,
+  token: string,
+  requestFirebase: typeof fetch
+): Promise<void> {
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/athletes/${uid}`;
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const existing = await requestFirebase(url, { headers, signal: AbortSignal.timeout(4000) });
+  if (existing.ok) return;
+  if (existing.status !== 404) throw new Error('Preview athlete could not be read');
+
+  const created = await requestFirebase(`${url}?currentDocument.exists=false`, {
+    method: 'PATCH',
+    headers,
+    signal: AbortSignal.timeout(4000),
+    body: JSON.stringify({
+      fields: {
+        id: { stringValue: uid },
+        name: { stringValue: 'Atleta de prueba' },
+      },
+    }),
+  });
+  if (created.ok) return;
+  // Concurrent sign-ins can create the same document. Verify the winner without overwriting it.
+  if (created.status === 409 || created.status === 412) {
+    const winner = await requestFirebase(url, { headers, signal: AbortSignal.timeout(4000) });
+    if (winner.ok) return;
+  }
+  throw new Error('Preview athlete could not be initialized');
+}
+
 function sessionResponse(body: object, status = 200) {
   return Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 }
@@ -102,6 +133,7 @@ export async function initializePreviewSession(
     if (resolveLinkedAthlete && !linkedAthleteId) {
       return sessionResponse({ success: false, error: 'La cuenta de prueba no tiene un perfil vinculado.' }, 403);
     }
+    if (!resolveLinkedAthlete) await ensurePreviewAthlete(uid, token, requestFirebase);
     const athleteId = linkedAthleteId ?? uid;
     return sessionResponse({
       success: true,
