@@ -36,9 +36,6 @@ jobs:
           p.write_text(s.replace("import.meta.env.MODE === 'cloudflare-preview'", "import.meta.env?.MODE === 'cloudflare-preview'"))
           PY
           git diff --quiet -- firestore.rules firestore.preview.rules cloudflare/ wrangler.jsonc wrangler.app-preview.jsonc public/exercise-library/ src/data/ .github/workflows/cloudflare-app-preview.yml
-          git add -A
-          git diff --cached --binary > /tmp/integration.patch
-          test -s /tmp/integration.patch
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -59,6 +56,14 @@ jobs:
             npx tsx "src/server/__tests__/$suite.ts"
           done
           node --test scripts/zero-cost-guard.test.mjs
+      - name: Prepare verified source patch without workflow changes
+        run: |
+          set -euo pipefail
+          git restore --source=HEAD -- .github/workflows/android-apk.yml
+          git add -A
+          git diff --cached --quiet -- .github/workflows/
+          git diff --cached --binary > /tmp/integration.patch
+          test -s /tmp/integration.patch
       - uses: actions/upload-artifact@v4
         with:
           name: verified-integration-patch
@@ -83,6 +88,7 @@ jobs:
           test "$(git ls-remote origin refs/heads/migration/zero-cost | cut -f1)" = '063c0015fd4f95755729055a1708a6fc01c45383'
           test "$(git ls-remote origin refs/heads/release/7.0.0-ota | cut -f1)" = "$GITHUB_SHA"
           git apply --index /tmp/verified/integration.patch
+          git diff --cached --quiet -- .github/workflows/
           git diff --cached --quiet -- firestore.rules firestore.preview.rules cloudflare/ wrangler.jsonc wrangler.app-preview.jsonc public/exercise-library/ src/data/ .github/workflows/cloudflare-app-preview.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
