@@ -42,8 +42,8 @@ function pwaHeadersPlugin(): Plugin {
           res.statusCode = 200;
           res.end(
             JSON.stringify({
-              version: '6.4.0',
-              buildId: '6.4.0-elite-pwa',
+              version: '7.0.0',
+              buildId: '7.0.0-ota-release',
               buildDate: new Date().toISOString(),
             })
           );

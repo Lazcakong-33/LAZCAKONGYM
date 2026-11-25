@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { AuthProvider } from './components/AuthProvider';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import {
   APP_VERSION,
   APP_BUILD_ID,
@@ -25,6 +26,25 @@ try {
     window.history.replaceState({}, '', newRelativePath);
   }
 } catch {}
+
+// Recover cleanly from stale dynamic import chunks after deploy without wiping athlete data
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  try {
+    const safety = getAppUpdateSafetyStatus();
+    if (!safety.canUpdateSafely) {
+      window.dispatchEvent(new CustomEvent('app-update-deferred', { detail: safety }));
+      window.dispatchEvent(new CustomEvent('app-update-available'));
+      return;
+    }
+    const guardKey = 'lazcakon_preload_reload_at';
+    const lastAttempt = Number(sessionStorage.getItem(guardKey) || '0');
+    if (Date.now() - lastAttempt > 15_000) {
+      sessionStorage.setItem(guardKey, String(Date.now()));
+      window.location.reload();
+    }
+  } catch {}
+});
 
 // Controlled version tracking without aggressive global CacheStorage destruction
 try {
@@ -114,7 +134,9 @@ if (runtimePlatform.hasServiceWorkerSupport && 'serviceWorker' in navigator) {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <AuthProvider>
-    <App />
-  </AuthProvider>
+  <ErrorBoundary>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </ErrorBoundary>
 );

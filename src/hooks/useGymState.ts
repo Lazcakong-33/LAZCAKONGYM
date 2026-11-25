@@ -355,7 +355,14 @@ export const sanitizeActiveSessionRdlRest = (
 };
 
 export function useGymState() {
-  const { user: authUser, loading: authLoading, isGoogleVerifiedSession, refreshAuthSession } = useAuth();
+  const {
+    user: authUser,
+    loading: authLoading,
+    isGoogleVerifiedSession,
+    redirectError,
+    clearRedirectError,
+    refreshAuthSession,
+  } = useAuth();
   const sessionInitializedUidRef = useRef<string | null>(null);
   const sessionServerValidatedRef = useRef<boolean>(false);
   const sessionValidationInFlightUidRef = useRef<string | null>(null);
@@ -377,6 +384,13 @@ export function useGymState() {
   const [sessionBootstrapError, setSessionBootstrapError] = useState<string | null>(null);
   const [authStatusNotice, setAuthStatusNotice] = useState<string | null>(null);
   const [bootstrapRetryNonce, setBootstrapRetryNonce] = useState<number>(0);
+
+  useEffect(() => {
+    if (redirectError) {
+      setAuthStatusNotice(redirectError);
+      clearRedirectError();
+    }
+  }, [redirectError, clearRedirectError]);
 
   // Profiles (no plaintext PINs or hardcoded Admin flags)
   const [profiles, setProfiles] = useState<Profile[]>(() => {
@@ -612,7 +626,18 @@ export function useGymState() {
           }
         }
 
-        const idToken = await currentUser.getIdToken();
+        let idTokenTimer: ReturnType<typeof setTimeout> | null = null;
+        const idToken = await Promise.race([
+          currentUser.getIdToken(),
+          new Promise<string>((_, reject) => {
+            idTokenTimer = setTimeout(
+              () => reject(new Error('Tiempo de espera agotado verificando tu sesión.')),
+              3500
+            );
+          }),
+        ]).finally(() => {
+          if (idTokenTimer !== null) clearTimeout(idTokenTimer);
+        });
         if (!isStillActiveForUser(currentUser.uid)) return;
 
         const hintAthleteId =
@@ -4018,6 +4043,7 @@ export function useGymState() {
       setAdminRequiresGoogleSignIn(Boolean(payload.adminRequiresGoogleSignIn));
       setSessionAthleteId(payload.athleteId);
       sessionInitializedUidRef.current = payload.uid;
+      sessionServerValidatedRef.current = true;
       if (effectiveAdmin) {
         adminRosterHydratedUidRef.current = null;
       }
@@ -4142,6 +4168,7 @@ export function useGymState() {
         const idToken = await cred.user.getIdToken();
         const sessionRes = await safeApiFetchJson<Record<string, any>>('/api/auth/session-init', {
           method: 'POST',
+          timeoutMs: 12_000,
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${idToken}`,
@@ -4237,6 +4264,7 @@ export function useGymState() {
       const idToken = await cred.user.getIdToken();
       const res = await safeApiFetchJson<Record<string, any>>('/api/auth/session-init', {
         method: 'POST',
+        timeoutMs: 12_000,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${idToken}`,
@@ -4292,6 +4320,12 @@ export function useGymState() {
     } catch (err: any) {
       const code = String(err?.code || '');
       const opLabel = getGoogleAuthOperationLabel();
+      if (code === 'auth/redirect-initiated') {
+        return {
+          success: false,
+          message: 'Redirigiendo a Google para completar el inicio de sesión seguro…',
+        };
+      }
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
         return {
           success: false,
@@ -4572,6 +4606,12 @@ export function useGymState() {
           await signOut(auth).catch(() => {});
         }
         const code = String(err?.code || '');
+        if (code === 'auth/redirect-initiated') {
+          return {
+            success: false,
+            message: 'Redirigiendo a Google para completar el registro seguro…',
+          };
+        }
         if (code === 'auth/popup-closed-by-user') {
           return { success: false, message: 'Registro con Google cancelado.' };
         }

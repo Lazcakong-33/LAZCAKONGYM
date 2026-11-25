@@ -296,8 +296,6 @@ export function subscribeAthletesFromCloud(
           doc(db, 'athletes', targetId),
           (snap) => {
             if (!snap.exists()) {
-              // A new preview account has no training document until its first save.
-              // Its absence is not a deletion signal in the isolated project.
               onUpdate([], new Set(firebaseConfig.projectId === 'lazcakong-zero-cost-test' ? [] : [targetId]));
               return;
             }
@@ -673,29 +671,46 @@ export async function linkLegacyProfileWithServer(payload: {
   }
 }
 
-export async function createSingleUseInvite(
+export async function createSingleUseInviteDetailed(
   createdBy: string,
   note?: string
-): Promise<InviteLink | null> {
+): Promise<{ success: boolean; invite: InviteLink | null; error?: string }> {
   try {
     const headers = await getBearerAuthHeaders();
     const result = await safeApiFetchJson<{ success?: boolean; invite?: InviteLink; error?: string }>(
       '/api/admin/invites',
       {
         method: 'POST',
+        timeoutMs: 12_000,
         headers,
         body: JSON.stringify({ createdBy, note }),
       }
     );
     const data = result.data;
-    if (!result.ok || !result.isJson || !data?.success) {
-      throw new Error(result.error || data?.error || 'No autorizado para generar invitaciones.');
+    if (!result.ok || !result.isJson || !data?.success || !data.invite) {
+      return {
+        success: false,
+        invite: null,
+        error: data?.error || result.error || 'No autorizado para generar invitaciones.',
+      };
     }
-    return data.invite as InviteLink;
-  } catch (err) {
+    return { success: true, invite: data.invite };
+  } catch (err: any) {
     console.warn('[createSingleUseInvite error]:', err);
-    return null;
+    return {
+      success: false,
+      invite: null,
+      error: err?.message || 'Error de conexión generando invitación.',
+    };
   }
+}
+
+export async function createSingleUseInvite(
+  createdBy: string,
+  note?: string
+): Promise<InviteLink | null> {
+  const res = await createSingleUseInviteDetailed(createdBy, note);
+  return res.invite;
 }
 
 export async function generateBatchInviteTokens(
@@ -711,6 +726,7 @@ export async function generateBatchInviteTokens(
       error?: string;
     }>('/api/admin/invites/batch', {
       method: 'POST',
+      timeoutMs: 15_000,
       headers,
       body: JSON.stringify({ count, createdBy }),
     });
@@ -719,7 +735,7 @@ export async function generateBatchInviteTokens(
       return {
         success: false,
         tokens: [],
-        message: result.error || data?.error || 'Error generando lote de invitaciones.',
+        message: data?.error || result.error || 'Error generando lote de invitaciones.',
       };
     }
     return {
@@ -736,55 +752,113 @@ export async function generateBatchInviteTokens(
   }
 }
 
-export async function revokeInviteToken(token: string): Promise<boolean> {
+export async function revokeInviteTokenDetailed(
+  token: string
+): Promise<{ success: boolean; error?: string }> {
   try {
     const headers = await getBearerAuthHeaders();
-    const resolvedInviteUrl = resolveApiUrl(`/api/admin/invites/${encodeURIComponent(token)}`);
-    const res = await fetch(resolvedInviteUrl, {
-      method: 'DELETE',
-      headers,
-      credentials: resolvedInviteUrl.startsWith('/') ? 'same-origin' : 'omit',
-    });
-    return res.ok;
-  } catch (err) {
+    const result = await safeApiFetchJson<{ success?: boolean; error?: string }>(
+      `/api/admin/invites/${encodeURIComponent(token)}`,
+      {
+        method: 'DELETE',
+        timeoutMs: 12_000,
+        headers,
+      }
+    );
+    if (!result.ok || !result.isJson || !result.data?.success) {
+      return {
+        success: false,
+        error: result.data?.error || result.error || 'No se pudo revocar la invitación.',
+      };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.warn('[revokeInviteToken error]:', err);
-    return false;
+    return {
+      success: false,
+      error: err?.message || 'Error de conexión revocando invitación.',
+    };
+  }
+}
+
+export async function revokeInviteToken(token: string): Promise<boolean> {
+  const res = await revokeInviteTokenDetailed(token);
+  return res.success;
+}
+
+export async function fetchInvitesAdminResult(): Promise<{
+  success: boolean;
+  invites: InviteLink[];
+  error?: string;
+}> {
+  try {
+    const headers = await getBearerAuthHeaders();
+    const result = await safeApiFetchJson<{
+      success?: boolean;
+      invites?: InviteLink[];
+      error?: string;
+    }>('/api/admin/invites', {
+      method: 'GET',
+      timeoutMs: 12_000,
+      headers,
+    });
+    if (!result.ok || !result.isJson) {
+      return {
+        success: false,
+        invites: [],
+        error:
+          result.data?.error ||
+          result.error ||
+          'No se pudieron cargar las invitaciones desde el servidor.',
+      };
+    }
+    return {
+      success: true,
+      invites: Array.isArray(result.data?.invites) ? result.data.invites : [],
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      invites: [],
+      error: err?.message || 'Error de conexión cargando invitaciones.',
+    };
   }
 }
 
 export async function fetchInvitesAdmin(): Promise<InviteLink[]> {
-  try {
-    const headers = await getBearerAuthHeaders();
-    const result = await safeApiFetchJson<{ invites?: InviteLink[] }>('/api/admin/invites', {
-      method: 'GET',
-      headers,
-    });
-    if (!result.ok || !result.isJson) return [];
-    return Array.isArray(result.data?.invites) ? result.data.invites : [];
-  } catch {
-    return [];
-  }
+  const res = await fetchInvitesAdminResult();
+  return res.invites;
 }
 
 /**
  * Poll Admin-only /api/admin/invites for Invite Management UI (strictly server-verified Admin only).
  */
-export function subscribeToInvites(onUpdate: (invites: InviteLink[]) => void): () => void {
+export function subscribeToInvites(
+  onUpdate: (invites: InviteLink[]) => void,
+  onError?: (error: string | null) => void
+): () => void {
   if (!auth.currentUser) {
     onUpdate([]);
+    onError?.('Debes iniciar sesión como Administrador para consultar invitaciones.');
     return () => {};
   }
 
   let cancelled = false;
   const pull = async () => {
-    const list = await fetchInvitesAdmin();
-    if (!cancelled) {
-      onUpdate(list);
+    const res = await fetchInvitesAdminResult();
+    if (cancelled) return;
+    if (res.success) {
+      onError?.(null);
+      onUpdate(res.invites);
+    } else {
+      onError?.(res.error || 'Error cargando invitaciones.');
     }
   };
 
-  pull();
-  const timer = setInterval(pull, 15000);
+  void pull();
+  const timer = setInterval(() => {
+    void pull();
+  }, 15000);
   return () => {
     cancelled = true;
     clearInterval(timer);

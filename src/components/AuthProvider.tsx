@@ -1,19 +1,22 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { auth, db, firebaseConfig } from '../firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { onAuthStateChanged, onIdTokenChanged, User } from 'firebase/auth';
+import { getRedirectResult, onAuthStateChanged, onIdTokenChanged, User } from 'firebase/auth';
 import { extractGoogleVerifiedState } from '../utils/adminAuthCriterion';
 import { markStartupTiming, setStartupFlag } from '../utils/startupPerf';
 
 export { extractGoogleVerifiedState };
 
 const AUTH_TOKEN_CLAIMS_SOFT_TIMEOUT_MS = 1200;
+const AUTH_INIT_MAX_WAIT_MS = 3500;
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   isGoogleVerifiedSession: boolean;
   signInProvider: string | null;
+  redirectError: string | null;
+  clearRedirectError: () => void;
   refreshAuthSession: (
     targetUser?: User | null,
     forceRefresh?: boolean
@@ -25,6 +28,8 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   isGoogleVerifiedSession: false,
   signInProvider: null,
+  redirectError: null,
+  clearRedirectError: () => {},
   refreshAuthSession: async () => ({ isGoogleVerified: false, signInProvider: null }),
 });
 
@@ -33,8 +38,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isGoogleVerifiedSession, setIsGoogleVerifiedSession] = useState(false);
   const [signInProvider, setSignInProvider] = useState<string | null>(null);
+  const [redirectError, setRedirectError] = useState<string | null>(null);
   const latestAuthUidRef = useRef<string | null>(null);
   const isMountedRef = useRef(true);
+
+  const clearRedirectError = useCallback(() => {
+    setRedirectError(null);
+  }, []);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -102,8 +112,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let active = true;
+
+    // Watchdog: never stall forever on "Cargando sesión…" if Firebase IndexedDB hangs on mobile
+    const authInitWatchdog = setTimeout(() => {
+      if (active) {
+        setStartupFlag('authInitWatchdogTriggered', true);
+        setLoading(false);
+      }
+    }, AUTH_INIT_MAX_WAIT_MS);
+
+    // Complete mobile/PWA redirect flow cleanly if returning from signInWithRedirect
+    void Promise.resolve()
+      .then(() => getRedirectResult(auth))
+      .catch((err: any) => {
+        if (!active) return;
+        const code = String(err?.code || '');
+        if (code && code !== 'auth/null-user') {
+          const rawMsg = String(err?.message || err || 'Error completando acceso con Google.');
+          setRedirectError(
+            code === 'auth/unauthorized-domain'
+              ? `Este dominio no está autorizado en Firebase Authentication (${code}).`
+              : `No se pudo completar el inicio de sesión con Google (${code}): ${rawMsg}`
+          );
+        }
+      });
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (!active) return;
+      clearTimeout(authInitWatchdog);
       markStartupTiming('firebaseAuthRestoreMs');
       latestAuthUidRef.current = currentUser?.uid ?? null;
       setUser(currentUser);
@@ -169,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       active = false;
+      clearTimeout(authInitWatchdog);
       unsubscribeAuth();
       unsubscribeIdToken();
     };
@@ -176,7 +213,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, isGoogleVerifiedSession, signInProvider, refreshAuthSession }}
+      value={{
+        user,
+        loading,
+        isGoogleVerifiedSession,
+        signInProvider,
+        redirectError,
+        clearRedirectError,
+        refreshAuthSession,
+      }}
     >
       {children}
     </AuthContext.Provider>

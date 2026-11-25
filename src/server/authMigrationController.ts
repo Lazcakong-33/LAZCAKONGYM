@@ -22,6 +22,10 @@ import {
   queryCollectionByFieldWithUserToken,
   getDocumentWithUserToken,
   patchDocumentWithUserToken,
+  listCollectionWithUserToken,
+  putDocumentWithUserToken,
+  deleteDocumentWithUserToken,
+  batchSetDocumentsWithUserToken,
 } from './firebaseAdminServer.ts';
 import type { AuthenticatedUser } from './firebaseAdminServer.ts';
 
@@ -900,6 +904,15 @@ export async function handleVerifyInvite(
     });
   } catch (error: any) {
     console.error('[handleVerifyInvite error]:', error);
+    if (isFirestorePermissionDeniedError(error)) {
+      return res.status(503).json({
+        success: false,
+        valid: false,
+        status: 'not_found',
+        error:
+          'El servicio de verificación de invitaciones requiere credenciales de servidor (FIREBASE_SERVICE_ACCOUNT_JSON) configuradas.',
+      });
+    }
     return res.status(500).json({ success: false, valid: false, status: 'not_found', error: 'Error verificando invitación.' });
   }
 }
@@ -1050,6 +1063,13 @@ export async function handleRegisterWithInvite(
     });
   } catch (error: any) {
     console.error('[handleRegisterWithInvite error]:', error);
+    if (isFirestorePermissionDeniedError(error)) {
+      return res.status(503).json({
+        success: false,
+        error:
+          'El registro automático por invitación requiere credenciales de servidor (FIREBASE_SERVICE_ACCOUNT_JSON) configuradas.',
+      });
+    }
     return res.status(500).json({ success: false, error: 'Error creando cuenta con invitación.' });
   }
 }
@@ -1129,6 +1149,13 @@ export async function handleRedeemInvite(
     });
   } catch (error: any) {
     console.error('[handleRedeemInvite error]:', error);
+    if (isFirestorePermissionDeniedError(error)) {
+      return res.status(503).json({
+        success: false,
+        error:
+          'El canje de invitaciones requiere credenciales de servidor (FIREBASE_SERVICE_ACCOUNT_JSON) configuradas.',
+      });
+    }
     return res.status(500).json({ success: false, error: 'Error procesando canje de invitación.' });
   }
 }
@@ -1356,6 +1383,36 @@ function assertAuthorizedAdmin(req: Request, res: Response): AuthenticatedUser |
   return admin;
 }
 
+function shouldUseAdminUserTokenFastPath(
+  req: Request,
+  deps?: AuthControllerDeps
+): string | null {
+  const rawIdToken = (req as any).rawIdToken as string | undefined;
+  if (
+    !deps?.getAdminServices &&
+    rawIdToken &&
+    (!parseConfiguredServiceAccount() || adminFirestorePermissionDeniedDetected)
+  ) {
+    return rawIdToken;
+  }
+  return null;
+}
+
+async function listInvitesWithUserToken(res: Response, rawIdToken: string) {
+  const restRes = await listCollectionWithUserToken(rawIdToken, 'invites', 250);
+  if (!restRes.ok) {
+    return res.status(restRes.status === 403 ? 403 : 500).json({
+      success: false,
+      error: restRes.error || 'No se pudieron consultar las invitaciones en Firestore.',
+    });
+  }
+  const list = restRes.docs
+    .map((d) => d.data)
+    .filter((data) => Boolean(data && data.token));
+  list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  return res.status(200).json({ success: true, invites: list });
+}
+
 /**
  * GET /api/admin/invites
  */
@@ -1365,6 +1422,17 @@ export async function handleAdminListInvites(
   deps?: AuthControllerDeps
 ) {
   if (!assertAuthorizedAdmin(req, res)) return;
+  const rawIdToken = (req as any).rawIdToken as string | undefined;
+  const fastToken = shouldUseAdminUserTokenFastPath(req, deps);
+  if (fastToken) {
+    try {
+      return await listInvitesWithUserToken(res, fastToken);
+    } catch (err: any) {
+      console.error('[handleAdminListInvites REST error]:', err);
+      return res.status(500).json({ success: false, error: 'Error listando invitaciones.' });
+    }
+  }
+
   try {
     const resolveAdmin = deps?.getAdminServices || getAdminServices;
     const { db } = resolveAdmin();
@@ -1379,9 +1447,31 @@ export async function handleAdminListInvites(
     list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     return res.status(200).json({ success: true, invites: list });
   } catch (err: any) {
+    if (isFirestorePermissionDeniedError(err) && rawIdToken) {
+      adminFirestorePermissionDeniedDetected = true;
+      try {
+        return await listInvitesWithUserToken(res, rawIdToken);
+      } catch {}
+    }
     console.error('[handleAdminListInvites error]:', err);
     return res.status(500).json({ success: false, error: 'Error listando invitaciones.' });
   }
+}
+
+async function createInviteWithUserToken(
+  res: Response,
+  rawIdToken: string,
+  tokenHash: string,
+  inviteDoc: Record<string, any>
+) {
+  const restRes = await putDocumentWithUserToken(rawIdToken, 'invites', tokenHash, inviteDoc);
+  if (!restRes.ok) {
+    return res.status(restRes.status === 403 ? 403 : 500).json({
+      success: false,
+      error: restRes.error || 'No se pudo guardar la invitación en Firestore.',
+    });
+  }
+  return res.status(201).json({ success: true, invite: inviteDoc });
 }
 
 /**
@@ -1394,26 +1484,42 @@ export async function handleAdminCreateInvite(
 ) {
   const admin = assertAuthorizedAdmin(req, res);
   if (!admin) return;
+  const token = generateSecureInviteCode();
+  const createdBy = String(req.body?.createdBy || admin.email || 'Coach Admin').trim();
+  const note = String(req.body?.note || '').trim();
+  const inviteDoc = {
+    token,
+    createdAt: new Date().toISOString(),
+    createdBy,
+    ...(note ? { note } : {}),
+    used: false,
+    revoked: false,
+  };
+  const tokenHash = hashToken(token);
+  const rawIdToken = (req as any).rawIdToken as string | undefined;
+  const fastToken = shouldUseAdminUserTokenFastPath(req, deps);
+  if (fastToken) {
+    try {
+      return await createInviteWithUserToken(res, fastToken, tokenHash, inviteDoc);
+    } catch (err: any) {
+      console.error('[handleAdminCreateInvite REST error]:', err);
+      return res.status(500).json({ success: false, error: 'Error creando código de invitación.' });
+    }
+  }
+
   try {
     const resolveAdmin = deps?.getAdminServices || getAdminServices;
     const { db } = resolveAdmin();
-    const token = generateSecureInviteCode();
-    const createdBy = String(req.body?.createdBy || admin.email || 'Coach Admin').trim();
-    const note = String(req.body?.note || '').trim();
-    const inviteDoc = {
-      token,
-      createdAt: new Date().toISOString(),
-      createdBy,
-      ...(note ? { note } : {}),
-      used: false,
-      revoked: false,
-    };
-
-    const tokenHash = hashToken(token);
     await db.collection('invites').doc(tokenHash).set(inviteDoc);
 
     return res.status(201).json({ success: true, invite: inviteDoc });
   } catch (err: any) {
+    if (isFirestorePermissionDeniedError(err) && rawIdToken) {
+      adminFirestorePermissionDeniedDetected = true;
+      try {
+        return await createInviteWithUserToken(res, rawIdToken, tokenHash, inviteDoc);
+      } catch {}
+    }
     console.error('[handleAdminCreateInvite error]:', err);
     return res.status(500).json({ success: false, error: 'Error creando código de invitación.' });
   }
@@ -1429,33 +1535,59 @@ export async function handleAdminBatchCreateInvites(
 ) {
   const admin = assertAuthorizedAdmin(req, res);
   if (!admin) return;
+  const count = Math.min(50, Math.max(1, Number(req.body?.count || 50)));
+  const createdBy = String(req.body?.createdBy || admin.email || 'Coach Admin').trim();
+  const nowIso = new Date().toISOString();
+
+  const tokens: string[] = [];
+  const invites: Array<Record<string, any>> = [];
+  const items: Array<{ docId: string; data: Record<string, any> }> = [];
+
+  for (let i = 0; i < count; i++) {
+    const token = generateSecureInviteCode();
+    const inviteDoc = {
+      token,
+      createdAt: nowIso,
+      createdBy,
+      note: `Pase Beta Exclusivo #${i + 1}`,
+      used: false,
+      revoked: false,
+    };
+    tokens.push(token);
+    invites.push(inviteDoc);
+    items.push({ docId: hashToken(token), data: inviteDoc });
+  }
+
+  const rawIdToken = (req as any).rawIdToken as string | undefined;
+  const fastToken = shouldUseAdminUserTokenFastPath(req, deps);
+  if (fastToken) {
+    try {
+      const restRes = await batchSetDocumentsWithUserToken(fastToken, 'invites', items);
+      if (!restRes.ok) {
+        return res.status(restRes.status === 403 ? 403 : 500).json({
+          success: false,
+          error: restRes.error || 'Error creando lote de invitaciones en Firestore.',
+        });
+      }
+      return res.status(201).json({
+        success: true,
+        tokens,
+        invites,
+        message: `¡${count} códigos de invitación generados exitosamente!`,
+      });
+    } catch (err: any) {
+      console.error('[handleAdminBatchCreateInvites REST error]:', err);
+      return res.status(500).json({ success: false, error: 'Error creando lote de invitaciones.' });
+    }
+  }
+
   try {
     const resolveAdmin = deps?.getAdminServices || getAdminServices;
     const { db } = resolveAdmin();
-    const count = Math.min(50, Math.max(1, Number(req.body?.count || 50)));
-    const createdBy = String(req.body?.createdBy || admin.email || 'Coach Admin').trim();
-    const nowIso = new Date().toISOString();
-
     const batch = db.batch();
-    const tokens: string[] = [];
-    const invites: any[] = [];
-
-    for (let i = 0; i < count; i++) {
-      const token = generateSecureInviteCode();
-      const inviteDoc = {
-        token,
-        createdAt: nowIso,
-        createdBy,
-        note: `Pase Beta Exclusivo #${i + 1}`,
-        used: false,
-        revoked: false,
-      };
-      const ref = db.collection('invites').doc(hashToken(token));
-      batch.set(ref, inviteDoc);
-      tokens.push(token);
-      invites.push(inviteDoc);
+    for (const item of items) {
+      batch.set(db.collection('invites').doc(item.docId), item.data);
     }
-
     await batch.commit();
     return res.status(201).json({
       success: true,
@@ -1464,9 +1596,38 @@ export async function handleAdminBatchCreateInvites(
       message: `¡${count} códigos de invitación generados exitosamente!`,
     });
   } catch (err: any) {
+    if (isFirestorePermissionDeniedError(err) && rawIdToken) {
+      adminFirestorePermissionDeniedDetected = true;
+      try {
+        const restRes = await batchSetDocumentsWithUserToken(rawIdToken, 'invites', items);
+        if (restRes.ok) {
+          return res.status(201).json({
+            success: true,
+            tokens,
+            invites,
+            message: `¡${count} códigos de invitación generados exitosamente!`,
+          });
+        }
+      } catch {}
+    }
     console.error('[handleAdminBatchCreateInvites error]:', err);
     return res.status(500).json({ success: false, error: 'Error creando lote de invitaciones.' });
   }
+}
+
+async function revokeInviteWithUserToken(res: Response, rawIdToken: string, rawToken: string) {
+  const [hashedDel, rawDel] = await Promise.all([
+    deleteDocumentWithUserToken(rawIdToken, 'invites', hashToken(rawToken)),
+    deleteDocumentWithUserToken(rawIdToken, 'invites', rawToken),
+  ]);
+  if (!hashedDel.ok || !rawDel.ok) {
+    const status = hashedDel.status === 403 || rawDel.status === 403 ? 403 : 500;
+    return res.status(status).json({
+      success: false,
+      error: hashedDel.error || rawDel.error || 'No se pudo revocar la invitación.',
+    });
+  }
+  return res.status(200).json({ success: true });
 }
 
 /**
@@ -1482,18 +1643,85 @@ export async function handleAdminRevokeInvite(
   if (!rawToken) {
     return res.status(400).json({ success: false, error: 'Token requerido.' });
   }
+  const rawIdToken = (req as any).rawIdToken as string | undefined;
+  const fastToken = shouldUseAdminUserTokenFastPath(req, deps);
+  if (fastToken) {
+    try {
+      return await revokeInviteWithUserToken(res, fastToken, rawToken);
+    } catch (err: any) {
+      console.error('[handleAdminRevokeInvite REST error]:', err);
+      return res.status(500).json({ success: false, error: 'Error revocando invitación.' });
+    }
+  }
+
   try {
     const resolveAdmin = deps?.getAdminServices || getAdminServices;
     const { db } = resolveAdmin();
-    await Promise.allSettled([
+    await Promise.all([
       db.collection('invites').doc(hashToken(rawToken)).delete(),
       db.collection('invites').doc(rawToken).delete(),
     ]);
     return res.status(200).json({ success: true });
   } catch (err: any) {
+    if (isFirestorePermissionDeniedError(err) && rawIdToken) {
+      adminFirestorePermissionDeniedDetected = true;
+      try {
+        return await revokeInviteWithUserToken(res, rawIdToken, rawToken);
+      } catch {}
+    }
     console.error('[handleAdminRevokeInvite error]:', err);
     return res.status(500).json({ success: false, error: 'Error revocando invitación.' });
   }
+}
+
+async function deleteAthleteWithUserToken(
+  res: Response,
+  admin: AuthenticatedUser,
+  rawIdToken: string,
+  athleteId: string
+) {
+  const existing = await getDocumentWithUserToken(rawIdToken, 'athletes', athleteId);
+  if (!existing.ok) {
+    return res.status(existing.status === 403 ? 403 : 500).json({
+      success: false,
+      error: 'No se pudo verificar el perfil del atleta en Firestore.',
+    });
+  }
+  const targetData = existing.exists ? existing.data || {} : {};
+  if (
+    isAuthorizedAdminEmail(targetData.email) ||
+    targetData.authUid === admin.uid ||
+    athleteId === 'perfil_admin_master' ||
+    (admin.athleteId && athleteId === admin.athleteId)
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: 'La cuenta del Administrador Master no puede ser eliminada.',
+    });
+  }
+
+  const tombstoneRes = await putDocumentWithUserToken(rawIdToken, 'deleted_athletes', athleteId, {
+    athleteId,
+    authUid: targetData.authUid || null,
+    deletedAt: new Date().toISOString(),
+    deletedBy: admin.email || admin.uid,
+  });
+  if (!tombstoneRes.ok) {
+    return res.status(tombstoneRes.status === 403 ? 403 : 500).json({
+      success: false,
+      error: tombstoneRes.error || 'No se pudo registrar la baja del atleta.',
+    });
+  }
+
+  const deleteRes = await deleteDocumentWithUserToken(rawIdToken, 'athletes', athleteId);
+  if (!deleteRes.ok) {
+    return res.status(deleteRes.status === 403 ? 403 : 500).json({
+      success: false,
+      error: deleteRes.error || 'No se pudo eliminar el documento del atleta.',
+    });
+  }
+
+  return res.status(200).json({ success: true });
 }
 
 /**
@@ -1509,6 +1737,17 @@ export async function handleAdminDeleteAthlete(
   const athleteId = String(req.params?.athleteId || '').trim();
   if (!athleteId) {
     return res.status(400).json({ success: false, error: 'athleteId requerido.' });
+  }
+
+  const rawIdToken = (req as any).rawIdToken as string | undefined;
+  const fastToken = shouldUseAdminUserTokenFastPath(req, deps);
+  if (fastToken) {
+    try {
+      return await deleteAthleteWithUserToken(res, admin, fastToken, athleteId);
+    } catch (err: any) {
+      console.error('[handleAdminDeleteAthlete REST error]:', err);
+      return res.status(500).json({ success: false, error: 'Error eliminando perfil de atleta.' });
+    }
   }
 
   try {
@@ -1550,6 +1789,12 @@ export async function handleAdminDeleteAthlete(
 
     return res.status(200).json({ success: true });
   } catch (err: any) {
+    if (isFirestorePermissionDeniedError(err) && rawIdToken) {
+      adminFirestorePermissionDeniedDetected = true;
+      try {
+        return await deleteAthleteWithUserToken(res, admin, rawIdToken, athleteId);
+      } catch {}
+    }
     console.error('[handleAdminDeleteAthlete error]:', err);
     return res.status(500).json({ success: false, error: 'Error eliminando perfil de atleta.' });
   }

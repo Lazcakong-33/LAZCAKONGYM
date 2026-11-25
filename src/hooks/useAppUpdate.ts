@@ -6,37 +6,46 @@ import {
   getAppUpdateSafetyStatus,
 } from '../utils/updateApp';
 import { resolveApiUrl } from '../utils/apiUrl';
-import { detectRuntimePlatform } from '../utils/capacitorPlatform';
-
 import {
+  detectRuntimePlatform,
+  subscribeAppLifecycleResume,
+} from '../utils/capacitorPlatform';
+import {
+  clearJustInstalledOtaNotice,
+  compareSemver,
   DEFAULT_NATIVE_VERSION_CODE,
   downloadAndStageOtaUpdate,
+  evaluateOtaCompatibility,
+  evaluateOtaRetryEligibility,
   fetchOtaManifestFromServer,
+  getInstalledOtaRuntimeInfo,
+  OFFICIAL_RELEASE_APK_DOWNLOAD_URL,
+  readJustInstalledOtaNotice,
+  reportOtaTelemetry,
   resolveOtaChannel,
   validateOtaManifest,
   type OtaManifestPayload,
+  type OtaUrgency,
 } from '../utils/otaUpdateEngine';
 
 export function isVersionGreater(candidateVersion: string, currentVersion: string): boolean {
   if (!candidateVersion || !currentVersion) return false;
-  const parse = (v: string) =>
-    v
-      .replace(/^v/i, '')
-      .split('-')[0]
-      .split('.')
-      .map((n) => parseInt(n, 10) || 0);
-
-  const c = parse(candidateVersion);
-  const cur = parse(currentVersion);
-
-  for (let i = 0; i < Math.max(c.length, cur.length); i++) {
-    const num1 = c[i] || 0;
-    const num2 = cur[i] || 0;
-    if (num1 > num2) return true;
-    if (num1 < num2) return false;
-  }
-  return false;
+  return compareSemver(candidateVersion, currentVersion) > 0;
 }
+
+export const AUTO_UPDATE_CHECK_COOLDOWN_MS = 15 * 60 * 1000;
+export const BACKGROUND_UPDATE_POLL_INTERVAL_MS = 30 * 60 * 1000;
+const LAST_AUTO_CHECK_STORAGE_KEY = 'lazcakon_ota_last_auto_check_at';
+
+export type OtaStageStatus =
+  | 'idle'
+  | 'checking'
+  | 'downloading'
+  | 'ready_to_apply'
+  | 'deferred_workout'
+  | 'apk_required'
+  | 'installed'
+  | 'error';
 
 export interface AppUpdateState {
   hasUpdateAvailable: boolean;
@@ -45,29 +54,68 @@ export interface AppUpdateState {
   serverVersion: string | null;
   broadcastMessage: string | null;
   otaPendingManifest: OtaManifestPayload | null;
+  downloadProgress: number | null;
+  otaStageStatus: OtaStageStatus;
+  requiresApkUpdate: boolean;
+  apkDownloadUrl: string;
+  urgency: OtaUrgency;
+  justInstalledVersion: string | null;
+  otaError: string | null;
   triggerUpdate: () => Promise<void>;
   dismissUpdate: () => void;
+  dismissInstalledConfirmation: () => void;
   checkUpdatesNow: () => Promise<boolean>;
 }
 
 export function useAppUpdate(): AppUpdateState {
+  try {
+    if (!localStorage.getItem('lazcakon_installed_version')) {
+      localStorage.setItem('lazcakon_installed_version', APP_VERSION);
+    }
+    localStorage.setItem('lazcakon_installed_build_id', APP_BUILD_ID);
+    localStorage.setItem('lazcakon_app_version', APP_VERSION);
+  } catch {}
+
   const [hasUpdateAvailable, setHasUpdateAvailable] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [effectiveCurrentVersion, setEffectiveCurrentVersion] = useState<string>(APP_VERSION);
   const [serverVersion, setServerVersion] = useState<string | null>(null);
   const [broadcastMessage, setBroadcastMessage] = useState<string | null>(null);
   const [latestBroadcastId, setLatestBroadcastId] = useState<string | null>(null);
   const [otaPendingManifest, setOtaPendingManifest] = useState<OtaManifestPayload | null>(null);
-  // Multiple 25-second/visibility checks must never race to download or stage a bundle.
-  const isNativeOtaCheckRunning = useRef(false);
-  const lastAutomaticPollAt = useRef(0);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+  const [otaStageStatus, setOtaStageStatus] = useState<OtaStageStatus>('idle');
+  const [requiresApkUpdate, setRequiresApkUpdate] = useState<boolean>(false);
+  const [apkDownloadUrl, setApkDownloadUrl] = useState<string>(OFFICIAL_RELEASE_APK_DOWNLOAD_URL);
+  const [urgency, setUrgency] = useState<OtaUrgency>('optional');
+  const [otaError, setOtaError] = useState<string | null>(null);
+  const [justInstalledVersion, setJustInstalledVersion] = useState<string | null>(() => {
+    const notice = readJustInstalledOtaNotice();
+    return notice?.version || null;
+  });
+
+  const autoDownloadStartedForBuildRef = useRef<string | null>(null);
+  const telemetryReportedStatusRef = useRef<string | null>(null);
+  const lastAutoCheckAtRef = useRef<number>(0);
+
+  const dismissInstalledConfirmation = useCallback(() => {
+    clearJustInstalledOtaNotice();
+    setJustInstalledVersion(null);
+    if (otaStageStatus === 'installed') {
+      setOtaStageStatus('idle');
+    }
+  }, [otaStageStatus]);
 
   const dismissUpdate = useCallback(() => {
     try {
-      localStorage.setItem('lazcakon_installed_version', APP_VERSION);
+      localStorage.setItem('lazcakon_installed_version', effectiveCurrentVersion);
       localStorage.setItem('lazcakon_installed_build_id', APP_BUILD_ID);
       localStorage.setItem('lazcakongym_dismissed_update', APP_BUILD_ID);
       if (serverVersion) {
         localStorage.setItem('lazcakongym_dismissed_version', serverVersion);
+      }
+      if (otaPendingManifest?.buildId) {
+        localStorage.setItem('lazcakongym_dismissed_update', otaPendingManifest.buildId);
       }
       if (latestBroadcastId) {
         localStorage.setItem('lazcakongym_dismissed_update', latestBroadcastId);
@@ -77,82 +125,183 @@ export function useAppUpdate(): AppUpdateState {
     } catch {}
     setHasUpdateAvailable(false);
     window.dispatchEvent(new CustomEvent('app-update-dismissed'));
-  }, [latestBroadcastId, serverVersion]);
+  }, [effectiveCurrentVersion, latestBroadcastId, otaPendingManifest?.buildId, serverVersion]);
+
+  const runBackgroundDownload = useCallback(
+    async (
+      manifest: OtaManifestPayload,
+      runtimeWebVersion: string,
+      nativeVersionCode: number
+    ) => {
+      if (autoDownloadStartedForBuildRef.current === manifest.buildId) return;
+      const retryCheck = evaluateOtaRetryEligibility(manifest.buildId);
+      if (!retryCheck.eligible) {
+        setOtaStageStatus('error');
+        setOtaError(retryCheck.reason || null);
+        return;
+      }
+
+      autoDownloadStartedForBuildRef.current = manifest.buildId;
+      setOtaStageStatus('downloading');
+      setDownloadProgress(5);
+      setOtaError(null);
+
+      const result = await downloadAndStageOtaUpdate(manifest, {
+        currentWebVersion: runtimeWebVersion,
+        currentNativeVersionCode: nativeVersionCode,
+        applyImmediatelyWhenSafe: false,
+        onProgress: (pct) => {
+          setDownloadProgress(pct);
+        },
+      });
+
+      if (result.status === 'staged_for_background') {
+        setOtaPendingManifest(manifest);
+        setServerVersion(manifest.version);
+        setHasUpdateAvailable(true);
+        setDownloadProgress(100);
+        setOtaStageStatus('ready_to_apply');
+        void reportOtaTelemetry({
+          channel: manifest.channel,
+          installedVersion: runtimeWebVersion,
+          installedBuildId: APP_BUILD_ID,
+          nativeVersionCode,
+          targetVersion: manifest.version,
+          status: 'staged',
+        });
+      } else if (result.status === 'applied') {
+        setOtaPendingManifest(manifest);
+        setServerVersion(manifest.version);
+        setDownloadProgress(100);
+        setOtaStageStatus('ready_to_apply');
+        void reportOtaTelemetry({
+          channel: manifest.channel,
+          installedVersion: runtimeWebVersion,
+          installedBuildId: APP_BUILD_ID,
+          nativeVersionCode,
+          targetVersion: manifest.version,
+          status: 'staged',
+        });
+      } else if (result.status === 'deferred_unsafe') {
+        setOtaPendingManifest(manifest);
+        setServerVersion(manifest.version);
+        setHasUpdateAvailable(true);
+        setDownloadProgress(100);
+        setOtaStageStatus('deferred_workout');
+        void reportOtaTelemetry({
+          channel: manifest.channel,
+          installedVersion: runtimeWebVersion,
+          installedBuildId: APP_BUILD_ID,
+          nativeVersionCode,
+          targetVersion: manifest.version,
+          status: 'deferred_workout',
+        });
+      } else if (result.status === 'error' || result.status === 'blocked') {
+        autoDownloadStartedForBuildRef.current = null;
+        setDownloadProgress(null);
+        setOtaStageStatus('error');
+        setOtaError(result.reason || 'Error descargando actualización OTA.');
+        void reportOtaTelemetry({
+          channel: manifest.channel,
+          installedVersion: runtimeWebVersion,
+          installedBuildId: APP_BUILD_ID,
+          nativeVersionCode,
+          targetVersion: manifest.version,
+          status: 'error',
+          errorMessage: result.reason,
+        });
+      }
+    },
+    []
+  );
 
   const checkUpdatesNow = useCallback(async (): Promise<boolean> => {
     try {
       const { hasServiceWorkerSupport, isCapacitorNative } = detectRuntimePlatform();
 
-      // 0. Installed Android/iOS application: self-hosted OTA, no manual button.
-      // Our first-party client owns the poller. The native Capgo autoUpdate flag
-      // stays false because this is not an external Capgo-hosted channel.
+      // 0. On Capacitor native shells, check self-hosted OTA manifest with real native & bundle versions
       if (isCapacitorNative) {
-        if (isNativeOtaCheckRunning.current) return false;
-        isNativeOtaCheckRunning.current = true;
         try {
+          const runtimeInfo = await getInstalledOtaRuntimeInfo();
+          const currentVer = isVersionGreater(runtimeInfo.webVersion, APP_VERSION)
+            ? runtimeInfo.webVersion
+            : APP_VERSION;
+          setEffectiveCurrentVersion(currentVer);
+
           const channel = resolveOtaChannel();
           const otaResp = await fetchOtaManifestFromServer({
             channel,
-            nativeVersionCode: DEFAULT_NATIVE_VERSION_CODE,
+            nativeVersionCode: runtimeInfo.nativeVersionCode,
           });
+          if (otaResp.apkDownloadUrl) {
+            setApkDownloadUrl(otaResp.apkDownloadUrl);
+          }
 
-          if (otaResp.enabled && otaResp.updateAvailable && otaResp.manifest) {
-            const manifest = otaResp.manifest;
-            const validation = validateOtaManifest(manifest, {
-              currentWebVersion: APP_VERSION,
-              currentNativeVersionCode: DEFAULT_NATIVE_VERSION_CODE,
+          if (otaResp.enabled && otaResp.manifest) {
+            const m = otaResp.manifest;
+            const dismissedVer = localStorage.getItem('lazcakongym_dismissed_version');
+            const dismissedBuild = localStorage.getItem('lazcakongym_dismissed_update');
+            const isDismissed =
+              m.urgency !== 'critical' &&
+              (dismissedVer === m.version || dismissedBuild === m.buildId);
+
+            // Check if native APK upgrade is strictly required (forbidden via OTA)
+            const compat = evaluateOtaCompatibility(m, runtimeInfo.nativeVersionCode);
+            if (
+              compat.requiresApkUpdate &&
+              isVersionGreater(m.version, currentVer) &&
+              !isDismissed
+            ) {
+              setRequiresApkUpdate(true);
+              setApkDownloadUrl(m.apkDownloadUrl || otaResp.apkDownloadUrl || OFFICIAL_RELEASE_APK_DOWNLOAD_URL);
+              setOtaPendingManifest(m);
+              setServerVersion(m.version);
+              setUrgency(m.urgency === 'critical' ? 'critical' : 'optional');
+              setBroadcastMessage(
+                m.releaseNotes ||
+                  'Esta versión incluye cambios nativos Android. Descarga la nueva APK oficial.'
+              );
+              setOtaStageStatus('apk_required');
+              setHasUpdateAvailable(true);
+              window.dispatchEvent(new CustomEvent('app-update-available'));
+              return true;
+            }
+
+            const validation = validateOtaManifest(m, {
+              currentWebVersion: currentVer,
+              currentNativeVersionCode: runtimeInfo.nativeVersionCode,
               expectedChannel: channel,
             });
-            if (validation.valid) {
-              // Download once, verify checksum, then activate on the NEXT safe
-              // application launch. No interaction, forced reload, or data wipe.
-              const result = await downloadAndStageOtaUpdate(manifest, {
-                currentWebVersion: APP_VERSION,
-                currentNativeVersionCode: DEFAULT_NATIVE_VERSION_CODE,
-                applyImmediatelyWhenSafe: false,
-                skipDownloadWhenUnsafe: true,
-              });
 
-              if (result.status === 'staged_for_background') {
-                // Keep the optional, user-requested ACTUALIZAR AHORA banner
-                // even though the bundle is already auto-downloaded and set
-                // for the next launch. Manual apply reuses the staged bundle.
-                setOtaPendingManifest(manifest);
-                setServerVersion(manifest.version);
-                setBroadcastMessage(
-                  'Actualización descargada automáticamente. Se instalará al volver a abrir LAZCAKONG GYM o puedes tocar Actualizar ahora.'
-                );
-                setHasUpdateAvailable(true);
-                return true;
-              }
-              if (result.status === 'deferred_unsafe') {
-                setOtaPendingManifest(manifest);
-                setServerVersion(manifest.version);
-                setBroadcastMessage('Actualización automática pendiente: se descargará al terminar el entrenamiento y sincronizar los datos.');
-                setHasUpdateAvailable(true);
-                return true;
-              }
-              if (result.status === 'error') {
-                console.warn('[LAZCAKONGYM] Actualización automática reintentable:', result.reason);
-              } else if (result.status === 'blocked') {
-                console.warn('[LAZCAKONGYM] Manifiesto OTA bloqueado:', result.reason);
-              }
-            } else if (validation.requiresApkUpdate) {
-              console.info('[LAZCAKONGYM] Esta versión requiere una nueva APK firmada:', validation.reason);
+            if (validation.valid && !isDismissed) {
+              setRequiresApkUpdate(false);
+              setOtaPendingManifest(m);
+              setServerVersion(m.version);
+              setUrgency(m.urgency === 'critical' ? 'critical' : 'optional');
+              setBroadcastMessage(
+                m.releaseNotes || `Mejoras disponibles en LAZCAKONG GYM ${m.version}.`
+              );
+              setHasUpdateAvailable(true);
+              window.dispatchEvent(new CustomEvent('app-update-available'));
+              // Background auto-download & safe stage without interrupting workouts
+              void runBackgroundDownload(m, currentVer, runtimeInfo.nativeVersionCode);
+              return true;
             }
           }
-        } catch (error) {
-          console.warn('[LAZCAKONGYM] No se pudo consultar OTA automático:', error);
-        } finally {
-          isNativeOtaCheckRunning.current = false;
-        }
 
-        // A native APK cannot be updated by a PWA Service Worker or /api/version.
-        setOtaPendingManifest(null);
-        setServerVersion(null);
-        setBroadcastMessage(null);
-        setHasUpdateAvailable(false);
-        return false;
+          if (telemetryReportedStatusRef.current !== currentVer) {
+            telemetryReportedStatusRef.current = currentVer;
+            void reportOtaTelemetry({
+              channel,
+              installedVersion: currentVer,
+              installedBuildId: APP_BUILD_ID,
+              nativeVersionCode: runtimeInfo.nativeVersionCode,
+              status: 'up_to_date',
+            });
+          }
+          setOtaPendingManifest(null);
+          setRequiresApkUpdate(false);
+        } catch {}
       }
 
       // 1. Check if a newer Service Worker is waiting on mobile/PWA
@@ -161,15 +310,8 @@ export function useAppUpdate(): AppUpdateState {
         if (registration) {
           await registration.update().catch(() => {});
           if (registration.waiting) {
-            const safety = getAppUpdateSafetyStatus();
-            if (safety.canUpdateSafely) {
-              // Web/PWA: automatically activate the waiting worker ONLY when safe.
-              // forceAppUpdate rechecks safety before reloading.
-              await forceAppUpdate();
-              return false;
-            }
             setHasUpdateAvailable(true);
-            window.dispatchEvent(new CustomEvent('app-update-deferred', { detail: safety }));
+            window.dispatchEvent(new CustomEvent('app-update-available'));
             return true;
           }
         }
@@ -186,6 +328,9 @@ export function useAppUpdate(): AppUpdateState {
         if (contentType.includes('application/json')) {
           const data = await res.json();
           const targetVer = data.version || APP_VERSION;
+          if (data.apkDownloadUrl) {
+            setApkDownloadUrl(data.apkDownloadUrl);
+          }
           setServerVersion(targetVer);
           if (data.broadcastMessage) {
             setBroadcastMessage(data.broadcastMessage);
@@ -228,22 +373,40 @@ export function useAppUpdate(): AppUpdateState {
     } catch {
       return false;
     }
-  }, []);
+  }, [runBackgroundDownload]);
 
   useEffect(() => {
-    const isNative = detectRuntimePlatform().isCapacitorNative;
-    // Scalable fleet polling: no 25-second API storm for thousands of athletes.
-    const pollingIntervalMs = isNative ? 15 * 60_000 : 5 * 60_000;
-    const checkIfDue = () => {
-      if (document.visibilityState === 'hidden') return;
+    const runThrottledAutoCheck = (allowInitialMount = false) => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
       const now = Date.now();
-      if (now - lastAutomaticPollAt.current < 2 * 60_000) return;
-      lastAutomaticPollAt.current = now;
+      let lastCheck = lastAutoCheckAtRef.current;
+      if (!lastCheck) {
+        try {
+          const persisted = Number(localStorage.getItem(LAST_AUTO_CHECK_STORAGE_KEY) || '0');
+          if (Number.isFinite(persisted) && persisted > 0) {
+            lastCheck = persisted;
+          }
+        } catch {}
+      }
+
+      if (!allowInitialMount && now - lastCheck < AUTO_UPDATE_CHECK_COOLDOWN_MS) {
+        return;
+      }
+
+      if (allowInitialMount && lastCheck > 0 && now - lastCheck < 60_000) {
+        return;
+      }
+
+      lastAutoCheckAtRef.current = now;
+      try {
+        localStorage.setItem(LAST_AUTO_CHECK_STORAGE_KEY, String(now));
+      } catch {}
       void checkUpdatesNow();
     };
 
-    // At startup and after returning from background when stale.
-    checkIfDue();
+    runThrottledAutoCheck(true);
 
     const onSwUpdate = () => {
       setHasUpdateAvailable(true);
@@ -251,55 +414,99 @@ export function useAppUpdate(): AppUpdateState {
     const onDismissed = () => {
       setHasUpdateAvailable(false);
     };
+    const onJustInstalled = (evt: Event) => {
+      const detail = (evt as CustomEvent<{ version?: string }>).detail;
+      if (detail?.version) {
+        setJustInstalledVersion(detail.version);
+        setOtaStageStatus('installed');
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        runThrottledAutoCheck(false);
+      }
+    };
+
     window.addEventListener('app-update-available', onSwUpdate);
     window.addEventListener('app-update-dismissed', onDismissed);
+    window.addEventListener('ota-just-installed', onJustInstalled);
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
-    const interval = setInterval(checkIfDue, pollingIntervalMs);
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') checkIfDue();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
+    const interval = setInterval(() => {
+      runThrottledAutoCheck(false);
+    }, BACKGROUND_UPDATE_POLL_INTERVAL_MS);
+
+    const unsubscribeResume = subscribeAppLifecycleResume(() => {
+      runThrottledAutoCheck(false);
+    });
 
     return () => {
       window.removeEventListener('app-update-available', onSwUpdate);
       window.removeEventListener('app-update-dismissed', onDismissed);
-      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('ota-just-installed', onJustInstalled);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      unsubscribeResume();
       clearInterval(interval);
     };
   }, [checkUpdatesNow]);
 
   const triggerUpdate = async () => {
+    if (requiresApkUpdate) {
+      if (typeof document !== 'undefined') {
+        const link = document.createElement('a');
+        link.href = apkDownloadUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      }
+      return;
+    }
+
     const safety = getAppUpdateSafetyStatus();
     if (!safety.canUpdateSafely) {
       setIsUpdating(false);
+      setOtaStageStatus('deferred_workout');
       window.dispatchEvent(new CustomEvent('app-update-deferred', { detail: safety }));
       return;
     }
 
     setIsUpdating(true);
+    setOtaError(null);
 
-    // If Capacitor native has a validated OTA bundle ready, download & apply via @capgo/capacitor-updater
     const { isCapacitorNative } = detectRuntimePlatform();
-    // Never refresh an APK's embedded assets as if they were PWA assets.
-    if (isCapacitorNative && !otaPendingManifest) {
-      setIsUpdating(false);
-      setHasUpdateAvailable(false);
-      return;
-    }
     if (isCapacitorNative && otaPendingManifest) {
+      setOtaStageStatus('downloading');
+      const runtimeInfo = await getInstalledOtaRuntimeInfo();
       const otaResult = await downloadAndStageOtaUpdate(otaPendingManifest, {
-        currentWebVersion: APP_VERSION,
-        currentNativeVersionCode: DEFAULT_NATIVE_VERSION_CODE,
+        currentWebVersion: runtimeInfo.webVersion || APP_VERSION,
+        currentNativeVersionCode: runtimeInfo.nativeVersionCode || DEFAULT_NATIVE_VERSION_CODE,
         applyImmediatelyWhenSafe: true,
+        skipRetryGuard: true,
+        onProgress: (pct) => setDownloadProgress(pct),
       });
-      if (otaResult.status === 'deferred_unsafe' || otaResult.status === 'blocked' || otaResult.status === 'error') {
-        if (otaResult.status === 'error') {
-          setBroadcastMessage('No se pudo aplicar la actualización. Tus datos permanecen intactos; inténtalo nuevamente.');
-          setHasUpdateAvailable(true);
-        }
+
+      if (otaResult.status === 'deferred_unsafe') {
         setIsUpdating(false);
+        setOtaStageStatus('deferred_workout');
         return;
       }
+
+      if (otaResult.status === 'blocked' || otaResult.status === 'error') {
+        setIsUpdating(false);
+        setOtaStageStatus('error');
+        setOtaError(otaResult.reason || 'Error aplicando paquete OTA.');
+        void reportOtaTelemetry({
+          channel: otaPendingManifest.channel,
+          installedVersion: effectiveCurrentVersion,
+          installedBuildId: APP_BUILD_ID,
+          nativeVersionCode: runtimeInfo.nativeVersionCode,
+          targetVersion: otaPendingManifest.version,
+          status: 'error',
+          errorMessage: otaResult.reason,
+        });
+        return;
+      }
+
       if (otaResult.status === 'applied' || otaResult.status === 'staged_for_background') {
         try {
           localStorage.setItem('lazcakon_installed_version', otaPendingManifest.version);
@@ -308,6 +515,16 @@ export function useAppUpdate(): AppUpdateState {
           localStorage.setItem('lazcakongym_dismissed_version', otaPendingManifest.version);
           localStorage.setItem('lazcakon_last_update_ts', String(Date.now()));
         } catch {}
+        void reportOtaTelemetry({
+          channel: otaPendingManifest.channel,
+          installedVersion: otaPendingManifest.version,
+          installedBuildId: otaPendingManifest.buildId,
+          nativeVersionCode: runtimeInfo.nativeVersionCode,
+          targetVersion: otaPendingManifest.version,
+          status: 'updated',
+        });
+        setJustInstalledVersion(otaPendingManifest.version);
+        setOtaStageStatus('installed');
         setHasUpdateAvailable(false);
         setIsUpdating(false);
         return;
@@ -328,6 +545,7 @@ export function useAppUpdate(): AppUpdateState {
         localStorage.setItem('lazcakon_ack_broadcast_id', APP_BUILD_ID);
       }
     } catch {}
+
     try {
       const result = await forceAppUpdate();
       if (result.deferred) {
@@ -345,12 +563,20 @@ export function useAppUpdate(): AppUpdateState {
   return {
     hasUpdateAvailable,
     isUpdating,
-    currentVersion: APP_VERSION,
+    currentVersion: effectiveCurrentVersion,
     serverVersion,
     broadcastMessage,
     otaPendingManifest,
+    downloadProgress,
+    otaStageStatus,
+    requiresApkUpdate,
+    apkDownloadUrl,
+    urgency,
+    justInstalledVersion,
+    otaError,
     triggerUpdate,
     dismissUpdate,
+    dismissInstalledConfirmation,
     checkUpdatesNow,
   };
 }

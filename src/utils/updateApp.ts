@@ -4,14 +4,14 @@
  * and automatically restart into the newest build without losing athlete local records.
  */
 
-// Dev OTA releases inject the actual bundle version during Vite build so that
-// the installed JS never redownloads its own release on the next launch.
-const buildVersion = (import.meta as unknown as { env?: Record<string, string> })?.env?.VITE_APP_VERSION || '';
+const buildVersion =
+  (import.meta as unknown as { env?: Record<string, string> })?.env?.VITE_APP_VERSION || '';
+export const DEFAULT_APP_VERSION = 'v7.0.0';
 export const APP_VERSION = /^v?\d+\.\d+\.\d+$/.test(buildVersion)
   ? `v${buildVersion.replace(/^v/i, '')}`
-  : 'v6.4.4';
-export const APP_BUILD_ID = `${APP_VERSION.replace(/^v/, '')}-ota-segura`;
-export const BUILD_DATE = '2026-11-23';
+  : DEFAULT_APP_VERSION;
+export const APP_BUILD_ID = `${APP_VERSION.replace(/^v/, '')}-ota-release`;
+export const BUILD_DATE = '2026-11-25';
 
 export const OFFLINE_SYNC_QUEUE_STORAGE_KEY = 'lazcakon_pending_offline_sync_queue';
 export const DEFERRED_UPDATE_FLAG_KEY = 'lazcakon_deferred_update_pending';

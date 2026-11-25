@@ -10,6 +10,7 @@ export interface StartupTimingSnapshot {
   firstFirestoreSyncMs: number | null;
   usedInstantLocalResume: boolean;
   activeSessionRestored: boolean;
+  authInitWatchdogTriggered?: boolean;
 }
 
 const nowMs = (): number =>
@@ -31,6 +32,7 @@ const state: StartupTimingSnapshot = {
   firstFirestoreSyncMs: null,
   usedInstantLocalResume: false,
   activeSessionRestored: false,
+  authInitWatchdogTriggered: false,
 };
 
 function publishToWindow() {
@@ -44,7 +46,12 @@ function publishToWindow() {
 export function markStartupTiming(
   key: keyof Omit<
     StartupTimingSnapshot,
-    'bootStartedAtMs' | 'tokenClaimsTimedOut' | 'usedInstantLocalResume' | 'activeSessionRestored' | 'serverSessionInitStatus'
+    | 'bootStartedAtMs'
+    | 'tokenClaimsTimedOut'
+    | 'usedInstantLocalResume'
+    | 'activeSessionRestored'
+    | 'serverSessionInitStatus'
+    | 'authInitWatchdogTriggered'
   >,
   valueMs?: number
 ): number {
@@ -57,7 +64,12 @@ export function markStartupTiming(
 }
 
 export function setStartupFlag<
-  K extends 'tokenClaimsTimedOut' | 'usedInstantLocalResume' | 'activeSessionRestored' | 'serverSessionInitStatus'
+  K extends
+    | 'tokenClaimsTimedOut'
+    | 'usedInstantLocalResume'
+    | 'activeSessionRestored'
+    | 'serverSessionInitStatus'
+    | 'authInitWatchdogTriggered'
 >(key: K, value: StartupTimingSnapshot[K]): void {
   state[key] = value;
   publishToWindow();

@@ -2435,7 +2435,7 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
           </span>
         </div>
 
-        {import.meta.env.MODE === 'cloudflare-preview' && platformInfo.isCapacitorNative && (
+        {import.meta.env?.MODE === 'cloudflare-preview' && platformInfo.isCapacitorNative && (
           <div className="space-y-2">
             <button
               type="button"
@@ -2468,7 +2468,7 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
         {hasUpdateAvailable ? (
           <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/10 border border-amber-500/40 space-y-3">
             <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <RefreshCw className="w-4 h-4 text-amber-400 shrink-0" />
               <span>Hay una nueva versión disponible</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">

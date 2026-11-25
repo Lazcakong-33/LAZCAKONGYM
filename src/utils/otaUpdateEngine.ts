@@ -1,7 +1,11 @@
 import { CapacitorUpdater, type BundleInfo } from '@capgo/capacitor-updater';
+import { App as CapacitorApp } from '@capacitor/app';
+import { auth } from '../firebase';
 import { detectRuntimePlatform } from './capacitorPlatform';
 import { resolveApiUrl } from './apiUrl';
+import { safeApiFetchJson } from './safeApiFetch';
 import {
+  APP_BUILD_ID,
   APP_VERSION,
   DEFERRED_UPDATE_FLAG_KEY,
   getAppUpdateSafetyStatus,
@@ -9,8 +13,77 @@ import {
   type UpdateSafetyStorage,
 } from './updateApp';
 
-import { DEFAULT_NATIVE_VERSION_CODE, evaluateOtaCompatibility, type OtaChannel, type OtaManifestPayload, type OtaManifestResponse, type OtaValidationResult } from './otaCompatibility.ts';
-export * from './otaCompatibility.ts';
+export type OtaChannel = 'development' | 'staging' | 'production';
+export type OtaUrgency = 'optional' | 'critical';
+
+export type OtaChangedScope =
+  | 'ui'
+  | 'library'
+  | 'react_ts'
+  | 'assets'
+  | 'android_java'
+  | 'android_manifest'
+  | 'gradle'
+  | 'native_plugin'
+  | 'keystore'
+  | 'ios_swift';
+
+export const FORBIDDEN_OTA_NATIVE_SCOPES: readonly OtaChangedScope[] = [
+  'android_java',
+  'android_manifest',
+  'gradle',
+  'native_plugin',
+  'keystore',
+  'ios_swift',
+] as const;
+
+export const DEFAULT_NATIVE_VERSION_CODE = 1;
+export const DEFAULT_NATIVE_VERSION_NAME = '1.0';
+export const SUPPORTED_CAPACITOR_MAJOR = 8;
+export const OFFICIAL_RELEASE_APK_DOWNLOAD_URL =
+  'https://github.com/Lazcakong-33/LAZCAKONGYM/releases/latest/download/app-release.apk';
+export const OFFICIAL_GITHUB_RELEASES_URL =
+  'https://github.com/Lazcakong-33/LAZCAKONGYM/releases/latest';
+/** Public, development-only OTA index preserved from migration/zero-cost. */
+export const DEV_GITHUB_OTA_MANIFEST_URL =
+  'https://raw.githubusercontent.com/Lazcakong-33/LAZCAKONGYM/ota-development/ota/manifest.development.json';
+
+export interface OtaManifestPayload {
+  version: string;
+  buildId: string;
+  channel: OtaChannel;
+  url: string;
+  checksum: string;
+  contentsPolicy: 'web_assets_only' | string;
+  changedScopes?: OtaChangedScope[];
+  requiresApkUpdate?: boolean;
+  apkDownloadUrl?: string;
+  urgency?: OtaUrgency;
+  signature?: string;
+  signatureAlgorithm?: 'ed25519';
+  minNativeVersionCode: number;
+  maxNativeVersionCode?: number;
+  capacitorMajor: number;
+  releaseNotes?: string;
+  publishedAt?: string;
+}
+
+export interface OtaManifestResponse {
+  success: boolean;
+  enabled: boolean;
+  channel: OtaChannel;
+  updateAvailable: boolean;
+  manifest: OtaManifestPayload | null;
+  apkDownloadUrl?: string;
+  reason?: string;
+}
+
+export interface OtaValidationResult {
+  valid: boolean;
+  compatible: boolean;
+  requiresApkUpdate: boolean;
+  reason?: string;
+}
 
 export interface OtaPluginAdapter {
   notifyAppReady: () => Promise<unknown>;
@@ -19,12 +92,37 @@ export interface OtaPluginAdapter {
   next: (options: { id: string }) => Promise<BundleInfo>;
   reset: (options?: { toLastSuccessful?: boolean }) => Promise<void>;
   current: () => Promise<{ bundle: BundleInfo; native: string }>;
+  addListener?: (
+    eventName: 'download',
+    listenerFunc: (event: { percent?: number; bundle?: BundleInfo }) => void
+  ) => Promise<{ remove: () => Promise<void> }> | { remove: () => Promise<void> | void };
 }
 
 export interface OtaApplyResult {
   status: 'applied' | 'staged_for_background' | 'deferred_unsafe' | 'blocked' | 'not_native' | 'error';
   bundleId?: string;
   safety?: UpdateSafetyCheck;
+  reason?: string;
+}
+
+export interface InstalledOtaRuntimeInfo {
+  bundleId: string;
+  webVersion: string;
+  nativeVersionCode: number;
+  nativeVersionName: string;
+}
+
+export interface OtaJustInstalledNotice {
+  version: string;
+  buildId: string;
+  installedAt: number;
+}
+
+export interface OtaRetryEligibility {
+  eligible: boolean;
+  attempts: number;
+  quarantined: boolean;
+  nextRetryAt?: number;
   reason?: string;
 }
 
@@ -35,15 +133,31 @@ const DEFAULT_OTA_PLUGIN_ADAPTER: OtaPluginAdapter = {
   next: (options) => CapacitorUpdater.next(options),
   reset: (options) => CapacitorUpdater.reset(options),
   current: () => CapacitorUpdater.current(),
+  addListener: (eventName, listenerFunc) =>
+    CapacitorUpdater.addListener(eventName, listenerFunc as any),
 };
 
 const SHA256_HEX_REGEX = /^[a-f0-9]{64}$/i;
 const TEMPORARY_PREVIEW_HOST_REGEX = /^ais-(dev|pre)-[a-z0-9-]+\./i;
-const OTA_PENDING_BUNDLE_KEY = 'lazcakon_ota_pending_bundle_v1';
-/** Public, development-only OTA index; never used by production builds/channels. */
-export const DEV_GITHUB_OTA_MANIFEST_URL =
-  'https://raw.githubusercontent.com/Lazcakong-33/LAZCAKONGYM/ota-development/ota/manifest.development.json';
+export const OTA_PENDING_BUNDLE_KEY = 'lazcakon_ota_pending_bundle_v1';
+export const OTA_RETRY_STATE_KEY = 'lazcakon_ota_retry_state_v1';
+export const OTA_QUARANTINE_KEY = 'lazcakon_ota_quarantined_builds_v1';
+export const OTA_BOOT_GUARD_KEY = 'lazcakon_ota_boot_guard_v1';
+export const OTA_JUST_INSTALLED_KEY = 'lazcakon_ota_just_installed_v1';
+export const OTA_DEVICE_ID_KEY = 'lazcakon_ota_device_id_v1';
 
+const RETRY_BACKOFF_MS = [15_000, 60_000, 180_000] as const;
+const MAX_RETRY_ATTEMPTS = 3;
+const BOOT_LOOP_WINDOW_MS = 90_000;
+const BOOT_LOOP_THRESHOLD = 2;
+
+function getSafeStorage(storage?: UpdateSafetyStorage | null): UpdateSafetyStorage | null {
+  if (storage !== undefined) return storage;
+  try {
+    if (typeof localStorage !== 'undefined') return localStorage;
+  } catch {}
+  return null;
+}
 
 export function compareSemver(candidateVersion: string, currentVersion: string): number {
   const parse = (v: string) =>
@@ -93,6 +207,228 @@ export function resolveOtaChannel(requested?: string | null): OtaChannel {
   return 'development';
 }
 
+export function getQuarantinedBuildIds(storage?: UpdateSafetyStorage | null): string[] {
+  const store = getSafeStorage(storage);
+  if (!store) return [];
+  try {
+    const raw = store.getItem(OTA_QUARANTINE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function quarantineBuildId(buildId: string, storage?: UpdateSafetyStorage | null): void {
+  const store = getSafeStorage(storage);
+  if (!store || !buildId) return;
+  try {
+    const existing = getQuarantinedBuildIds(store);
+    if (!existing.includes(buildId)) {
+      store.setItem?.(OTA_QUARANTINE_KEY, JSON.stringify([...existing, buildId].slice(-20)));
+    }
+  } catch {}
+}
+
+export function evaluateOtaRetryEligibility(
+  buildId: string,
+  storage?: UpdateSafetyStorage | null,
+  nowMs = Date.now()
+): OtaRetryEligibility {
+  const store = getSafeStorage(storage);
+  if (!buildId) {
+    return { eligible: false, attempts: 0, quarantined: false, reason: 'Identificador de paquete inválido.' };
+  }
+  if (getQuarantinedBuildIds(store).includes(buildId)) {
+    return {
+      eligible: false,
+      attempts: MAX_RETRY_ATTEMPTS,
+      quarantined: true,
+      reason: 'Esta versión OTA fue puesta en cuarentena tras fallos repetidos para proteger tu app.',
+    };
+  }
+  if (!store) return { eligible: true, attempts: 0, quarantined: false };
+
+  try {
+    const raw = store.getItem(OTA_RETRY_STATE_KEY);
+    if (!raw) return { eligible: true, attempts: 0, quarantined: false };
+    const state = JSON.parse(raw) as Record<string, { attempts: number; nextRetryAt: number }>;
+    const entry = state?.[buildId];
+    if (!entry) return { eligible: true, attempts: 0, quarantined: false };
+    if (entry.attempts >= MAX_RETRY_ATTEMPTS) {
+      return {
+        eligible: false,
+        attempts: entry.attempts,
+        quarantined: true,
+        reason: 'Límite de reintentos alcanzado; paquete bloqueado para evitar bucles.',
+      };
+    }
+    if (entry.nextRetryAt > nowMs) {
+      const waitSec = Math.max(1, Math.ceil((entry.nextRetryAt - nowMs) / 1000));
+      return {
+        eligible: false,
+        attempts: entry.attempts,
+        quarantined: false,
+        nextRetryAt: entry.nextRetryAt,
+        reason: `Reintento controlado en ${waitSec} s.`,
+      };
+    }
+    return { eligible: true, attempts: entry.attempts, quarantined: false };
+  } catch {
+    return { eligible: true, attempts: 0, quarantined: false };
+  }
+}
+
+export function recordOtaAttemptResult(
+  buildId: string,
+  succeeded: boolean,
+  storage?: UpdateSafetyStorage | null,
+  nowMs = Date.now()
+): OtaRetryEligibility {
+  const store = getSafeStorage(storage);
+  if (!store || !buildId) {
+    return { eligible: succeeded, attempts: succeeded ? 0 : 1, quarantined: false };
+  }
+
+  let state: Record<string, { attempts: number; nextRetryAt: number }> = {};
+  try {
+    const raw = store.getItem(OTA_RETRY_STATE_KEY);
+    if (raw) state = JSON.parse(raw) || {};
+  } catch {}
+
+  if (succeeded) {
+    delete state[buildId];
+    try {
+      store.setItem?.(OTA_RETRY_STATE_KEY, JSON.stringify(state));
+    } catch {}
+    return { eligible: true, attempts: 0, quarantined: false };
+  }
+
+  const prevAttempts = state[buildId]?.attempts || 0;
+  const attempts = prevAttempts + 1;
+  if (attempts >= MAX_RETRY_ATTEMPTS) {
+    quarantineBuildId(buildId, store);
+    delete state[buildId];
+    try {
+      store.setItem?.(OTA_RETRY_STATE_KEY, JSON.stringify(state));
+    } catch {}
+    return {
+      eligible: false,
+      attempts,
+      quarantined: true,
+      reason: 'Paquete OTA puesto en cuarentena tras 3 errores consecutivos.',
+    };
+  }
+
+  const delayMs = RETRY_BACKOFF_MS[Math.min(attempts - 1, RETRY_BACKOFF_MS.length - 1)];
+  const nextRetryAt = nowMs + delayMs;
+  state[buildId] = { attempts, nextRetryAt };
+  try {
+    store.setItem?.(OTA_RETRY_STATE_KEY, JSON.stringify(state));
+  } catch {}
+
+  return {
+    eligible: false,
+    attempts,
+    quarantined: false,
+    nextRetryAt,
+    reason: `Descarga fallida (${attempts}/${MAX_RETRY_ATTEMPTS}). Reintento automático en ${Math.round(
+      delayMs / 1000
+    )} s.`,
+  };
+}
+
+export function readJustInstalledOtaNotice(
+  storage?: UpdateSafetyStorage | null
+): OtaJustInstalledNotice | null {
+  const store = getSafeStorage(storage);
+  if (!store) return null;
+  try {
+    const raw = store.getItem(OTA_JUST_INSTALLED_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as OtaJustInstalledNotice;
+    if (parsed && typeof parsed.version === 'string') {
+      return parsed;
+    }
+  } catch {}
+  return null;
+}
+
+export function clearJustInstalledOtaNotice(storage?: UpdateSafetyStorage | null): void {
+  const store = getSafeStorage(storage);
+  try {
+    store?.removeItem?.(OTA_JUST_INSTALLED_KEY);
+  } catch {}
+}
+
+export function evaluateOtaCompatibility(
+  manifest: OtaManifestPayload,
+  currentNativeVersionCode = DEFAULT_NATIVE_VERSION_CODE
+): OtaValidationResult {
+  if (manifest.requiresApkUpdate) {
+    return {
+      valid: false,
+      compatible: false,
+      requiresApkUpdate: true,
+      reason: 'Esta versión incluye cambios nativos y requiere actualizar el APK completo.',
+    };
+  }
+
+  if (manifest.contentsPolicy !== 'web_assets_only') {
+    return {
+      valid: false,
+      compatible: false,
+      requiresApkUpdate: true,
+      reason: 'Política OTA inválida: solo se permiten recursos web (React/TS/UI/biblioteca/imágenes).',
+    };
+  }
+
+  const scopes = Array.isArray(manifest.changedScopes) ? manifest.changedScopes : [];
+  const forbiddenScope = scopes.find((s) => FORBIDDEN_OTA_NATIVE_SCOPES.includes(s));
+  if (forbiddenScope) {
+    return {
+      valid: false,
+      compatible: false,
+      requiresApkUpdate: true,
+      reason: `Cambio nativo prohibido vía OTA (${forbiddenScope}). Requiere compilación de APK.`,
+    };
+  }
+
+  if (Number(manifest.capacitorMajor) !== SUPPORTED_CAPACITOR_MAJOR) {
+    return {
+      valid: false,
+      compatible: false,
+      requiresApkUpdate: true,
+      reason: `Versión de Capacitor incompatible (${manifest.capacitorMajor}; requerido ${SUPPORTED_CAPACITOR_MAJOR}).`,
+    };
+  }
+
+  if (Number(manifest.minNativeVersionCode) > currentNativeVersionCode) {
+    return {
+      valid: false,
+      compatible: false,
+      requiresApkUpdate: true,
+      reason: `Requiere APK nativo versión >= ${manifest.minNativeVersionCode} (instalada: ${currentNativeVersionCode}).`,
+    };
+  }
+
+  if (
+    typeof manifest.maxNativeVersionCode === 'number' &&
+    manifest.maxNativeVersionCode > 0 &&
+    currentNativeVersionCode > manifest.maxNativeVersionCode
+  ) {
+    return {
+      valid: false,
+      compatible: false,
+      requiresApkUpdate: true,
+      reason: 'El paquete OTA no aplica a esta versión nativa instalada.',
+    };
+  }
+
+  return { valid: true, compatible: true, requiresApkUpdate: false };
+}
+
 export function validateOtaManifest(
   manifest: OtaManifestPayload | null | undefined,
   options?: {
@@ -115,6 +451,18 @@ export function validateOtaManifest(
       compatible: false,
       requiresApkUpdate: false,
       reason: 'Canal OTA de producción deshabilitado hasta autorización explícita.',
+    };
+  }
+
+  if (
+    manifest.channel === 'production' &&
+    (!manifest.signature || manifest.signatureAlgorithm !== 'ed25519')
+  ) {
+    return {
+      valid: false,
+      compatible: false,
+      requiresApkUpdate: false,
+      reason: 'El canal producción exige firma criptográfica Ed25519 verificada en el manifiesto.',
     };
   }
 
@@ -189,23 +537,157 @@ export function validateOtaManifest(
   );
 }
 
+export async function getInstalledOtaRuntimeInfo(
+  adapter: OtaPluginAdapter = DEFAULT_OTA_PLUGIN_ADAPTER,
+  storage?: UpdateSafetyStorage | null
+): Promise<InstalledOtaRuntimeInfo> {
+  const { isCapacitorNative } = detectRuntimePlatform();
+  const store = getSafeStorage(storage);
+  let webVersion = APP_VERSION;
+  try {
+    const storedVer = store?.getItem('lazcakon_installed_version');
+    if (storedVer && compareSemver(storedVer, APP_VERSION) > 0) {
+      webVersion = storedVer;
+    }
+  } catch {}
+
+  if (!isCapacitorNative) {
+    return {
+      bundleId: 'builtin',
+      webVersion,
+      nativeVersionCode: DEFAULT_NATIVE_VERSION_CODE,
+      nativeVersionName: DEFAULT_NATIVE_VERSION_NAME,
+    };
+  }
+
+  let bundleId = 'builtin';
+  let nativeVersionCode = DEFAULT_NATIVE_VERSION_CODE;
+  let nativeVersionName = DEFAULT_NATIVE_VERSION_NAME;
+
+  try {
+    const current = await adapter.current();
+    if (current?.bundle?.id) bundleId = current.bundle.id;
+    if (current?.bundle?.version && compareSemver(current.bundle.version, webVersion) > 0) {
+      webVersion = current.bundle.version;
+    }
+    if (current?.native) {
+      nativeVersionName = current.native;
+    }
+  } catch {}
+
+  try {
+    const info = await CapacitorApp.getInfo();
+    const parsedBuild = parseInt(String(info?.build || ''), 10);
+    if (Number.isFinite(parsedBuild) && parsedBuild > 0) {
+      nativeVersionCode = parsedBuild;
+    }
+    if (info?.version) {
+      nativeVersionName = info.version;
+    }
+  } catch {}
+
+  return {
+    bundleId,
+    webVersion,
+    nativeVersionCode,
+    nativeVersionName,
+  };
+}
+
 /**
  * Must be called immediately on React app boot in Capacitor native shells
- * so @capgo/capacitor-updater cancels the 10-second rollback watchdog.
- * If a broken OTA crashes before reaching this line, Capgo automatically
- * reverts to the previous working bundle.
+ * so @capgo/capacitor-updater cancels the 10-second rollback watchdog,
+ * detects rapid boot-loops, and exposes post-install confirmation notices.
  */
 export async function markOtaBootReady(
   adapter: OtaPluginAdapter = DEFAULT_OTA_PLUGIN_ADAPTER,
-  forceNativeForTest = false
-): Promise<{ notified: boolean; skipped?: boolean }> {
+  forceNativeForTest = false,
+  storage?: UpdateSafetyStorage | null,
+  nowMs = Date.now()
+): Promise<{
+  notified: boolean;
+  skipped?: boolean;
+  rolledBackBootLoop?: boolean;
+  justInstalled?: OtaJustInstalledNotice | null;
+}> {
   const { isCapacitorNative } = detectRuntimePlatform();
   if (!isCapacitorNative && !forceNativeForTest) {
     return { notified: false, skipped: true };
   }
+
+  const store = getSafeStorage(storage);
+  let activeBundleId = 'builtin';
+  let activeBundleVersion = APP_VERSION;
+
+  try {
+    const current = await adapter.current();
+    if (current?.bundle?.id) activeBundleId = current.bundle.id;
+    if (current?.bundle?.version) activeBundleVersion = current.bundle.version;
+  } catch {}
+
+  // Boot-loop protection: if a non-builtin OTA bundle enters > threshold quick boots, roll back
+  if (store && activeBundleId && activeBundleId !== 'builtin') {
+    try {
+      const rawGuard = store.getItem(OTA_BOOT_GUARD_KEY);
+      const parsed = rawGuard
+        ? (JSON.parse(rawGuard) as { bundleId: string; count: number; firstBootAt: number })
+        : null;
+
+      const withinWindow = parsed && nowMs - parsed.firstBootAt <= BOOT_LOOP_WINDOW_MS;
+      const nextCount = parsed && parsed.bundleId === activeBundleId && withinWindow ? parsed.count + 1 : 1;
+
+      if (nextCount > BOOT_LOOP_THRESHOLD) {
+        quarantineBuildId(activeBundleId, store);
+        store.removeItem?.(OTA_BOOT_GUARD_KEY);
+        store.removeItem?.(OTA_PENDING_BUNDLE_KEY);
+        await adapter.reset({ toLastSuccessful: true }).catch(() => {});
+        return { notified: false, rolledBackBootLoop: true };
+      }
+
+      store.setItem?.(
+        OTA_BOOT_GUARD_KEY,
+        JSON.stringify({
+          bundleId: activeBundleId,
+          count: nextCount,
+          firstBootAt: withinWindow && parsed ? parsed.firstBootAt : nowMs,
+        })
+      );
+    } catch {}
+  }
+
   try {
     await adapter.notifyAppReady();
-    return { notified: true };
+    let justInstalled: OtaJustInstalledNotice | null = null;
+
+    if (store) {
+      try {
+        const pendingRaw = store.getItem(OTA_PENDING_BUNDLE_KEY);
+        if (pendingRaw) {
+          const pending = JSON.parse(pendingRaw) as {
+            bundleId?: string;
+            version?: string;
+            buildId?: string;
+          };
+          if (
+            pending &&
+            (pending.bundleId === activeBundleId ||
+              (pending.version && pending.version === activeBundleVersion))
+          ) {
+            justInstalled = {
+              version: pending.version || activeBundleVersion,
+              buildId: pending.buildId || APP_BUILD_ID,
+              installedAt: nowMs,
+            };
+            store.setItem?.(OTA_JUST_INSTALLED_KEY, JSON.stringify(justInstalled));
+            store.setItem?.('lazcakon_installed_version', justInstalled.version);
+            store.setItem?.('lazcakon_installed_build_id', justInstalled.buildId);
+            store.removeItem?.(OTA_PENDING_BUNDLE_KEY);
+          }
+        }
+      } catch {}
+    }
+
+    return { notified: true, justInstalled };
   } catch {
     return { notified: false };
   }
@@ -220,74 +702,31 @@ export async function fetchOtaManifestFromServer(options?: {
   const nativeVersionCode = options?.nativeVersionCode ?? DEFAULT_NATIVE_VERSION_CODE;
   const fetcher = options?.fetcher || fetch;
 
-  const emptyResponse: OtaManifestResponse = {
-    success: false,
-    enabled: false,
-    channel,
-    updateAvailable: false,
-    manifest: null,
-  };
-
   const endpoint = resolveApiUrl(
     `/api/ota/manifest?channel=${encodeURIComponent(channel)}&nativeVersionCode=${encodeURIComponent(
       String(nativeVersionCode)
     )}&t=${Date.now()}`
   );
 
-  // Existing Cloud Run endpoint remains authoritative, including an explicit
-  // enabled:false response (remote kill switch). Do not bypass it.
-  let apiResponse: OtaManifestResponse | null = null;
-  try {
-    const response = await fetcher(endpoint, {
-      method: 'GET',
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-      signal: typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
-        ? AbortSignal.timeout(6500) : undefined,
-    });
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.channel === channel && typeof data.enabled === 'boolean') {
-        apiResponse = data as OtaManifestResponse;
-        if (!apiResponse.enabled || (apiResponse.updateAvailable && apiResponse.manifest)) {
-          return apiResponse;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[LAZCAKONGYM] Servidor OTA no disponible:', err);
-  }
+  const response = await fetcher(endpoint, {
+    method: 'GET',
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache' },
+  });
 
-  // Independent distribution of *development* web bundles via GitHub Releases.
-  // Production never falls back to a development channel or public manifest.
-  if (channel !== 'development') {
-    return apiResponse || emptyResponse;
-  }
-
-  try {
-    const response = await fetcher(`${DEV_GITHUB_OTA_MANIFEST_URL}?t=${Date.now()}`, {
-      method: 'GET',
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-      signal: typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
-        ? AbortSignal.timeout(6500) : undefined,
-    });
-    if (!response.ok) return apiResponse || emptyResponse;
-    const manifest = await response.json() as OtaManifestPayload;
-    if (manifest?.channel !== 'development') return apiResponse || emptyResponse;
-    // Compatibility and version checks still run in useAppUpdate before showing
-    // any update button; do not trust the index simply because it is HTTP 200.
+  if (!response.ok) {
     return {
-      success: true,
-      enabled: true,
-      channel: 'development',
-      updateAvailable: Boolean(manifest.url && manifest.checksum),
-      manifest: manifest.url && manifest.checksum ? manifest : null,
+      success: false,
+      enabled: false,
+      channel,
+      updateAvailable: false,
+      manifest: null,
+      reason: `Error HTTP ${response.status} consultando manifiesto OTA.`,
     };
-  } catch (err) {
-    console.warn('[LAZCAKONGYM] Manifiesto OTA de GitHub no disponible:', err);
-    return apiResponse || emptyResponse;
   }
+
+  const data = (await response.json()) as OtaManifestResponse;
+  return data;
 }
 
 export async function downloadAndStageOtaUpdate(
@@ -300,8 +739,8 @@ export async function downloadAndStageOtaUpdate(
     allowProduction?: boolean;
     forceNativeForTest?: boolean;
     applyImmediatelyWhenSafe?: boolean;
-    /** Automatic mode: wait until workout and offline changes are safe before downloading. */
-    skipDownloadWhenUnsafe?: boolean;
+    skipRetryGuard?: boolean;
+    onProgress?: (percent: number) => void;
   }
 ): Promise<OtaApplyResult> {
   const { isCapacitorNative } = detectRuntimePlatform();
@@ -310,6 +749,18 @@ export async function downloadAndStageOtaUpdate(
       status: 'not_native',
       reason: 'OTA nativo solo aplica dentro de la aplicación Capacitor Android/iOS.',
     };
+  }
+
+  const storage = getSafeStorage(options?.storage);
+
+  if (!options?.skipRetryGuard) {
+    const retryCheck = evaluateOtaRetryEligibility(manifest.buildId, storage);
+    if (!retryCheck.eligible) {
+      return {
+        status: 'blocked',
+        reason: retryCheck.reason || 'Paquete OTA temporalmente en espera o en cuarentena.',
+      };
+    }
   }
 
   const validation = validateOtaManifest(manifest, {
@@ -327,96 +778,53 @@ export async function downloadAndStageOtaUpdate(
   }
 
   const adapter = options?.adapter || DEFAULT_OTA_PLUGIN_ADAPTER;
-  const storage =
-    options?.storage !== undefined
-      ? options.storage
-      : typeof localStorage !== 'undefined'
-        ? localStorage
-        : null;
 
-
-  // Staging for next launch avoids any forced restart during navigation.
-  // If a bundle is already downloaded, reuse it instead of downloading every
-  // 25 seconds. Revalidate compatibility above on every manifest poll.
-  const safetyBeforeDownload = getAppUpdateSafetyStatus(storage);
-  if (!safetyBeforeDownload.canUpdateSafely && options?.skipDownloadWhenUnsafe) {
-    try { storage?.setItem?.(DEFERRED_UPDATE_FLAG_KEY, String(Date.now())); } catch {}
-    return {
-      status: 'deferred_unsafe',
-      safety: safetyBeforeDownload,
-      reason: safetyBeforeDownload.reason || 'Sesión de entrenamiento o sincronización pendientes.',
-    };
-  }
-
-  type PendingOtaRecord = {
-    bundleId: string;
-    version: string;
-    checksum: string;
-    channel: OtaChannel;
-    downloadedAt: number;
-    staged?: boolean;
-  };
-  let priorBundle: PendingOtaRecord | null = null;
-  try {
-    const raw = storage?.getItem(OTA_PENDING_BUNDLE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as PendingOtaRecord;
-      const isMatching =
-        parsed?.version === manifest.version &&
-        parsed?.checksum === manifest.checksum &&
-        parsed?.channel === manifest.channel &&
-        typeof parsed?.bundleId === 'string' &&
-        parsed.bundleId.length > 0 &&
-        Number.isFinite(parsed.downloadedAt) &&
-        Date.now() - parsed.downloadedAt >= 0 &&
-        Date.now() - parsed.downloadedAt < 6 * 60 * 60 * 1000;
-      if (isMatching) priorBundle = parsed;
-    }
-  } catch {}
-
-  if (priorBundle?.staged && !options?.applyImmediatelyWhenSafe) {
-    return {
-      status: 'staged_for_background',
-      bundleId: priorBundle.bundleId,
-      safety: safetyBeforeDownload,
-      reason: 'Paquete descargado y programado para el próximo inicio.',
-    };
+  let downloadListenerHandle: { remove: () => Promise<void> | void } | null = null;
+  if (typeof options?.onProgress === 'function' && typeof adapter.addListener === 'function') {
+    try {
+      const handlePromise = adapter.addListener('download', (evt) => {
+        const pct = Math.max(0, Math.min(100, Math.round(Number(evt?.percent ?? 0))));
+        options.onProgress?.(pct);
+      });
+      downloadListenerHandle = await Promise.resolve(handlePromise);
+    } catch {}
   }
 
   let downloadedBundle: BundleInfo;
-  if (priorBundle) {
-    downloadedBundle = { id: priorBundle.bundleId } as BundleInfo;
-  } else {
+  try {
+    options?.onProgress?.(5);
+    downloadedBundle = await adapter.download({
+      url: manifest.url,
+      version: manifest.version,
+      checksum: manifest.checksum,
+    });
+    options?.onProgress?.(100);
+    recordOtaAttemptResult(manifest.buildId, true, storage);
+  } catch (err: any) {
+    const retryStatus = recordOtaAttemptResult(manifest.buildId, false, storage);
+    return {
+      status: 'error',
+      reason: retryStatus.reason || err?.message || 'Error verificando o descargando el paquete OTA.',
+    };
+  } finally {
     try {
-      downloadedBundle = await adapter.download({
-        url: manifest.url,
-        version: manifest.version,
-        checksum: manifest.checksum,
-      });
-    } catch (err: any) {
-      return {
-        status: 'error',
-        reason: err?.message || 'Error verificando o descargando el paquete OTA.',
-      };
-    }
+      await downloadListenerHandle?.remove?.();
+    } catch {}
   }
 
-  const savePending = (staged: boolean): void => {
-    try {
-      storage?.setItem?.(
-        OTA_PENDING_BUNDLE_KEY,
-        JSON.stringify({
-          bundleId: downloadedBundle.id,
-          version: manifest.version,
-          checksum: manifest.checksum,
-          channel: manifest.channel,
-          downloadedAt: priorBundle?.downloadedAt || Date.now(),
-          staged,
-        } satisfies PendingOtaRecord)
-      );
-    } catch {}
-  };
-  savePending(false);
+  try {
+    storage?.setItem?.(
+      OTA_PENDING_BUNDLE_KEY,
+      JSON.stringify({
+        bundleId: downloadedBundle.id,
+        version: manifest.version,
+        buildId: manifest.buildId,
+        checksum: manifest.checksum,
+        channel: manifest.channel,
+        downloadedAt: Date.now(),
+      })
+    );
+  } catch {}
 
   const safety = getAppUpdateSafetyStatus(storage);
   if (!safety.canUpdateSafely) {
@@ -434,34 +842,33 @@ export async function downloadAndStageOtaUpdate(
     };
   }
 
-  try {
-    if (options?.applyImmediatelyWhenSafe) {
-      await adapter.set({ id: downloadedBundle.id });
-      return {
-        status: 'applied',
-        bundleId: downloadedBundle.id,
-        safety,
-      };
-    }
-
-    await adapter.next({ id: downloadedBundle.id });
-    savePending(true);
-    try { storage?.removeItem?.(DEFERRED_UPDATE_FLAG_KEY); } catch {}
+  if (options?.applyImmediatelyWhenSafe) {
+    await adapter.set({ id: downloadedBundle.id });
+    try {
+      storage?.setItem?.(
+        OTA_JUST_INSTALLED_KEY,
+        JSON.stringify({
+          version: manifest.version,
+          buildId: manifest.buildId,
+          installedAt: Date.now(),
+        })
+      );
+      storage?.removeItem?.(OTA_PENDING_BUNDLE_KEY);
+    } catch {}
     return {
-      status: 'staged_for_background',
+      status: 'applied',
       bundleId: downloadedBundle.id,
       safety,
-    };
-  } catch (err: any) {
-    return {
-      status: 'error',
-      bundleId: downloadedBundle.id,
-      safety,
-      reason: err?.message || 'No se pudo activar la actualización OTA descargada.',
     };
   }
-}
 
+  await adapter.next({ id: downloadedBundle.id });
+  return {
+    status: 'staged_for_background',
+    bundleId: downloadedBundle.id,
+    safety,
+  };
+}
 
 export async function rollbackOtaToPreviousBundle(
   adapter: OtaPluginAdapter = DEFAULT_OTA_PLUGIN_ADAPTER,
@@ -476,5 +883,68 @@ export async function rollbackOtaToPreviousBundle(
     return { rolledBack: true };
   } catch (err: any) {
     return { rolledBack: false, reason: err?.message || 'No se pudo revertir el bundle OTA.' };
+  }
+}
+
+function getOrCreateDeviceId(): string {
+  const store = getSafeStorage();
+  if (!store) return 'browser-default';
+  try {
+    const existing = store.getItem(OTA_DEVICE_ID_KEY);
+    if (existing) return existing;
+    const generated = `lzk_${Math.random().toString(36).slice(2, 10)}`;
+    store.setItem?.(OTA_DEVICE_ID_KEY, generated);
+    return generated;
+  } catch {
+    return 'browser-default';
+  }
+}
+
+export async function reportOtaTelemetry(params: {
+  channel: OtaChannel;
+  installedVersion: string;
+  installedBuildId: string;
+  nativeVersionCode?: number;
+  targetVersion?: string;
+  status: 'up_to_date' | 'downloading' | 'staged' | 'updated' | 'deferred_workout' | 'rolled_back' | 'error';
+  errorMessage?: string;
+}): Promise<void> {
+  try {
+    const currentUser = auth?.currentUser;
+    if (!currentUser) return;
+    const idToken = await currentUser.getIdToken();
+    if (!idToken) return;
+
+    const { platform } = detectRuntimePlatform();
+    const mappedPlatform =
+      platform === 'capacitor_android'
+        ? 'android_apk'
+        : platform === 'capacitor_ios'
+          ? 'ios_app'
+          : platform === 'pwa_standalone'
+            ? 'pwa'
+            : 'web';
+
+    await safeApiFetchJson('/api/ota/telemetry', {
+      method: 'POST',
+      timeoutMs: 6000,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        deviceId: getOrCreateDeviceId(),
+        platform: mappedPlatform,
+        channel: params.channel,
+        installedVersion: params.installedVersion,
+        installedBuildId: params.installedBuildId,
+        nativeVersionCode: params.nativeVersionCode ?? DEFAULT_NATIVE_VERSION_CODE,
+        targetVersion: params.targetVersion,
+        status: params.status,
+        errorMessage: params.errorMessage,
+      }),
+    });
+  } catch {
+    // Non-fatal telemetry: never disrupt user flow
   }
 }

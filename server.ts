@@ -510,12 +510,13 @@ app.get('/api/version', async (_req, res) => {
     broadcast = getServerBroadcastState();
   } catch {}
   res.status(200).json({
-    version: broadcast?.version || '6.4.2',
-    buildId: broadcast?.buildId || '6.4.2-muscle-map',
+    version: broadcast?.version || '7.0.0',
+    buildId: broadcast?.buildId || '7.0.0-ota-release',
     broadcastId: broadcast?.broadcastId || null,
     broadcastMessage: broadcast?.message || null,
     buildDate: broadcast?.updatedAt || new Date().toISOString(),
-    features: ['elite-pwa-update-system', 'zero-destruction-cache', 'active-workout-protection'],
+    apkDownloadUrl: 'https://github.com/Lazcakong-33/LAZCAKONGYM/releases/latest/download/app-release.apk',
+    features: ['elite-pwa-update-system', 'zero-destruction-cache', 'active-workout-protection', 'capacitor-ota-auto-update'],
   });
 });
 
@@ -535,6 +536,57 @@ app.get('/api/ota/bundles/:filename', async (req, res) => {
     handleGetOtaBundleZip(req, res);
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || 'Error sirviendo paquete OTA' });
+  }
+});
+
+// Authenticated Device OTA Telemetry & Master Admin Update Center APIs
+app.post('/api/ota/telemetry', async (req, res) => {
+  try {
+    const { verifyAuthTokenMiddleware } = await import('./src/server/firebaseAdminServer.ts');
+    const { handleReportOtaTelemetry } = await import('./src/server/otaUpdateController.ts');
+    await verifyAuthTokenMiddleware(req, res, () => handleReportOtaTelemetry(req, res));
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || 'Error registrando telemetría OTA' });
+  }
+});
+
+app.get('/api/admin/ota/status', async (req, res) => {
+  try {
+    const { verifyAuthTokenMiddleware } = await import('./src/server/firebaseAdminServer.ts');
+    const { handleAdminGetOtaStatus } = await import('./src/server/otaUpdateController.ts');
+    await verifyAuthTokenMiddleware(req, res, () => handleAdminGetOtaStatus(req, res));
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || 'Error consultando estado OTA del sistema' });
+  }
+});
+
+app.post('/api/admin/ota/publish', async (req, res) => {
+  try {
+    const { verifyAuthTokenMiddleware } = await import('./src/server/firebaseAdminServer.ts');
+    const { handleAdminPublishOtaRelease } = await import('./src/server/otaUpdateController.ts');
+    await verifyAuthTokenMiddleware(req, res, () => handleAdminPublishOtaRelease(req, res));
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || 'Error publicando actualización OTA' });
+  }
+});
+
+app.post('/api/admin/ota/rollback', async (req, res) => {
+  try {
+    const { verifyAuthTokenMiddleware } = await import('./src/server/firebaseAdminServer.ts');
+    const { handleAdminRollbackOtaRelease } = await import('./src/server/otaUpdateController.ts');
+    await verifyAuthTokenMiddleware(req, res, () => handleAdminRollbackOtaRelease(req, res));
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || 'Error revirtiendo actualización OTA' });
+  }
+});
+
+app.post('/api/admin/ota/sync-github', async (req, res) => {
+  try {
+    const { verifyAuthTokenMiddleware } = await import('./src/server/firebaseAdminServer.ts');
+    const { handleAdminSyncGithubRelease } = await import('./src/server/otaUpdateController.ts');
+    await verifyAuthTokenMiddleware(req, res, () => handleAdminSyncGithubRelease(req, res));
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || 'Error sincronizando GitHub Releases' });
   }
 });
 
@@ -605,8 +657,18 @@ async function startServer() {
       })
     );
 
-    // Fallback all routes to index.html for React SPA
-    app.get('*', (_req, res) => {
+    // Never serve index.html for missing JS/CSS/font/image/manifest chunks (prevents MIME-type blank screens)
+    app.get(/^\/assets\/.+/, (_req, res) => {
+      res.setHeader('Cache-Control', 'no-store');
+      res.status(404).type('text/plain').send('Asset not found');
+    });
+
+    app.get('*', (req, res) => {
+      if (/\.(js|mjs|css|map|png|jpg|jpeg|webp|svg|ico|woff2?|json|webmanifest)$/i.test(req.path)) {
+        res.setHeader('Cache-Control', 'no-store');
+        res.status(404).type('text/plain').send('Static file not found');
+        return;
+      }
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');

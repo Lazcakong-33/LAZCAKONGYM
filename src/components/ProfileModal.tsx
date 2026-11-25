@@ -36,6 +36,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState('🦍');
   const [goal, setGoal] = useState('Hipertrofia & Masa');
+  const [pendingDeleteProfile, setPendingDeleteProfile] = useState<Profile | null>(null);
 
   const currentIsAdmin = Boolean(isAdmin);
 
@@ -198,13 +199,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (
-                                confirm(
-                                  `¿Eliminar la cuenta de ${profile.name}? Desaparecerá de TODOS los dispositivos de inmediato.`
-                                )
-                              ) {
-                                onDeleteProfile(profile.id);
-                              }
+                              setPendingDeleteProfile(profile);
                             }}
                             className="p-2 text-slate-500 hover:text-rose-400 rounded-xl hover:bg-slate-800 transition-colors opacity-40 hover:opacity-100"
                             title="Eliminar cuenta de atleta en todos los dispositivos"
@@ -218,6 +213,33 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 );
               })}
             </div>
+
+            {pendingDeleteProfile && currentIsAdmin && (
+              <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/40 space-y-2.5 animate-in fade-in">
+                <p className="text-xs text-rose-200 font-bold leading-relaxed">
+                  ¿Eliminar la cuenta de <strong>{pendingDeleteProfile.name}</strong>? Desaparecerá de TODOS los dispositivos de inmediato.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPendingDeleteProfile(null)}
+                    className="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onDeleteProfile(pendingDeleteProfile.id);
+                      setPendingDeleteProfile(null);
+                    }}
+                    className="flex-1 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-black cursor-pointer"
+                  >
+                    Confirmar eliminación
+                  </button>
+                </div>
+              </div>
+            )}
 
             {!currentIsAdmin && adminRequiresGoogleSignIn && (
               <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200 leading-snug">

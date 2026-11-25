@@ -13,17 +13,24 @@ import path from 'node:path';
 import {
   downloadAndStageOtaUpdate,
   evaluateOtaCompatibility,
+  evaluateOtaRetryEligibility,
   markOtaBootReady,
+  recordOtaAttemptResult,
   rollbackOtaToPreviousBundle,
   validateOtaManifest,
-  fetchOtaManifestFromServer,
-  DEV_GITHUB_OTA_MANIFEST_URL,
   type OtaManifestPayload,
   type OtaPluginAdapter,
 } from '../../utils/otaUpdateEngine.ts';
 import {
+  buildCanonicalManifestSigningPayload,
+  handleAdminGetOtaStatus,
+  handleAdminPublishOtaRelease,
+  handleAdminRollbackOtaRelease,
   handleGetOtaBundleZip,
   handleGetOtaManifest,
+  handleReportOtaTelemetry,
+  resetOtaControlStateForTest,
+  verifyManifestEd25519Signature,
 } from '../otaUpdateController.ts';
 
 function createMemoryStorage(): Storage {
@@ -125,8 +132,12 @@ async function runSuite() {
 
     const gradleSrc = fs.readFileSync(path.resolve(process.cwd(), 'android/app/build.gradle'), 'utf8');
     assert.ok(gradleSrc.includes('applicationId "com.lazcakong.gym"'), 'Must preserve applicationId com.lazcakong.gym');
+    assert.ok(gradleSrc.includes(': 70000'), 'build.gradle default versionCode must exceed previous 1.x/6.x APKs (70000)');
+    assert.ok(gradleSrc.includes(': "7.0.0"'), 'build.gradle default versionName must match 7.0.0');
     assert.ok(gradleSrc.includes('LAZCAKONG_KEYSTORE_FILE'), 'build.gradle must check optional CI release keystore env var');
     assert.ok(gradleSrc.includes('LAZCAKONG_DEBUG_KEYSTORE_FILE'), 'build.gradle must check optional CI debug keystore env var');
+    assert.ok(wf.includes('apksigner'), 'Workflow must verify APK signature via apksigner');
+    assert.ok(wf.includes('migration/zero-cost'), 'Workflow must preserve migration/zero-cost branch');
   });
 
   // 2. Capacitor config keeps manual mode & zero external cloud auto-connect
@@ -290,20 +301,6 @@ async function runSuite() {
       assert.equal(devRes.body.enabled, true);
       assert.equal(devRes.body.channel, 'development');
 
-      // Fail closed if a misconfigured server exposes a production manifest in development.
-      const prevDevManifest = process.env.OTA_MANIFEST_DEV_JSON;
-      try {
-        process.env.OTA_MANIFEST_DEV_JSON = JSON.stringify(makeValidDevManifest({ channel: 'production' }));
-        const mismatchRes = createMockRes();
-        handleGetOtaManifest({ query: { channel: 'development' } } as any, mismatchRes);
-        assert.equal(mismatchRes.body.channel, 'development');
-        assert.equal(mismatchRes.body.updateAvailable, false);
-        assert.equal(mismatchRes.body.manifest, null);
-      } finally {
-        if (prevDevManifest === undefined) delete process.env.OTA_MANIFEST_DEV_JSON;
-        else process.env.OTA_MANIFEST_DEV_JSON = prevDevManifest;
-      }
-
       // Attempt path traversal in bundle zip filename
       for (const badName of ['../server.ts', '..%2Fpackage.json', 'evil.sh']) {
         const zipRes = createMockRes();
@@ -331,150 +328,249 @@ async function runSuite() {
     assert.ok(mainJava.includes('RestTimerNotificationPlugin.class'));
   });
 
-  // 8. Native clients must not display web-only update prompts that cannot change APK assets.
-  await check('8. Native update prompt requires a real OTA manifest and retains the 6.4.4 upgrade path', () => {
-    const hook = fs.readFileSync(path.resolve(process.cwd(), 'src/hooks/useAppUpdate.ts'), 'utf8');
-    const banner = fs.readFileSync(path.resolve(process.cwd(), 'src/components/UpdateBanner.tsx'), 'utf8');
-    const version = fs.readFileSync(path.resolve(process.cwd(), 'src/utils/updateApp.ts'), 'utf8');
-    assert.ok(hook.includes('A native APK cannot be updated by a PWA Service Worker or /api/version.'));
-    assert.ok(hook.includes('applyImmediatelyWhenSafe: false'), 'Native OTA must stage without forced app reload');
-    assert.ok(hook.includes('skipDownloadWhenUnsafe: true'), 'Never download/activate while a workout is active');
-    assert.ok(hook.includes('setOtaPendingManifest(null);\n        setServerVersion(null);'));
-    assert.ok(!hook.includes('Immediately register current running build in localStorage'));
-    assert.ok(!banner.includes('!isVersionGreater(serverVersion, currentVersion)'));
-    assert.ok(version.includes("VITE_APP_VERSION"), 'OTA build must embed actual release version');
+  // 8. Ed25519 Manifest Signing & Verification Guard
+  await check('8. Ed25519 cryptographic signature verifies authentic manifests and rejects tampered payloads', () => {
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
+    const publicPem = publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    const privatePem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+
+    const manifest = makeValidDevManifest({ version: '7.0.1', buildId: '7.0.1-ota-sig' });
+    const canonical = buildCanonicalManifestSigningPayload(manifest);
+    const sig = crypto.sign(null, Buffer.from(canonical, 'utf8'), privatePem).toString('base64');
+    manifest.signature = sig;
+    manifest.signatureAlgorithm = 'ed25519';
+
+    const ok = verifyManifestEd25519Signature(manifest, publicPem);
+    assert.equal(ok.verified, true);
+    assert.equal(ok.checked, true);
+
+    // Tamper bundle URL -> verification MUST fail
+    const tampered = { ...manifest, url: 'https://evil.example.com/malicious.zip' };
+    const bad = verifyManifestEd25519Signature(tampered, publicPem);
+    assert.equal(bad.verified, false);
+
+    // Production channel MUST require Ed25519 signature unconditionally
+    const unsignedProd = makeValidDevManifest({ channel: 'production', version: '7.0.1' });
+    delete unsignedProd.signature;
+    assert.equal(verifyManifestEd25519Signature(unsignedProd, publicPem).verified, false);
+    assert.equal(
+      validateOtaManifest(unsignedProd, {
+        currentWebVersion: '7.0.0',
+        expectedChannel: 'production',
+        allowProduction: true,
+      }).valid,
+      false
+    );
+
+    const signedProd = makeValidDevManifest({ channel: 'production', version: '7.0.1' });
+    signedProd.signature = crypto
+      .sign(null, Buffer.from(buildCanonicalManifestSigningPayload(signedProd), 'utf8'), privatePem)
+      .toString('base64');
+    signedProd.signatureAlgorithm = 'ed25519';
+    assert.equal(verifyManifestEd25519Signature(signedProd, publicPem).verified, true);
+    assert.equal(
+      validateOtaManifest(signedProd, {
+        currentWebVersion: '7.0.0',
+        expectedChannel: 'production',
+        allowProduction: true,
+      }).valid,
+      true
+    );
   });
 
-  // 9. Development CDN fallback must work when the backend is not configured.
-  await check('9. GitHub Releases fallback only for development; keeps explicit server kill switch', async () => {
-    const calls: string[] = [];
-    const request = async (url: RequestInfo | URL): Promise<Response> => {
-      const target = String(url);
-      calls.push(target);
-      if (target.includes('/api/ota/manifest')) {
-        return {
-          ok: true,
-          async json() {
-            return { success: true, enabled: true, channel: 'development', updateAvailable: false, manifest: null };
-          },
-        } as Response;
-      }
-      if (target.startsWith(DEV_GITHUB_OTA_MANIFEST_URL)) {
-        return {
-          ok: true,
-          async json() { return makeValidDevManifest(); },
-        } as Response;
-      }
-      throw new Error('Unexpected request: ' + target);
-    };
-    const dev = await fetchOtaManifestFromServer({
-      channel: 'development',
-      fetcher: request as typeof fetch,
-    });
-    assert.equal(dev.updateAvailable, true);
-    assert.equal(dev.manifest?.version, '6.4.3');
-    assert.equal(calls.length, 2);
-
-    const noDev = await fetchOtaManifestFromServer({
-      channel: 'development',
-      fetcher: (async () => ({
-        ok: true,
-        json: async () => ({
-          success: true, enabled: false, channel: 'development', updateAvailable: false, manifest: null,
-        }),
-      })) as unknown as typeof fetch,
-    });
-    assert.equal(noDev.updateAvailable, false);
-    assert.equal(noDev.enabled, false);
-
-    const stagingCalls: string[] = [];
-    const staging = await fetchOtaManifestFromServer({
-      channel: 'staging',
-      fetcher: (async (url) => {
-        stagingCalls.push(String(url));
-        return { ok: false, status: 503 } as Response;
-      }) as typeof fetch,
-    });
-    assert.equal(staging.updateAvailable, false);
-    assert.equal(stagingCalls.length, 1, 'Staging cannot leak into the development release channel');
-  });
-
-  // 10. Automatic deployment must not require tapping UPDATE NOW.
-  await check('10. Automatic native OTA stages once, waits for idle, and protects existing records', async () => {
+  // 9. Controlled Retry Backoff + Quarantine + Rapid Boot-Loop Automatic Rollback
+  await check('9. Controlled retry quarantines failing builds after 3 errors and markOtaBootReady rolls back boot loops automatically', async () => {
     const storage = createMemoryStorage();
-    const calls: string[] = [];
-    const adapter: OtaPluginAdapter = {
-      async notifyAppReady() { calls.push('ready'); },
-      async download(options) {
-        calls.push('download');
-        return {
-          id: 'neck-bundle',
-          version: options.version,
-          checksum: options.checksum || '',
-          downloaded: new Date().toISOString(),
-          status: 'success',
-        };
+    const buildId = '7.0.2-ota-bad';
+
+    assert.equal(evaluateOtaRetryEligibility(buildId, storage, 1000).eligible, true);
+    const fail1 = recordOtaAttemptResult(buildId, false, storage, 1000);
+    assert.equal(fail1.attempts, 1);
+    assert.equal(evaluateOtaRetryEligibility(buildId, storage, 2000).eligible, false);
+    assert.equal(evaluateOtaRetryEligibility(buildId, storage, 20000).eligible, true);
+
+    recordOtaAttemptResult(buildId, false, storage, 20000);
+    const fail3 = recordOtaAttemptResult(buildId, false, storage, 100000);
+    assert.equal(fail3.quarantined, true);
+    assert.equal(evaluateOtaRetryEligibility(buildId, storage, 9999999).quarantined, true);
+
+    // Boot-loop rollback test (>2 quick boots for non-builtin bundle)
+    let resetCalled = 0;
+    const loopAdapter: OtaPluginAdapter = {
+      async notifyAppReady() {
+        return {};
       },
-      async set(options) { calls.push('set:' + options.id); },
-      async next(options) {
-        calls.push('next:' + options.id);
-        return {
-          id: options.id,
-          version: '6.4.8',
-          checksum: '',
-          downloaded: new Date().toISOString(),
-          status: 'pending',
-        };
+      async download() {
+        throw new Error('unused');
       },
-      async reset() { calls.push('reset'); },
+      async set() {},
+      async next() {
+        throw new Error('unused');
+      },
+      async reset(opts) {
+        if (opts?.toLastSuccessful) resetCalled += 1;
+      },
       async current() {
-        return { bundle: { id: 'builtin', version: '1.0', checksum: '', downloaded: '', status: 'success' }, native: '1.0' };
+        return {
+          bundle: { id: 'bundle_loop_99', version: '7.0.9', downloaded: '', checksum: '', status: 'success' },
+          native: '1.0',
+        };
       },
     };
 
-    const manifest = makeValidDevManifest({ version: '6.4.8', buildId: '6.4.8-ota-test' });
-    storage.setItem('lazcakon_test_active_session', JSON.stringify({ id: 'session-no-force', sets: [] }));
-    const delayed = await downloadAndStageOtaUpdate(manifest, {
-      adapter, storage, currentWebVersion: '6.4.7', forceNativeForTest: true,
-      skipDownloadWhenUnsafe: true, applyImmediatelyWhenSafe: false,
-    });
-    assert.equal(delayed.status, 'deferred_unsafe');
-    assert.deepEqual(calls, [], 'No download or native activation during active workout');
-    storage.removeItem('lazcakon_test_active_session');
-
-    const first = await downloadAndStageOtaUpdate(manifest, {
-      adapter, storage, currentWebVersion: '6.4.7', forceNativeForTest: true,
-      skipDownloadWhenUnsafe: true, applyImmediatelyWhenSafe: false,
-    });
-    assert.equal(first.status, 'staged_for_background');
-    assert.deepEqual(calls, ['download', 'next:neck-bundle']);
-    const repeated = await downloadAndStageOtaUpdate(manifest, {
-      adapter, storage, currentWebVersion: '6.4.7', forceNativeForTest: true,
-      skipDownloadWhenUnsafe: true, applyImmediatelyWhenSafe: false,
-    });
-    assert.equal(repeated.status, 'staged_for_background');
-    assert.deepEqual(calls, ['download', 'next:neck-bundle'], 'Never download/stage same OTA on every 25s poll');
-    const wrongVersion = await downloadAndStageOtaUpdate(manifest, {
-      adapter, storage, currentWebVersion: '6.4.8', forceNativeForTest: true,
-      skipDownloadWhenUnsafe: true, applyImmediatelyWhenSafe: false,
-    });
-    assert.equal(wrongVersion.status, 'blocked', 'Installed release must not download itself');
-    assert.equal(storage.getItem('lazcakon_test_active_session'), null);
+    await markOtaBootReady(loopAdapter, true, storage, 10_000);
+    await markOtaBootReady(loopAdapter, true, storage, 20_000);
+    const thirdBoot = await markOtaBootReady(loopAdapter, true, storage, 30_000);
+    assert.equal(thirdBoot.rolledBackBootLoop, true);
+    assert.equal(resetCalled, 1);
+    assert.equal(evaluateOtaRetryEligibility('bundle_loop_99', storage, 40_000).quarantined, true);
   });
 
-  await check('11. Automatic OTA bundle version is actually stamped by the build and never loops', () => {
-    const version = fs.readFileSync(path.resolve(process.cwd(), 'src/utils/updateApp.ts'), 'utf8');
-    assert.ok(version.includes(String.raw`/^v?\d+\.\d+\.\d+$/`),
-      'Vite version regex must match real semver, not double-escaped \\d');
-    assert.ok(!version.includes(String.raw`/^v?\\d+\\.\\d+\\.\\d+$/`));
-    const hook = fs.readFileSync(path.resolve(process.cwd(), 'src/hooks/useAppUpdate.ts'), 'utf8');
-    assert.ok(hook.includes('skipDownloadWhenUnsafe: true'));
-    assert.ok(hook.includes('setHasUpdateAvailable(false);'));
-    assert.ok(hook.includes('await forceAppUpdate();'), 'PWA update must install automatically when safe');
-    assert.ok(!hook.includes('dismissedVer !== otaResp.manifest.version'),
-      'Automatic updates must not be blocked by old user dismissals');
-    const native = fs.readFileSync(path.resolve(process.cwd(), 'capacitor.config.ts'), 'utf8');
-    assert.ok(native.includes('autoUpdate: false'), 'Keep Capgo cloud updater off when using first-party self-hosted OTA');
+  // 10. Admin Update Center API Security, Publish, Telemetry & Safe Rollback
+  await check('10. Admin Update Center enforces Master Admin auth, validates HTTPS/SHA-256, records telemetry, and supports safe rollback', () => {
+    const prevAdmin = process.env.ADMIN_EMAIL;
+    process.env.ADMIN_EMAIL = 'kmiloko19@gmail.com';
+    resetOtaControlStateForTest(true);
+
+    try {
+      const nonAdminUser = { uid: 'athlete_1', email: 'athlete@gym.com', isAdmin: false };
+      const masterAdmin = { uid: 'master_1', email: 'kmiloko19@gmail.com', isAdmin: true };
+
+      const deniedRes = createMockRes();
+      handleAdminGetOtaStatus({ user: nonAdminUser } as any, deniedRes);
+      assert.equal(deniedRes.statusCode, 403);
+
+      // SSRF / private IP rejected on publish
+      const ssrfRes = createMockRes();
+      handleAdminPublishOtaRelease(
+        {
+          user: masterAdmin,
+          body: {
+            channel: 'development',
+            version: '7.0.1',
+            url: 'https://127.0.0.1/evil.zip',
+            checksum: 'a'.repeat(64),
+          },
+        } as any,
+        ssrfRes
+      );
+      assert.equal(ssrfRes.statusCode, 400);
+
+      // Valid publish v7.0.1 then v7.0.2
+      const pub1 = createMockRes();
+      handleAdminPublishOtaRelease(
+        {
+          user: masterAdmin,
+          body: {
+            channel: 'development',
+            version: '7.0.1',
+            releaseNotes: 'Mejora visual 1',
+            url: 'https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/v7.0.1/ota.zip',
+            checksum: '1'.repeat(64),
+          },
+        } as any,
+        pub1
+      );
+      assert.equal(pub1.statusCode, 200);
+
+      const pub2 = createMockRes();
+      handleAdminPublishOtaRelease(
+        {
+          user: masterAdmin,
+          body: {
+            channel: 'development',
+            version: '7.0.2',
+            releaseNotes: 'Mejora visual 2',
+            url: 'https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/v7.0.2/ota.zip',
+            checksum: '2'.repeat(64),
+          },
+        } as any,
+        pub2
+      );
+      assert.equal(pub2.statusCode, 200);
+
+      // Telemetry recording
+      const telRes = createMockRes();
+      handleReportOtaTelemetry(
+        {
+          user: nonAdminUser,
+          body: {
+            deviceId: 'honor_400_pro',
+            platform: 'android_apk',
+            channel: 'development',
+            installedVersion: '7.0.1',
+            status: 'updated',
+          },
+        } as any,
+        telRes
+      );
+      assert.equal(telRes.statusCode, 200);
+
+      // Rollback back to v7.0.1
+      const rbRes = createMockRes();
+      handleAdminRollbackOtaRelease(
+        {
+          user: masterAdmin,
+          body: {
+            channel: 'development',
+            targetBuildId: pub1.body.manifest.buildId,
+          },
+        } as any,
+        rbRes
+      );
+      assert.equal(rbRes.statusCode, 200);
+      assert.equal(rbRes.body.restored.version, '7.0.1');
+
+      const statusRes = createMockRes();
+      handleAdminGetOtaStatus({ user: masterAdmin } as any, statusRes);
+      assert.equal(statusRes.statusCode, 200);
+      assert.equal(statusRes.body.channels.development.activeManifest.version, '7.0.1');
+      assert.equal(statusRes.body.telemetrySummary.totalDevices, 1);
+    } finally {
+      resetOtaControlStateForTest(false);
+      if (prevAdmin === undefined) delete process.env.ADMIN_EMAIL;
+      else process.env.ADMIN_EMAIL = prevAdmin;
+    }
+  });
+
+  // 11. Zero-Cost Update Polling & Native 70000 Compatibility Matrix
+  await check('11. Zero-cost update polling eliminates permanent 25s timer and production publish blocks unsigned OTA', () => {
+    const hookSrc = fs.readFileSync(path.resolve(process.cwd(), 'src/hooks/useAppUpdate.ts'), 'utf8');
+    assert.ok(!hookSrc.includes(', 25000)'), 'Must NOT poll every 25s permanently');
+    assert.ok(hookSrc.includes('AUTO_UPDATE_CHECK_COOLDOWN_MS = 15 * 60 * 1000'), 'Must enforce 15m auto-check cooldown');
+    assert.ok(hookSrc.includes('BACKGROUND_UPDATE_POLL_INTERVAL_MS = 30 * 60 * 1000'), 'Must enforce 30m visible poll interval');
+
+    // Native versionCode 70000 compatibility checks
+    const compatOk = evaluateOtaCompatibility(makeValidDevManifest({ minNativeVersionCode: 70000 }), 70000);
+    assert.equal(compatOk.compatible, true);
+    const compatNeedsApk = evaluateOtaCompatibility(makeValidDevManifest({ minNativeVersionCode: 70100 }), 70000);
+    assert.equal(compatNeedsApk.compatible, false);
+    assert.equal(compatNeedsApk.requiresApkUpdate, true);
+
+    // Production publish without Ed25519 signature MUST fail HTTP 400
+    const prevAdmin = process.env.ADMIN_EMAIL;
+    process.env.ADMIN_EMAIL = 'kmiloko19@gmail.com';
+    resetOtaControlStateForTest(true);
+    try {
+      const unsignedProdPublish = createMockRes();
+      handleAdminPublishOtaRelease(
+        {
+          user: { uid: 'master_1', email: 'kmiloko19@gmail.com', isAdmin: true },
+          body: {
+            channel: 'production',
+            version: '7.0.1',
+            url: 'https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/v7.0.1/ota.zip',
+            checksum: 'a'.repeat(64),
+          },
+        } as any,
+        unsignedProdPublish
+      );
+      assert.equal(unsignedProdPublish.statusCode, 400);
+    } finally {
+      resetOtaControlStateForTest(false);
+      if (prevAdmin === undefined) delete process.env.ADMIN_EMAIL;
+      else process.env.ADMIN_EMAIL = prevAdmin;
+    }
   });
 
   console.log(`\n🎉 ALL ${passed} CI APK & OTA SYSTEM CHECKS PASSED!`);

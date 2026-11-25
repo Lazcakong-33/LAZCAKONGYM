@@ -24,13 +24,14 @@ import {
 } from 'lucide-react';
 import {
   InviteLink,
-  createSingleUseInvite,
+  createSingleUseInviteDetailed,
   generateBatchInviteTokens,
   subscribeToInvites,
-  revokeInviteToken,
-  fetchInvitesAdmin,
+  revokeInviteTokenDetailed,
+  fetchInvitesAdminResult,
   getPublicAppUrl,
 } from '../utils/firebaseSync';
+import { OFFICIAL_RELEASE_APK_DOWNLOAD_URL } from '../utils/otaUpdateEngine';
 
 interface InstallApkModalProps {
   isOpen: boolean;
@@ -65,21 +66,33 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
 
   // Single-use invite state
   const [invites, setInvites] = useState<InviteLink[]>([]);
+  const [invitesError, setInvitesError] = useState<string | null>(null);
+  const [isLoadingInvites, setIsLoadingInvites] = useState(false);
   const [recipientNote, setRecipientNote] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedInviteForQr, setSelectedInviteForQr] = useState<InviteLink | null>(null);
   const [batchGeneratedCodes, setBatchGeneratedCodes] = useState<string[]>([]);
-  const [statusNotice, setStatusNotice] = useState<string | null>(null);
+  const [statusNotice, setStatusNotice] = useState<{ text: string; isError?: boolean } | null>(null);
 
-  const showNotice = (msg: string) => {
-    setStatusNotice(msg);
-    setTimeout(() => setStatusNotice(null), 5000);
+  const showNotice = (text: string, isError = false) => {
+    setStatusNotice({ text, isError });
+    setTimeout(() => setStatusNotice(null), 6000);
   };
 
   const refreshInvitesList = async () => {
-    const list = await fetchInvitesAdmin();
-    setInvites(list);
-    return list;
+    setIsLoadingInvites(true);
+    try {
+      const res = await fetchInvitesAdminResult();
+      if (res.success) {
+        setInvitesError(null);
+        setInvites(res.invites);
+        return res.invites;
+      }
+      setInvitesError(res.error || 'No se pudieron cargar las invitaciones.');
+      return [];
+    } finally {
+      setIsLoadingInvites(false);
+    }
   };
 
   const handleGenerateBatch50 = async () => {
@@ -91,7 +104,7 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
         await refreshInvitesList();
         showNotice(res.message || 'Lote de 50 códigos generado en Firestore.');
       } else {
-        showNotice(res.message || 'No se pudo generar el lote.');
+        showNotice(res.message || 'No se pudo generar el lote.', true);
       }
     } finally {
       setIsGenerating(false);
@@ -125,17 +138,26 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
 
   useEffect(() => {
     if (!isOpen || !isAdmin) return;
-    const unsubscribe = subscribeToInvites((list) => {
-      setInvites(list);
-      const firstActive = list.find((i) => !i.used && !i.revoked) || null;
-      setSelectedInviteForQr((prev) => {
-        if (prev) {
-          const updatedPrev = list.find((i) => i.token === prev.token);
-          if (updatedPrev && !updatedPrev.used && !updatedPrev.revoked) return updatedPrev;
-        }
-        return firstActive;
-      });
-    });
+    setIsLoadingInvites(true);
+    const unsubscribe = subscribeToInvites(
+      (list) => {
+        setIsLoadingInvites(false);
+        setInvitesError(null);
+        setInvites(list);
+        const firstActive = list.find((i) => !i.used && !i.revoked) || null;
+        setSelectedInviteForQr((prev) => {
+          if (prev) {
+            const updatedPrev = list.find((i) => i.token === prev.token);
+            if (updatedPrev && !updatedPrev.used && !updatedPrev.revoked) return updatedPrev;
+          }
+          return firstActive;
+        });
+      },
+      (err) => {
+        setIsLoadingInvites(false);
+        setInvitesError(err);
+      }
+    );
     return () => unsubscribe();
   }, [isOpen, isAdmin]);
 
@@ -214,8 +236,17 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
                   <span>📲 Instalar App en tu Celular</span>
                 </button>
               )}
+              <a
+                href={OFFICIAL_RELEASE_APK_DOWNLOAD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 rounded-2xl bg-[#171717] hover:bg-[#222222] border border-[#CCFF00]/45 text-[#CCFF00] font-black text-xs flex items-center justify-center gap-2 uppercase tracking-wider"
+              >
+                <Download className="w-4 h-4" />
+                <span>Descargar APK Android Oficial (.apk)</span>
+              </a>
               <p className="text-[11px] text-slate-400 leading-normal">
-                Si no salta el aviso automático: Toca el menú de 3 puntos (⋮) en Chrome y selecciona <strong>"Instalar aplicación"</strong>.
+                Si prefieres instalar la versión PWA sin descarga: toca el menú de 3 puntos (⋮) en Chrome y selecciona <strong>"Instalar aplicación"</strong>.
               </p>
             </div>
           )}
@@ -238,14 +269,14 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
     if (e) e.preventDefault();
     setIsGenerating(true);
     try {
-      const created = await createSingleUseInvite(adminName, recipientNote);
-      if (created) {
+      const res = await createSingleUseInviteDetailed(adminName, recipientNote);
+      if (res.success && res.invite) {
         setRecipientNote('');
-        setSelectedInviteForQr(created);
+        setSelectedInviteForQr(res.invite);
         await refreshInvitesList();
-        showNotice(`Código ${created.token} creado en Firestore.`);
+        showNotice(`Código ${res.invite.token} creado en Firestore.`);
       } else {
-        showNotice('No se pudo crear el código. Verifica tu sesión Admin.');
+        showNotice(res.error || 'No se pudo crear el código. Verifica tu sesión Admin.', true);
       }
     } finally {
       setIsGenerating(false);
@@ -311,9 +342,19 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
         </div>
 
         {statusNotice && (
-          <div className="mt-3 p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-between gap-2">
-            <span>{statusNotice}</span>
-            <button type="button" onClick={() => setStatusNotice(null)} className="text-emerald-200 hover:text-white">
+          <div
+            className={`mt-3 p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 ${
+              statusNotice.isError
+                ? 'bg-rose-500/15 border-rose-500/40 text-rose-300'
+                : 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+            }`}
+          >
+            <span>{statusNotice.text}</span>
+            <button
+              type="button"
+              onClick={() => setStatusNotice(null)}
+              className="opacity-80 hover:opacity-100"
+            >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -535,7 +576,26 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
                 </div>
               </div>
 
-              {activeInvites.length === 0 ? (
+              {invitesError ? (
+                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/40 text-center space-y-2.5">
+                  <p className="text-xs text-rose-300 font-bold flex items-center justify-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{invitesError}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void refreshInvitesList()}
+                    disabled={isLoadingInvites}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/30 text-xs font-bold cursor-pointer disabled:opacity-50"
+                  >
+                    <span>{isLoadingInvites ? 'Consultando...' : 'Reintentar carga de invitaciones'}</span>
+                  </button>
+                </div>
+              ) : isLoadingInvites && activeInvites.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 text-center">
+                  <p className="text-xs text-slate-400">Cargando invitaciones desde el servidor…</p>
+                </div>
+              ) : activeInvites.length === 0 ? (
                 <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 text-center space-y-2">
                   <p className="text-xs text-slate-400">
                     No hay enlaces activos sin usar en este momento.
@@ -592,8 +652,13 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
                             <button
                               type="button"
                               onClick={async () => {
-                                const ok = await revokeInviteToken(inv.token);
-                                if (ok) await refreshInvitesList();
+                                const res = await revokeInviteTokenDetailed(inv.token);
+                                if (res.success) {
+                                  await refreshInvitesList();
+                                  showNotice(`Invitación ${inv.token} revocada.`);
+                                } else {
+                                  showNotice(res.error || 'No se pudo revocar la invitación.', true);
+                                }
                               }}
                               className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30"
                               title="Caducar / eliminar este enlace"
@@ -735,8 +800,13 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
                       <button
                         type="button"
                         onClick={async () => {
-                          const ok = await revokeInviteToken(inv.token);
-                          if (ok) await refreshInvitesList();
+                          const res = await revokeInviteTokenDetailed(inv.token);
+                          if (res.success) {
+                            await refreshInvitesList();
+                            showNotice(`Registro ${inv.token} eliminado.`);
+                          } else {
+                            showNotice(res.error || 'No se pudo eliminar la invitación.', true);
+                          }
                         }}
                         className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg"
                         title="Limpiar del registro"
@@ -885,25 +955,34 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
           </div>
         )}
 
-        {/* TAB 4: GENERATE NATIVE .APK WITH PWABUILDER */}
+        {/* TAB 4: OFFICIAL RELEASE APK (GITHUB RELEASES) & PWABUILDER */}
         {activeTab === 'pwabuilder' && (
           <div className="space-y-4 animate-in fade-in">
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
-              <h4 className="text-xs font-black text-amber-300 flex items-center space-x-1.5">
+            <div className="p-4 rounded-2xl bg-[#CCFF00]/10 border border-[#CCFF00]/35 space-y-2.5">
+              <h4 className="text-xs font-black text-[#CCFF00] flex items-center space-x-1.5">
                 <Package className="w-4 h-4" />
-                <span>Empaquetador Oficial APK Firmado (PWABuilder)</span>
+                <span>APK Release Oficial Firmada (GitHub Releases)</span>
               </h4>
               <p className="text-xs text-slate-300 leading-relaxed">
-                La app cuenta con <code>manifest.json</code> y Service Worker configurados.
+                Descarga directa de la APK Android firmada de LAZCAKONG GYM (<code className="text-[#CCFF00]">com.lazcakong.gym</code>) con actualizaciones automáticas OTA habilitadas.
               </p>
+              <a
+                href={OFFICIAL_RELEASE_APK_DOWNLOAD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 rounded-2xl bg-[#CCFF00] hover:bg-[#d9ff33] text-[#090909] font-black text-xs shadow-lg flex items-center justify-center space-x-2"
+              >
+                <Download className="w-4 h-4" />
+                <span>Descargar APK Release Oficial (.apk)</span>
+              </a>
             </div>
             <a
               href={`https://www.pwabuilder.com/reportcard?site=${encodeURIComponent(officialBaseUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs shadow-lg flex items-center justify-center space-x-2"
+              className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center space-x-2"
             >
-              <span>Abrir PWABuilder</span>
+              <span>Abrir reporte en PWABuilder (PWA)</span>
               <ExternalLink className="w-4 h-4" />
             </a>
           </div>

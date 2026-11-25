@@ -561,6 +561,140 @@ export async function deleteSubcollectionDocWithUserToken(
   return { ok: res.ok || res.status === 404, status: res.status };
 }
 
+function getFirestoreRestDocumentName(collectionId: string, docId: string): string {
+  const projectId = process.env.FIREBASE_PROJECT_ID || firebaseConfig.projectId;
+  const dbId = process.env.FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId || '(default)';
+  return `projects/${projectId}/databases/${dbId}/documents/${collectionId}/${docId}`;
+}
+
+export async function listCollectionWithUserToken(
+  rawIdToken: string,
+  collectionId: string,
+  pageSize = 200
+): Promise<{ ok: boolean; status: number; docs: Array<{ id: string; data: Record<string, any> }>; error?: string }> {
+  const baseUrl = getFirestoreRestDocumentsUrl();
+  const docs: Array<{ id: string; data: Record<string, any> }> = [];
+  let pageToken = '';
+  let pages = 0;
+
+  do {
+    const params = new URLSearchParams({ pageSize: String(Math.min(300, Math.max(1, pageSize))) });
+    if (pageToken) params.set('pageToken', pageToken);
+    const res = await fetch(`${baseUrl}/${encodeURIComponent(collectionId)}?${params.toString()}`, {
+      method: 'GET',
+      signal:
+        typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+          ? AbortSignal.timeout(10_000)
+          : undefined,
+      headers: { Authorization: `Bearer ${rawIdToken}` },
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      return { ok: false, status: res.status, docs: [], error: errText.slice(0, 300) };
+    }
+    const json = (await res.json()) as {
+      documents?: Array<{ name?: string; fields?: Record<string, any> }>;
+      nextPageToken?: string;
+    };
+    for (const doc of json.documents || []) {
+      const id = doc.name?.split('/').pop() || '';
+      if (id) {
+        docs.push({ id, data: fromFirestoreRestFields(doc.fields || {}) });
+      }
+    }
+    pageToken = json.nextPageToken || '';
+    pages += 1;
+  } while (pageToken && pages < 5);
+
+  return { ok: true, status: 200, docs };
+}
+
+export async function putDocumentWithUserToken(
+  rawIdToken: string,
+  collectionId: string,
+  docId: string,
+  data: Record<string, any>
+): Promise<{ ok: boolean; status: number; data?: Record<string, any>; error?: string }> {
+  const baseUrl = getFirestoreRestDocumentsUrl();
+  const res = await fetch(`${baseUrl}/${encodeURIComponent(collectionId)}/${encodeURIComponent(docId)}`, {
+    method: 'PATCH',
+    signal:
+      typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(10_000)
+        : undefined,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${rawIdToken}`,
+    },
+    body: JSON.stringify({
+      fields: toFirestoreRestFields(data),
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    return { ok: false, status: res.status, error: errText.slice(0, 300) };
+  }
+  const docJson = (await res.json()) as { fields?: Record<string, any> };
+  return {
+    ok: true,
+    status: 200,
+    data: fromFirestoreRestFields(docJson.fields || {}),
+  };
+}
+
+export async function deleteDocumentWithUserToken(
+  rawIdToken: string,
+  collectionId: string,
+  docId: string
+): Promise<{ ok: boolean; status: number; error?: string }> {
+  const baseUrl = getFirestoreRestDocumentsUrl();
+  const res = await fetch(`${baseUrl}/${encodeURIComponent(collectionId)}/${encodeURIComponent(docId)}`, {
+    method: 'DELETE',
+    signal:
+      typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(10_000)
+        : undefined,
+    headers: { Authorization: `Bearer ${rawIdToken}` },
+  });
+  if (!res.ok && res.status !== 404) {
+    const errText = await res.text().catch(() => '');
+    return { ok: false, status: res.status, error: errText.slice(0, 300) };
+  }
+  return { ok: true, status: res.status };
+}
+
+export async function batchSetDocumentsWithUserToken(
+  rawIdToken: string,
+  collectionId: string,
+  items: Array<{ docId: string; data: Record<string, any> }>
+): Promise<{ ok: boolean; status: number; error?: string }> {
+  if (items.length === 0) return { ok: true, status: 200 };
+  const baseUrl = getFirestoreRestDocumentsUrl();
+  const writes = items.map((item) => ({
+    update: {
+      name: getFirestoreRestDocumentName(collectionId, item.docId),
+      fields: toFirestoreRestFields(item.data),
+    },
+  }));
+  const res = await fetch(`${baseUrl}:commit`, {
+    method: 'POST',
+    signal:
+      typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(15_000)
+        : undefined,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${rawIdToken}`,
+    },
+    body: JSON.stringify({ writes }),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    return { ok: false, status: res.status, error: errText.slice(0, 300) };
+  }
+  return { ok: true, status: 200 };
+}
+
 // Secure SHA-256 token hashing
 export function hashToken(rawToken: string): string {
   const clean = String(rawToken || '').trim().toUpperCase();

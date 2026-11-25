@@ -49,7 +49,11 @@ const MapaMuscularView = React.lazy(() =>
 
 export default function App() {
   useEffect(() => {
-    void markOtaBootReady();
+    void markOtaBootReady().then((res) => {
+      if (res?.justInstalled && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ota-just-installed', { detail: res.justInstalled }));
+      }
+    });
   }, []);
 
   const gym = useGymState();
@@ -234,6 +238,21 @@ export default function App() {
           onDismissAuthNotice={gym.clearAuthStatusNotice}
         />
       </>
+    );
+  }
+
+  if (!gym.activeProfile) {
+    return (
+      <div className="min-h-dvh bg-[#090909] text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <p className="text-sm font-bold text-slate-300">Cargando perfil del atleta…</p>
+        <button
+          type="button"
+          onClick={gym.retrySessionBootstrap}
+          className="px-4 py-2.5 rounded-xl bg-amber-500 text-black text-xs font-black cursor-pointer"
+        >
+          Reintentar carga
+        </button>
+      </div>
     );
   }
 

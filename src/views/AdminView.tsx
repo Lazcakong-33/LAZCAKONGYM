@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Crown,
   Send,
@@ -52,7 +52,11 @@ import {
   MuscleGroupVolumeRow,
   WeeklyTrendRow,
 } from '../utils/exportReport';
-import { syncUserDataToFirebase, broadcastAppUpdateToDevices } from '../utils/firebaseSync';
+import {
+  syncUserDataToFirebase,
+  broadcastAppUpdateToDevices,
+  fetchUserDataFromFirebase,
+} from '../utils/firebaseSync';
 import { APP_VERSION, APP_BUILD_ID } from '../utils/updateApp';
 import { purgeAndSanitizeWorkoutHistory } from '../utils/historySanitizer';
 import { BackupInspectionResult } from '../utils/eliteBackupEngine';
@@ -61,6 +65,7 @@ import {
   EliteBackupRestoreOptions,
   EliteBackupRestorePanel,
 } from '../components/EliteBackupRestorePanel';
+import { AdminUpdateCenter } from '../components/AdminUpdateCenter';
 
 interface AdminViewProps {
   activeProfile: Profile;
@@ -123,6 +128,20 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [selectedAthleteId, setSelectedAthleteId] = useState(
     profiles.find((p) => !p.isAdmin)?.id || profiles[0]?.id || ''
   );
+  const [cloudAthleteDataMap, setCloudAthleteDataMap] = useState<
+    Record<
+      string,
+      {
+        history?: CompletedWorkout[];
+        bodyWeightLogs?: BodyWeightEntry[];
+        routines?: Routine[];
+      }
+    >
+  >({});
+  const [pendingAthleteAction, setPendingAthleteAction] = useState<{
+    type: 'clean' | 'delete';
+    profile: Profile;
+  } | null>(null);
 
   // Exercise library search & muscle filter
   const [searchLibrary, setSearchLibrary] = useState('');
@@ -130,8 +149,47 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
   const selectedAthlete = profiles.find((p) => p.id === selectedAthleteId) || activeProfile;
 
-  // Retrieve athlete-specific data if available (with automatic deduplication & duration normalization)
+  useEffect(() => {
+    if (!selectedAthleteId || selectedAthleteId === activeProfile.id) return;
+    let cancelled = false;
+    void fetchUserDataFromFirebase(selectedAthleteId)
+      .then((res) => {
+        if (cancelled || !res.success || !res.data) return;
+        const raw = res.data;
+        setCloudAthleteDataMap((prev) => ({
+          ...prev,
+          [selectedAthleteId]: {
+            history: Array.isArray(raw.history) ? (raw.history as CompletedWorkout[]) : undefined,
+            bodyWeightLogs: Array.isArray(raw.bodyWeightLogs)
+              ? (raw.bodyWeightLogs as BodyWeightEntry[])
+              : undefined,
+            routines: Array.isArray(raw.routines) ? (raw.routines as Routine[]) : undefined,
+          },
+        }));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAthleteId, activeProfile.id]);
+
+  // Retrieve athlete-specific data if available (preferring cloud Firestore for other athletes, local live props for active profile)
   const athleteHistory: CompletedWorkout[] = useMemo(() => {
+    if (selectedAthleteId === activeProfile.id) {
+      const { cleanedHistory } = purgeAndSanitizeWorkoutHistory(
+        history,
+        selectedAthlete?.weightKg || 95
+      );
+      return cleanedHistory;
+    }
+    const cloudHistory = cloudAthleteDataMap[selectedAthleteId]?.history;
+    if (Array.isArray(cloudHistory)) {
+      const { cleanedHistory } = purgeAndSanitizeWorkoutHistory(
+        cloudHistory,
+        selectedAthlete?.weightKg || 95
+      );
+      return cleanedHistory;
+    }
     try {
       const stored = localStorage.getItem(`lazcakon_${selectedAthleteId}_history`);
       if (stored) {
@@ -143,19 +201,32 @@ export const AdminView: React.FC<AdminViewProps> = ({
         return cleanedHistory;
       }
     } catch {}
-    const { cleanedHistory } = purgeAndSanitizeWorkoutHistory(history, selectedAthlete?.weightKg || 95);
-    return cleanedHistory;
-  }, [selectedAthleteId, history, selectedAthlete?.weightKg]);
+    return [];
+  }, [selectedAthleteId, activeProfile.id, history, cloudAthleteDataMap, selectedAthlete?.weightKg]);
 
   const athleteBodyWeight: BodyWeightEntry[] = useMemo(() => {
+    if (selectedAthleteId === activeProfile.id) {
+      return bodyWeightLogs;
+    }
+    const cloudLogs = cloudAthleteDataMap[selectedAthleteId]?.bodyWeightLogs;
+    if (Array.isArray(cloudLogs)) {
+      return cloudLogs;
+    }
     try {
       const stored = localStorage.getItem(`lazcakon_${selectedAthleteId}_bodyweight`);
       if (stored) return JSON.parse(stored) as BodyWeightEntry[];
     } catch {}
-    return bodyWeightLogs;
-  }, [selectedAthleteId, bodyWeightLogs]);
+    return [];
+  }, [selectedAthleteId, activeProfile.id, bodyWeightLogs, cloudAthleteDataMap]);
 
   const athleteRoutines: Routine[] = useMemo(() => {
+    if (selectedAthleteId === activeProfile.id) {
+      return routines;
+    }
+    const cloudRoutines = cloudAthleteDataMap[selectedAthleteId]?.routines;
+    if (Array.isArray(cloudRoutines) && cloudRoutines.length > 0) {
+      return cloudRoutines;
+    }
     try {
       const stored = localStorage.getItem(`lazcakon_${selectedAthleteId}_routines`);
       if (stored) {
@@ -164,7 +235,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
       }
     } catch {}
     return routines;
-  }, [selectedAthleteId, routines]);
+  }, [selectedAthleteId, activeProfile.id, routines, cloudAthleteDataMap]);
 
   // Comparative data calculation for export & overview (grouped by Day of the Week)
   const {
@@ -434,7 +505,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             const res = await broadcastAppUpdateToDevices(
               APP_VERSION,
               APP_BUILD_ID,
-              'Muro de Pago Seguro & Nuevo Mapa Muscular 360° · Toca para actualizar'
+              'LAZCAKONG GYM v7.0 · Mejoras y correcciones disponibles para actualizar'
             );
             setIsBroadcastingUpdate(false);
             window.dispatchEvent(new CustomEvent('app-update-available'));
@@ -452,6 +523,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
           <span>{isBroadcastingUpdate ? 'Enviando a celulares...' : 'Enviar Actualización a Celulares'}</span>
         </button>
       </div>
+
+      {/* Master Admin Centro de Actualizaciones (OTA + APK Release + Rollback + Telemetría) */}
+      <AdminUpdateCenter />
 
       {/* Quick Single-Use Invite & APK Bar for Coach */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-emerald-500/15 border border-amber-500/35 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
@@ -587,15 +661,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (
-                            confirm(
-                              `¿Limpiar completamente todos los entrenamientos, marcas y datos de ${p.name}? Empezará desde cero.`
-                            )
-                          ) {
-                            onCleanAthleteData(p.id);
-                            setCloudRefreshMsg(`¡Datos del atleta ${p.name} limpiados correctamente!`);
-                            setTimeout(() => setCloudRefreshMsg(null), 4000);
-                          }
+                          setPendingAthleteAction({ type: 'clean', profile: p });
                         }}
                         className="py-1 px-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold active:scale-95 transition-all shadow-sm"
                         title="Reiniciar historial y marcas a cero"
@@ -609,13 +675,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (
-                            confirm(
-                              `⚠️ ¿ELIMINAR ATLETA DEFINITIVAMENTE?\n\n¿Estás seguro de que deseas eliminar permanentemente a ${p.name} (${p.email})?\n\nEsta acción borrará al atleta de Cloud Firestore y DESAPARECERÁ DE TODOS LOS DISPOSITIVOS de inmediato.`
-                            )
-                          ) {
-                            onDeleteAthlete(p.id);
-                          }
+                          setPendingAthleteAction({ type: 'delete', profile: p });
                         }}
                         className="py-1 px-2.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 text-rose-400 border border-rose-500/40 text-[10px] font-black active:scale-95 transition-all shadow-sm flex items-center gap-1"
                         title="Eliminar este atleta de todos los dispositivos permanentemente"
@@ -1017,6 +1077,59 @@ export const AdminView: React.FC<AdminViewProps> = ({
           })}
         </div>
       </section>
+      {/* In-App Confirmation Modal for Athlete Clean / Delete (Capacitor-safe, no window.confirm) */}
+      {pendingAthleteAction && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setPendingAthleteAction(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-[#0d1424] border border-slate-700 p-5 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4 className="text-sm font-black text-white">
+              {pendingAthleteAction.type === 'delete'
+                ? '¿Eliminar atleta definitivamente?'
+                : '¿Limpiar datos del atleta?'}
+            </h4>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              {pendingAthleteAction.type === 'delete'
+                ? `Se eliminará permanentemente a ${pendingAthleteAction.profile.name} (${pendingAthleteAction.profile.email || 'sin correo'}) de Cloud Firestore y desaparecerá de todos los dispositivos.`
+                : `Se reiniciarán a cero todos los entrenamientos, marcas y registros de ${pendingAthleteAction.profile.name}.`}
+            </p>
+            <div className="flex gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setPendingAthleteAction(null)}
+                className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const target = pendingAthleteAction.profile;
+                  if (pendingAthleteAction.type === 'clean' && onCleanAthleteData) {
+                    onCleanAthleteData(target.id);
+                    setCloudRefreshMsg(`¡Datos del atleta ${target.name} limpiados correctamente!`);
+                    setTimeout(() => setCloudRefreshMsg(null), 4000);
+                  } else if (pendingAthleteAction.type === 'delete' && onDeleteAthlete) {
+                    onDeleteAthlete(target.id);
+                  }
+                  setPendingAthleteAction(null);
+                }}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-black cursor-pointer ${
+                  pendingAthleteAction.type === 'delete'
+                    ? 'bg-rose-500 hover:bg-rose-400 text-white'
+                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                }`}
+              >
+                {pendingAthleteAction.type === 'delete' ? 'Sí, eliminar' : 'Sí, limpiar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

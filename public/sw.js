@@ -1,6 +1,6 @@
 /* LAZCAKONGYM - Progressive Web App Service Worker */
-/* Version: v6.4.4 - Live Rest Timer Notifications */
-const CACHE_NAME = 'lazcakongym-v6.4.4-rest-live';
+/* Version: v7.0.0 - OTA & Shell Cache Recovery & MIME Safety */
+const CACHE_NAME = 'lazcakongym-v7.0.0-ota';
 const EXERCISE_LIB_CACHE_PREFIX = 'lazcakon-exercise-lib-';
 const EXERCISE_LIB_CACHE_NAME = 'lazcakon-exercise-lib-v1';
 const REST_ACTIVE_NOTIFICATION_TAG = 'lazcakon-rest-active';
@@ -248,7 +248,7 @@ self.addEventListener('activate', (event) => {
       .then(async () => {
         const clients = await self.clients.matchAll({ type: 'window' });
         for (const client of clients) {
-          client.postMessage({ type: 'SW_ACTIVATED', version: 'v6.4.2' });
+          client.postMessage({ type: 'SW_ACTIVATED', version: 'v7.0.0' });
         }
       })
   );
@@ -372,7 +372,8 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          if (response && response.status === 200) {
+          const contentType = (response.headers.get('content-type') || '').toLowerCase();
+          if (response && response.status === 200 && contentType.includes('text/html')) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           }
@@ -389,21 +390,36 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  const isCodeBundle = url.pathname.endsWith('.js') || url.pathname.endsWith('.css');
+  const isCodeBundle = url.pathname.endsWith('.js') || url.pathname.endsWith('.mjs') || url.pathname.endsWith('.css');
   if (isCodeBundle) {
     event.respondWith(
       fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200) {
+        .then(async (response) => {
+          const contentType = (response.headers.get('content-type') || '').toLowerCase();
+          const isHtmlPayload = contentType.includes('text/html');
+          if (response && response.status === 200 && !isHtmlPayload) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            return response;
           }
-          return response;
+          const cached = await caches.match(event.request);
+          if (cached) {
+            const cachedType = (cached.headers.get('content-type') || '').toLowerCase();
+            if (!cachedType.includes('text/html')) {
+              return cached;
+            }
+          }
+          return isHtmlPayload ? Response.error() : response;
         })
         .catch(async () => {
           const cached = await caches.match(event.request);
-          if (cached) return cached;
-          throw new Error('Asset not found in network or cache');
+          if (cached) {
+            const cachedType = (cached.headers.get('content-type') || '').toLowerCase();
+            if (!cachedType.includes('text/html')) {
+              return cached;
+            }
+          }
+          return Response.error();
         })
     );
     return;

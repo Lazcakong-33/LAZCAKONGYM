@@ -2,8 +2,10 @@ import {
   GoogleAuthProvider,
   linkWithCredential,
   linkWithPopup,
+  linkWithRedirect,
   signInWithCredential,
   signInWithPopup,
+  signInWithRedirect,
   type User,
   type UserCredential,
 } from 'firebase/auth';
@@ -22,7 +24,9 @@ export interface NativeAuthDeps {
   detectPlatform?: typeof detectRuntimePlatform;
   loadSocialLogin?: () => Promise<NativeSocialLoginClient>;
   signInWithPopupFn?: typeof signInWithPopup;
+  signInWithRedirectFn?: typeof signInWithRedirect;
   linkWithPopupFn?: typeof linkWithPopup;
+  linkWithRedirectFn?: typeof linkWithRedirect;
   signInWithCredentialFn?: typeof signInWithCredential;
   linkWithCredentialFn?: typeof linkWithCredential;
   credentialFromIdToken?: (idToken: string) => ReturnType<typeof GoogleAuthProvider.credential>;
@@ -214,16 +218,36 @@ async function getNativeGoogleIdToken(deps?: NativeAuthDeps): Promise<string> {
   }
 }
 
+function shouldFallbackToWebRedirect(err: any): boolean {
+  const code = String(err?.code || '');
+  return (
+    code === 'auth/popup-blocked' ||
+    code === 'auth/operation-not-supported-in-this-environment'
+  );
+}
+
 /**
  * Signs into Firebase Auth with Google preserving the exact Firebase UID across
- * Web/PWA (`signInWithPopup`) and Capacitor Android/iOS (`@capgo/capacitor-social-login` -> `signInWithCredential`).
+ * Web/PWA (`signInWithPopup` with `signInWithRedirect` fallback if blocked)
+ * and Capacitor Android/iOS (`@capgo/capacitor-social-login` -> `signInWithCredential`).
  */
 export async function signInWithGoogleHybrid(deps?: NativeAuthDeps): Promise<UserCredential> {
   const detect = deps?.detectPlatform || detectRuntimePlatform;
   const { isCapacitorNative } = detect();
   if (!isCapacitorNative) {
     const popupFn = deps?.signInWithPopupFn || signInWithPopup;
-    return await popupFn(auth, googleProvider);
+    try {
+      return await popupFn(auth, googleProvider);
+    } catch (err: any) {
+      if (shouldFallbackToWebRedirect(err)) {
+        const redirectFn = deps?.signInWithRedirectFn || signInWithRedirect;
+        await redirectFn(auth, googleProvider);
+        const redirectErr: any = new Error('Redirigiendo a Google para completar el inicio de sesión.');
+        redirectErr.code = 'auth/redirect-initiated';
+        throw redirectErr;
+      }
+      throw err;
+    }
   }
 
   const idToken = await getNativeGoogleIdToken(deps);
@@ -235,7 +259,7 @@ export async function signInWithGoogleHybrid(deps?: NativeAuthDeps): Promise<Use
 
 /**
  * Links an existing authenticated user to Google preserving the active Firebase UID across
- * Web/PWA (`linkWithPopup`) and Capacitor native (`linkWithCredential`).
+ * Web/PWA (`linkWithPopup` with `linkWithRedirect` fallback if blocked) and Capacitor native (`linkWithCredential`).
  */
 export async function linkWithGoogleHybrid(
   currentUser: User,
@@ -245,7 +269,18 @@ export async function linkWithGoogleHybrid(
   const { isCapacitorNative } = detect();
   if (!isCapacitorNative) {
     const linkPopupFn = deps?.linkWithPopupFn || linkWithPopup;
-    return await linkPopupFn(currentUser, googleProvider);
+    try {
+      return await linkPopupFn(currentUser, googleProvider);
+    } catch (err: any) {
+      if (shouldFallbackToWebRedirect(err)) {
+        const linkRedirectFn = deps?.linkWithRedirectFn || linkWithRedirect;
+        await linkRedirectFn(currentUser, googleProvider);
+        const redirectErr: any = new Error('Redirigiendo a Google para vincular la cuenta.');
+        redirectErr.code = 'auth/redirect-initiated';
+        throw redirectErr;
+      }
+      throw err;
+    }
   }
 
   const idToken = await getNativeGoogleIdToken(deps);
