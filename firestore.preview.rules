@@ -7,7 +7,7 @@ service cloud.firestore {
       }
 
       function isLinkedOwner() {
-        return request.auth != null && resource.data.authUid == request.auth.uid;
+        return request.auth != null && resource != null && resource.data.get('authUid', '') == request.auth.uid;
       }
 
       function validPreviewDocument() {
@@ -20,7 +20,8 @@ service cloud.firestore {
       }
 
       allow get: if isLinkedOwner() || (isPreviewOwner() && (resource == null || !resource.data.keys().hasAny(['authUid'])));
-      allow list: if isLinkedOwner() && request.query.limit <= 2;
+      allow list: if request.auth != null && resource.data.authUid == request.auth.uid
+        && request.query.limit <= 2;
       allow create: if isPreviewOwner() && validPreviewDocument()
         && !request.resource.data.keys().hasAny(['authUid']);
       allow update: if (isLinkedOwner() || (isPreviewOwner() && !resource.data.keys().hasAny(['authUid'])))
