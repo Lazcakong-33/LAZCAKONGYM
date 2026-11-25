@@ -1,6 +1,43 @@
 const projectId = 'lazcakong-zero-cost-test';
 const issuer = `https://securetoken.google.com/${projectId}`;
 
+async function findLinkedAthlete(
+  uid: string,
+  token: string,
+  requestFirebase: typeof fetch
+): Promise<string | null> {
+  const response = await requestFirebase(
+    `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        structuredQuery: {
+          select: { fields: [{ fieldPath: 'authUid' }] },
+          from: [{ collectionId: 'athletes' }],
+          where: { fieldFilter: { field: { fieldPath: 'authUid' }, op: 'EQUAL', value: { stringValue: uid } } },
+          limit: 2,
+        },
+      }),
+      signal: AbortSignal.timeout(6000),
+    }
+  );
+  if (!response.ok) throw new Error('Preview Firestore lookup failed');
+  const rows = await response.json() as Array<{
+    document?: { name: string; fields?: { authUid?: { stringValue?: string } } };
+  }>;
+  const matches = rows.flatMap(({ document }) => document ? [document] : []);
+  if (matches.length === 0) return null;
+  if (matches.length !== 1) throw new Error('An account must link to a single athlete');
+  const [match] = matches;
+  const prefix = `projects/${projectId}/databases/(default)/documents/athletes/`;
+  const id = match.name.startsWith(prefix) ? match.name.slice(prefix.length) : '';
+  if (!id || id.includes('/') || match.fields?.authUid?.stringValue !== uid) {
+    throw new Error('Athlete link did not match the verified account');
+  }
+  return id;
+}
+
 function sessionResponse(body: object, status = 200) {
   return Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 }
@@ -8,7 +45,8 @@ function sessionResponse(body: object, status = 200) {
 export async function initializePreviewSession(
   request: Request,
   apiKey: string | undefined,
-  requestFirebase: typeof fetch = fetch
+  requestFirebase: typeof fetch = fetch,
+  resolveLinkedAthlete = false
 ): Promise<Response> {
   if (!apiKey) {
     return sessionResponse({ success: false, error: 'Firebase de prueba no configurado.' }, 503);
@@ -60,11 +98,14 @@ export async function initializePreviewSession(
     if (user?.localId !== uid || user.disabled) return unauthorized();
     if (signInProvider === 'google.com' && user.emailVerified !== true) return unauthorized();
 
-    // The Worker returns synthetic identity metadata. The web client syncs
-    // training records separately through the isolated Firestore rules.
+    const linkedAthleteId = resolveLinkedAthlete ? await findLinkedAthlete(uid, token, requestFirebase) : null;
+    if (resolveLinkedAthlete && !linkedAthleteId) {
+      return sessionResponse({ success: false, error: 'La cuenta de prueba no tiene un perfil vinculado.' }, 403);
+    }
+    const athleteId = linkedAthleteId ?? uid;
     return sessionResponse({
       success: true,
-      athleteId: uid,
+      athleteId,
       authUid: uid,
       isAdmin: false,
       signInProvider,
@@ -72,7 +113,7 @@ export async function initializePreviewSession(
       adminRequiresGoogleSignIn: false,
       claimsUpdated: false,
       profile: {
-        id: uid,
+        id: athleteId,
         authUid: uid,
         name: 'Atleta de prueba',
         isAdmin: false,
