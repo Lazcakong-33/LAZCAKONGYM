@@ -77,7 +77,7 @@ export async function initializePreviewSession(
   request: Request,
   apiKey: string | undefined,
   requestFirebase: typeof fetch = fetch,
-  resolveLinkedAthlete = false
+  requireLinkedAthlete = false
 ): Promise<Response> {
   if (!apiKey) {
     return sessionResponse({ success: false, error: 'Firebase de prueba no configurado.' }, 503);
@@ -129,11 +129,11 @@ export async function initializePreviewSession(
     if (user?.localId !== uid || user.disabled) return unauthorized();
     if (signInProvider === 'google.com' && user.emailVerified !== true) return unauthorized();
 
-    const linkedAthleteId = resolveLinkedAthlete ? await findLinkedAthlete(uid, token, requestFirebase) : null;
-    if (resolveLinkedAthlete && !linkedAthleteId) {
+    const linkedAthleteId = await findLinkedAthlete(uid, token, requestFirebase);
+    if (requireLinkedAthlete && !linkedAthleteId) {
       return sessionResponse({ success: false, error: 'La cuenta de prueba no tiene un perfil vinculado.' }, 403);
     }
-    if (!resolveLinkedAthlete) await ensurePreviewAthlete(uid, token, requestFirebase);
+    if (!linkedAthleteId) await ensurePreviewAthlete(uid, token, requestFirebase);
     const athleteId = linkedAthleteId ?? uid;
     return sessionResponse({
       success: true,
