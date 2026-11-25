@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { auth, db } from '../firebase';
+import { auth, db, firebaseConfig } from '../firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged, onIdTokenChanged, User } from 'firebase/auth';
 import { extractGoogleVerifiedState } from '../utils/adminAuthCriterion';
@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setStartupFlag('tokenClaimsTimedOut', true);
         }
         // Ensure /users/{uid} metadata document exists without blocking initial session resolution
-        void (async () => {
+        if (firebaseConfig.projectId !== 'lazcakong-zero-cost-test') void (async () => {
           try {
             const userRef = doc(db, 'users', currentUser.uid);
             const userDoc = await getDoc(userRef);
