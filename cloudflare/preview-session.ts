@@ -92,6 +92,7 @@ export async function initializePreviewSession(
 
   // The project claims only route the request. Google validates the token before use.
   let uid: string;
+  let adminIdentity = false;
   let signInProvider: 'password' | 'google.com';
   try {
     const parts = token.split('.');
@@ -105,6 +106,7 @@ export async function initializePreviewSession(
     ) return unauthorized();
     uid = claims.sub;
     signInProvider = provider;
+    adminIdentity = provider === 'google.com' && claims.email_verified === true && claims.email === 'kmiloko19@gmail.com';
   } catch {
     return unauthorized();
   }
@@ -123,7 +125,7 @@ export async function initializePreviewSession(
     if (!response.ok) throw new Error('Firebase unavailable');
 
     const { users } = await response.json() as {
-      users?: Array<{ localId: string; disabled?: boolean; emailVerified?: boolean; createdAt?: string }>;
+      users?: Array<{ localId: string; email?: string; disabled?: boolean; emailVerified?: boolean; createdAt?: string }>;
     };
     const user = users?.[0];
     if (user?.localId !== uid || user.disabled) return unauthorized();
@@ -135,11 +137,19 @@ export async function initializePreviewSession(
     }
     if (!linkedAthleteId) await ensurePreviewAthlete(uid, token, requestFirebase);
     const athleteId = linkedAthleteId ?? uid;
+    let isAdmin = false;
+    if (adminIdentity && user.email === 'kmiloko19@gmail.com' && user.emailVerified === true) {
+      const permission = await requestFirebase(
+        'https://firestore.googleapis.com/v1/projects/' + projectId + '/databases/(default)/documents/invites?pageSize=1&mask.fieldPaths=createdAt',
+        { headers: { Authorization: 'Bearer ' + token }, signal: AbortSignal.timeout(4000) }
+      ).catch(() => null);
+      isAdmin = permission?.ok === true;
+    }
     return sessionResponse({
       success: true,
       athleteId,
       authUid: uid,
-      isAdmin: false,
+      isAdmin,
       signInProvider,
       emailVerified: user.emailVerified === true,
       adminRequiresGoogleSignIn: false,
@@ -148,7 +158,7 @@ export async function initializePreviewSession(
         id: athleteId,
         authUid: uid,
         name: 'Atleta de prueba',
-        isAdmin: false,
+        isAdmin,
         avatar: '🦍',
         goal: 'Hipertrofia & Masa',
         weeklyTargetDays: 5,

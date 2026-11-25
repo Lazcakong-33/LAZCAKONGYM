@@ -1,3 +1,4 @@
+import { previewInvites } from './preview-invites.ts';
 import smokeWorker from './preview-worker.mjs';
 import { handlePreviewCoach, type PreviewCoachBindings } from './preview-coach.ts';
 import { initializePreviewSession } from './preview-session.ts';
@@ -17,6 +18,9 @@ export default {
   async fetch(request: Request, env: PreviewBindings = {}): Promise<Response> {
     const url = new URL(request.url);
     const { pathname } = url;
+    if (pathname === '/api/admin/invites' || pathname.startsWith('/api/admin/invites/')) {
+      return previewInvites(request);
+    }
     const otaHeaders = new Headers({ 'Cache-Control': 'no-store', Vary: 'Origin' });
     if (request.headers.get('Origin') === 'https://localhost') {
       otaHeaders.set('Access-Control-Allow-Origin', 'https://localhost');

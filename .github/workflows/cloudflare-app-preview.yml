@@ -36,7 +36,7 @@ jobs:
           npx --yes firebase-tools@15.37.0 emulators:exec
           --config firebase.preview-emulators.json --only auth,firestore
           --project lazcakong-zero-cost-test
-          "node scripts/check-linked-session.mjs"
+          "node scripts/check-linked-session.mjs && node scripts/check-preview-invites.mjs"
       - run: npm run build -- --mode cloudflare-preview
       - run: npx --yes wrangler@4.168.0 deploy --dry-run --config wrangler.app-preview.jsonc
 
