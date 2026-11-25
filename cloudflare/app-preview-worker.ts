@@ -6,6 +6,7 @@ import { buildDailyCaloriesReport, calculateCompletedRoutineCalories } from '../
 import { evaluateOtaCompatibility, type OtaManifestPayload } from '../src/utils/otaCompatibility.ts';
 
 interface PreviewBindings extends PreviewCoachBindings {
+  PREVIEW_RESOLVE_LINKED_ATHLETE?: string;
   ASSETS?: { fetch(request: Request): Promise<Response> };
 }
 
@@ -89,7 +90,9 @@ export default {
         } });
       }
       if (request.method === 'POST') {
-        const response = await initializePreviewSession(request, env.PREVIEW_FIREBASE_API_KEY);
+        const response = await initializePreviewSession(
+          request, env.PREVIEW_FIREBASE_API_KEY, fetch, env.PREVIEW_RESOLVE_LINKED_ATHLETE === 'true'
+        );
         const headers = new Headers(response.headers);
         headers.append('Vary', 'Origin');
         if (fromAndroid) headers.set('Access-Control-Allow-Origin', 'https://localhost');
