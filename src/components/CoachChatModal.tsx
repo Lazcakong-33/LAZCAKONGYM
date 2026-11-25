@@ -292,8 +292,8 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
     []
   );
 
-  const coachWorkersAi = import.meta.env.VITE_COACH_WORKERS_AI === 'true';
-  const useLocalCoachActions = coachWorkersAi || import.meta.env.VITE_COACH_LOCAL_ONLY === 'true';
+  const coachWorkersAi = import.meta.env?.VITE_COACH_WORKERS_AI === 'true';
+  const useLocalCoachActions = coachWorkersAi || import.meta.env?.VITE_COACH_LOCAL_ONLY === 'true';
 
   const appendLocalSummaryIfAvailable = (intent: CoachQuickIntent, defaultReply?: string) => {
     const summary = buildCoachLocalFallback({
