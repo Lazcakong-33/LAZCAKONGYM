@@ -1,0 +1,82 @@
+name: Validate and integrate 7.0.0 staging package
+on:
+  push:
+    branches: ['release/7.0.0-ota']
+    paths: ['.github/workflows/integrate-7-0-0.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: integrate-7-0-0
+  cancel-in-progress: false
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/release/7.0.0-ota'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download and verify pinned package
+        run: |
+          set -euo pipefail
+          curl --fail --location --max-time 90 --proto '=https' -o /tmp/incremental.zip 'https://ais-dev-56i2tt63sua7ovhyxwpgjs-888570249716.us-east1.run.app/LAZCAKONG_GYM_7.0.0_OTA_INCREMENTAL.zip'
+          echo '89eeeeabe87e7194d0e5a086a1187c87f9bf63649e4d40175d50b748aea81ff8  /tmp/incremental.zip' | sha256sum -c -
+          unzip -tq /tmp/incremental.zip
+          unzip -q /tmp/incremental.zip -d /tmp/incremental
+          (cd /tmp/incremental && sha256sum -c SHA256SUMS.txt)
+          test "$(find /tmp/incremental/payload -type f | wc -l)" -eq 33
+          cp -a /tmp/incremental/payload/. .
+          git add -A
+          git diff --cached --binary > /tmp/integration.patch
+          test -s /tmp/integration.patch
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run build
+      - name: Validate isolated Cloudflare build
+        env:
+          VITE_PREVIEW_FIREBASE_CONFIG: '{"projectId":"demo-lazcakong","authDomain":"demo-lazcakong.firebaseapp.com","appId":"test-web","apiKey":"placeholder"}'
+        run: npm run build -- --mode cloudflare-preview
+      - name: Run regression tests
+        env:
+          CI_ANDROID_ONLY: 'true'
+          OTA_PRODUCTION_ENABLED: 'false'
+        run: |
+          set -euo pipefail
+          for suite in adminAccessRepairSuite pwaStartupSessionSuite nativeGoogleAuthSuite nativeAndroidRestRepairSuite nativeCapacitorStage7aSuite offlineProductionReadinessSuite otaUpdateSystemSuite neckLibrarySuite coachChatRecoverySuite coachLaunchReadinessSuite coachNoHangSuite; do
+            npx tsx "src/server/__tests__/$suite.ts"
+          done
+          node --test scripts/zero-cost-guard.test.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-integration-patch
+          path: /tmp/integration.patch
+  integrate:
+    needs: validate
+    if: github.ref == 'refs/heads/release/7.0.0-ota'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-integration-patch
+          path: /tmp/verified
+      - name: Commit verified changes to release branch only
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/migration/zero-cost | cut -f1)" = '063c0015fd4f95755729055a1708a6fc01c45383'
+          test "$(git ls-remote origin refs/heads/release/7.0.0-ota | cut -f1)" = "$GITHUB_SHA"
+          git apply --index /tmp/verified/integration.patch
+          git diff --cached --quiet -- firestore.rules firestore.preview.rules cloudflare/ wrangler.jsonc wrangler.app-preview.jsonc public/exercise-library/ src/data/ .github/workflows/cloudflare-app-preview.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'release: integrate verified 7.0.0 OTA staging package'
+          git push origin HEAD:refs/heads/release/7.0.0-ota
