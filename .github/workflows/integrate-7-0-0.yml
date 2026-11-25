@@ -28,6 +28,13 @@ jobs:
           (cd /tmp/incremental && sha256sum -c SHA256SUMS.txt)
           test "$(find /tmp/incremental/payload -type f | wc -l)" -eq 33
           cp -a /tmp/incremental/payload/. .
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/views/SettingsCloudView.tsx')
+          s = p.read_text()
+          assert "import.meta.env.MODE === 'cloudflare-preview'" in s
+          p.write_text(s.replace("import.meta.env.MODE === 'cloudflare-preview'", "import.meta.env?.MODE === 'cloudflare-preview'"))
+          PY
           git diff --quiet -- firestore.rules firestore.preview.rules cloudflare/ wrangler.jsonc wrangler.app-preview.jsonc public/exercise-library/ src/data/ .github/workflows/cloudflare-app-preview.yml
           git add -A
           git diff --cached --binary > /tmp/integration.patch
