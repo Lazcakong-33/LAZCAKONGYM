@@ -296,7 +296,9 @@ export function subscribeAthletesFromCloud(
           doc(db, 'athletes', targetId),
           (snap) => {
             if (!snap.exists()) {
-              onUpdate([], new Set([targetId]));
+              // A new preview account has no training document until its first save.
+              // Its absence is not a deletion signal in the isolated project.
+              onUpdate([], new Set(firebaseConfig.projectId === 'lazcakong-zero-cost-test' ? [] : [targetId]));
               return;
             }
             const data = snap.data();
