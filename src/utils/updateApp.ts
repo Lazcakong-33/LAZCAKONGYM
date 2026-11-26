@@ -6,12 +6,12 @@
 
 const buildVersion =
   (import.meta as unknown as { env?: Record<string, string> })?.env?.VITE_APP_VERSION || '';
-export const DEFAULT_APP_VERSION = 'v7.0.0';
+export const DEFAULT_APP_VERSION = 'v7.0.5';
 export const APP_VERSION = /^v?\d+\.\d+\.\d+$/.test(buildVersion)
   ? `v${buildVersion.replace(/^v/i, '')}`
   : DEFAULT_APP_VERSION;
 export const APP_BUILD_ID = `${APP_VERSION.replace(/^v/, '')}-ota-release`;
-export const BUILD_DATE = '2026-11-25';
+export const BUILD_DATE = '2026-11-26';
 
 export const OFFLINE_SYNC_QUEUE_STORAGE_KEY = 'lazcakon_pending_offline_sync_queue';
 export const DEFERRED_UPDATE_FLAG_KEY = 'lazcakon_deferred_update_pending';

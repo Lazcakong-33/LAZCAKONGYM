@@ -19,6 +19,9 @@ import {
   isAuthorizedAdminEmail,
   isAuthorizedAdminToken,
   isFirestorePermissionDeniedError,
+  getActiveFirebaseTargetInfo,
+  getDocumentPublicRest,
+  commitWritesWithUserToken,
   queryCollectionByFieldWithUserToken,
   getDocumentWithUserToken,
   patchDocumentWithUserToken,
@@ -27,7 +30,7 @@ import {
   deleteDocumentWithUserToken,
   batchSetDocumentsWithUserToken,
 } from './firebaseAdminServer.ts';
-import type { AuthenticatedUser } from './firebaseAdminServer.ts';
+import type { AuthenticatedUser, FirestoreRestWriteOp } from './firebaseAdminServer.ts';
 
 export interface AuthControllerDeps {
   getAdminServices?: typeof getAdminServices;
@@ -844,9 +847,298 @@ export async function handleSessionInit(
   }
 }
 
+function buildInviteLookupDoc(inviteDoc: Record<string, any>): Record<string, any> {
+  const used = Boolean(inviteDoc.used);
+  const revoked = Boolean(inviteDoc.revoked);
+  const lookup: Record<string, any> = {
+    active: !used && !revoked,
+    used,
+    revoked,
+    createdAt: String(inviteDoc.createdAt || new Date().toISOString()),
+  };
+  if (typeof inviteDoc.expiresAt === 'string' && inviteDoc.expiresAt) {
+    lookup.expiresAt = inviteDoc.expiresAt;
+  }
+  if (typeof inviteDoc.usedAt === 'string' && inviteDoc.usedAt) {
+    lookup.usedAt = inviteDoc.usedAt;
+  }
+  return lookup;
+}
+
+async function verifyInviteViaStarterLookupRest(res: Response, token: string) {
+  const tokenHash = hashToken(token);
+  const lookupRes = await getDocumentPublicRest('invite_lookup', tokenHash);
+  if (!lookupRes.ok) {
+    return res.status(503).json({
+      success: false,
+      valid: false,
+      status: 'not_found',
+      code: 'invite/service-unavailable',
+      error: 'No se pudo verificar la invitación en Firestore. El servicio requiere credenciales de servidor o reglas de invite_lookup correctamente configuradas.',
+    });
+  }
+  if (!lookupRes.exists) {
+    return res.status(200).json({ success: true, valid: false, status: 'not_found' });
+  }
+  const data = lookupRes.data || {};
+  if (data.revoked === true) {
+    return res.status(200).json({ success: true, valid: false, status: 'revoked' });
+  }
+  if (data.used === true) {
+    return res.status(200).json({ success: true, valid: false, status: 'used' });
+  }
+  if (data.expiresAt && new Date(data.expiresAt).getTime() < Date.now()) {
+    return res.status(200).json({ success: true, valid: false, status: 'revoked' });
+  }
+  if (data.active === false) {
+    return res.status(200).json({ success: true, valid: false, status: 'used' });
+  }
+  return res.status(200).json({
+    success: true,
+    valid: true,
+    status: 'valid',
+    invite: {
+      token,
+      createdAt: data.createdAt || new Date().toISOString(),
+      createdBy: 'Coach Camilo Lazcano',
+      used: false,
+    },
+  });
+}
+
+async function registerWithInviteUsingUserToken(params: {
+  res: Response;
+  rawIdToken: string;
+  token: string;
+  authUid: string;
+  finalName: string;
+  finalEmail: string;
+  newAthleteId: string;
+  nowIso: string;
+  newProfileDoc: Record<string, any>;
+  rateKey: string;
+  resetRate: (key: string) => Promise<void>;
+}) {
+  const {
+    res,
+    rawIdToken,
+    token,
+    authUid,
+    finalName,
+    finalEmail,
+    newAthleteId,
+    nowIso,
+    newProfileDoc,
+    rateKey,
+    resetRate,
+  } = params;
+  const tokenHash = hashToken(token);
+
+  const lookupRes = await getDocumentWithUserToken(rawIdToken, 'invite_lookup', tokenHash);
+  if (!lookupRes.ok) {
+    return res.status(lookupRes.status === 403 ? 403 : 503).json({
+      success: false,
+      error: 'No se pudo consultar el estado de la invitación en Firestore.',
+    });
+  }
+  if (!lookupRes.exists) {
+    return res.status(404).json({
+      success: false,
+      error: 'Código de invitación inválido o no encontrado.',
+    });
+  }
+  const lookupData = lookupRes.data || {};
+  if (lookupData.revoked === true) {
+    return res.status(403).json({
+      success: false,
+      error: 'Este código de invitación fue revocado.',
+    });
+  }
+  if (lookupData.used === true || lookupData.active === false) {
+    return res.status(409).json({
+      success: false,
+      error: 'Este código de invitación ya fue utilizado anteriormente.',
+    });
+  }
+  if (lookupData.expiresAt && new Date(lookupData.expiresAt).getTime() < Date.now()) {
+    return res.status(410).json({
+      success: false,
+      error: 'Este código de invitación ha expirado.',
+    });
+  }
+
+  // Ensure this authenticated Firebase UID does not already own an athlete profile
+  const existingUidRes = await queryCollectionByFieldWithUserToken(
+    rawIdToken,
+    'athletes',
+    'authUid',
+    authUid,
+    1
+  );
+  if (existingUidRes.ok && existingUidRes.docs.length > 0) {
+    return res.status(409).json({
+      success: false,
+      error: 'Esta cuenta de Firebase Auth ya tiene un perfil de atleta activo. Inicia sesión.',
+    });
+  }
+
+  // Single atomic Firestore commit: burn /invites/{hash} + /invite_lookup/{hash} + create /athletes/{newId}
+  const commitRes = await commitWritesWithUserToken(rawIdToken, [
+    {
+      type: 'update',
+      collectionId: 'invites',
+      docId: tokenHash,
+      existsPrecondition: true,
+      data: {
+        used: true,
+        usedAt: nowIso,
+        usedByUid: authUid,
+        usedByName: finalName,
+        usedByEmail: finalEmail,
+      },
+    },
+    {
+      type: 'update',
+      collectionId: 'invite_lookup',
+      docId: tokenHash,
+      existsPrecondition: true,
+      data: {
+        active: false,
+        used: true,
+        usedAt: nowIso,
+      },
+    },
+    {
+      type: 'set',
+      collectionId: 'athletes',
+      docId: newAthleteId,
+      existsPrecondition: false,
+      data: newProfileDoc,
+    },
+  ]);
+
+  if (!commitRes.ok) {
+    // Re-check lookup state to distinguish concurrent single-use race from other errors
+    const recheck = await getDocumentWithUserToken(rawIdToken, 'invite_lookup', tokenHash).catch(() => null);
+    if (recheck?.ok && recheck.exists) {
+      if (recheck.data?.used === true || recheck.data?.active === false) {
+        return res.status(409).json({
+          success: false,
+          error: 'Este código de invitación ya fue utilizado anteriormente.',
+        });
+      }
+      if (recheck.data?.revoked === true) {
+        return res.status(403).json({
+          success: false,
+          error: 'Este código de invitación fue revocado.',
+        });
+      }
+    }
+    return res.status(commitRes.status === 403 ? 403 : 409).json({
+      success: false,
+      error:
+        commitRes.error ||
+        'No se pudo canjear el código de invitación. Verifica que siga vigente y sin usar.',
+    });
+  }
+
+  await resetRate(rateKey);
+  return res.status(201).json({
+    success: true,
+    athleteId: newAthleteId,
+    authUid,
+    isAdmin: false,
+    profile: sanitizeAthleteForClient(newProfileDoc, newAthleteId, authUid, false),
+    message: 'Cuenta creada e invitación canjeada exitosamente.',
+  });
+}
+
+async function redeemInviteUsingUserToken(params: {
+  res: Response;
+  rawIdToken: string;
+  rawToken: string;
+  user: AuthenticatedUser;
+  rateLimitKey: string;
+  resetRate: (key: string) => Promise<void>;
+}) {
+  const { res, rawIdToken, rawToken, user, rateLimitKey, resetRate } = params;
+  const tokenHash = hashToken(rawToken);
+  const nowIso = new Date().toISOString();
+
+  const lookupRes = await getDocumentWithUserToken(rawIdToken, 'invite_lookup', tokenHash);
+  if (!lookupRes.ok) {
+    return res.status(lookupRes.status === 403 ? 403 : 503).json({
+      success: false,
+      error: 'No se pudo consultar la invitación en Firestore.',
+    });
+  }
+  if (!lookupRes.exists) {
+    return res.status(404).json({ success: false, error: 'Código de invitación inválido o no encontrado.' });
+  }
+  const lookupData = lookupRes.data || {};
+  if (lookupData.revoked === true) {
+    return res.status(403).json({ success: false, error: 'Este código de invitación fue revocado.' });
+  }
+  if (lookupData.used === true || lookupData.active === false) {
+    return res.status(409).json({
+      success: false,
+      error: 'Este código de invitación ya fue utilizado anteriormente.',
+    });
+  }
+  if (lookupData.expiresAt && new Date(lookupData.expiresAt).getTime() < Date.now()) {
+    return res.status(410).json({ success: false, error: 'Este código de invitación ha expirado.' });
+  }
+
+  const commitRes = await commitWritesWithUserToken(rawIdToken, [
+    {
+      type: 'update',
+      collectionId: 'invites',
+      docId: tokenHash,
+      existsPrecondition: true,
+      data: {
+        used: true,
+        usedAt: nowIso,
+        usedByUid: user.uid,
+        usedByEmail: user.email || 'atleta',
+      },
+    },
+    {
+      type: 'update',
+      collectionId: 'invite_lookup',
+      docId: tokenHash,
+      existsPrecondition: true,
+      data: {
+        active: false,
+        used: true,
+        usedAt: nowIso,
+      },
+    },
+  ]);
+
+  if (!commitRes.ok) {
+    const recheck = await getDocumentWithUserToken(rawIdToken, 'invite_lookup', tokenHash).catch(() => null);
+    if (recheck?.ok && recheck.exists && (recheck.data?.used === true || recheck.data?.active === false)) {
+      return res.status(409).json({
+        success: false,
+        error: 'Este código de invitación ya fue utilizado anteriormente.',
+      });
+    }
+    return res.status(commitRes.status === 403 ? 403 : 409).json({
+      success: false,
+      error: commitRes.error || 'No se pudo canjear el código de invitación.',
+    });
+  }
+
+  await resetRate(rateLimitKey);
+  return res.status(200).json({
+    success: true,
+    message: '¡Pase de acceso verificado y canjeado exitosamente!',
+  });
+}
+
 /**
  * POST /api/invites/verify
- * Public rate-limited check of invite status via Admin SDK (browser never reads /invites).
+ * Public rate-limited check of invite status (Admin SDK or zero-PII /invite_lookup REST on Starter Tier).
  */
 export async function handleVerifyInvite(
   req: Request,
@@ -868,6 +1160,24 @@ export async function handleVerifyInvite(
       status: 'not_found',
       error: `Demasiadas verificaciones. Intenta en ${rateCheck.retryAfterSec || 60} segundos.`,
     });
+  }
+
+  if (
+    !deps?.getAdminServices &&
+    (!parseConfiguredServiceAccount() || adminFirestorePermissionDeniedDetected)
+  ) {
+    try {
+      return await verifyInviteViaStarterLookupRest(res, token);
+    } catch (err: any) {
+      console.error('[handleVerifyInvite Starter REST error]:', err);
+      return res.status(503).json({
+        success: false,
+        valid: false,
+        status: 'not_found',
+        code: 'invite/service-unavailable',
+        error: 'Error de conexión verificando invitación en Firestore.',
+      });
+    }
   }
 
   try {
@@ -905,12 +1215,17 @@ export async function handleVerifyInvite(
   } catch (error: any) {
     console.error('[handleVerifyInvite error]:', error);
     if (isFirestorePermissionDeniedError(error)) {
+      adminFirestorePermissionDeniedDetected = true;
+      try {
+        return await verifyInviteViaStarterLookupRest(res, token);
+      } catch {}
       return res.status(503).json({
         success: false,
         valid: false,
         status: 'not_found',
+        code: 'invite/service-unavailable',
         error:
-          'El servicio de verificación de invitaciones requiere credenciales de servidor (FIREBASE_SERVICE_ACCOUNT_JSON) configuradas.',
+          'El servicio de verificación de invitaciones requiere credenciales de servidor o reglas públicas de invite_lookup activas.',
       });
     }
     return res.status(500).json({ success: false, valid: false, status: 'not_found', error: 'Error verificando invitación.' });
@@ -961,41 +1276,68 @@ export async function handleRegisterWithInvite(
     });
   }
 
+  const authUid = caller.uid;
+  const finalEmail = String(caller.email || rawEmail).toLowerCase().trim();
+  const finalName = rawName || String(finalEmail.split('@')[0] || 'Atleta').trim();
+
+  if (!finalEmail || !finalEmail.includes('@')) {
+    return res.status(400).json({ success: false, error: 'Se requiere un correo electrónico válido en Firebase Auth.' });
+  }
+
+  const newAthleteId = `perfil_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+  const nowIso = new Date().toISOString();
+
+  const newProfileDoc = {
+    id: newAthleteId,
+    name: finalName,
+    email: finalEmail,
+    authUid,
+    isAdmin: false, // Strictly non-admin for invite registration
+    migrationStatus: 'confirmed',
+    avatar,
+    goal,
+    weeklyTargetDays: 5,
+    soundEnabled: true,
+    vibrationEnabled: true,
+    weightUnit: 'kg',
+    routines: [],
+    history: [],
+    prs: {},
+    bodyWeightLogs: [],
+    createdAt: nowIso,
+    lastSyncedAt: nowIso,
+  };
+
+  const rawIdToken = (req as any).rawIdToken as string | undefined;
+  if (
+    !deps?.getAdminServices &&
+    rawIdToken &&
+    (!parseConfiguredServiceAccount() || adminFirestorePermissionDeniedDetected)
+  ) {
+    try {
+      return await registerWithInviteUsingUserToken({
+        res,
+        rawIdToken,
+        token,
+        authUid,
+        finalName,
+        finalEmail,
+        newAthleteId,
+        nowIso,
+        newProfileDoc,
+        rateKey,
+        resetRate,
+      });
+    } catch (err: any) {
+      console.error('[handleRegisterWithInvite Starter REST error]:', err);
+      return res.status(500).json({ success: false, error: 'Error creando cuenta con invitación.' });
+    }
+  }
+
   try {
     const resolveAdmin = deps?.getAdminServices || getAdminServices;
     const { db } = resolveAdmin();
-
-    const authUid = caller.uid;
-    const finalEmail = String(caller.email || rawEmail).toLowerCase().trim();
-    const finalName = rawName || String(finalEmail.split('@')[0] || 'Atleta').trim();
-
-    if (!finalEmail || !finalEmail.includes('@')) {
-      return res.status(400).json({ success: false, error: 'Se requiere un correo electrónico válido en Firebase Auth.' });
-    }
-
-    const newAthleteId = `perfil_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
-    const nowIso = new Date().toISOString();
-
-    const newProfileDoc = {
-      id: newAthleteId,
-      name: finalName,
-      email: finalEmail,
-      authUid,
-      isAdmin: false, // Strictly non-admin for invite registration
-      migrationStatus: 'confirmed',
-      avatar,
-      goal,
-      weeklyTargetDays: 5,
-      soundEnabled: true,
-      vibrationEnabled: true,
-      weightUnit: 'kg',
-      routines: [],
-      history: [],
-      prs: {},
-      bodyWeightLogs: [],
-      createdAt: nowIso,
-      lastSyncedAt: nowIso,
-    };
+    const tokenHash = hashToken(token);
 
     const txResult = await db.runTransaction(async (transaction) => {
       const { ref: inviteRef, snap: inviteSnap } = await resolveInviteDocRefAndSnap(db, token, transaction);
@@ -1035,6 +1377,9 @@ export async function handleRegisterWithInvite(
         };
       }
 
+      const lookupRef = db.collection('invite_lookup').doc(tokenHash);
+      const lookupSnap = await transaction.get(lookupRef);
+
       transaction.update(inviteRef, {
         used: true,
         usedAt: nowIso,
@@ -1042,6 +1387,14 @@ export async function handleRegisterWithInvite(
         usedByName: finalName,
         usedByEmail: finalEmail,
       });
+
+      if (lookupSnap.exists) {
+        transaction.update(lookupRef, {
+          active: false,
+          used: true,
+          usedAt: nowIso,
+        });
+      }
 
       transaction.set(db.collection('athletes').doc(newAthleteId), newProfileDoc);
       return { ok: true, status: 201 };
@@ -1064,10 +1417,29 @@ export async function handleRegisterWithInvite(
   } catch (error: any) {
     console.error('[handleRegisterWithInvite error]:', error);
     if (isFirestorePermissionDeniedError(error)) {
+      adminFirestorePermissionDeniedDetected = true;
+      if (rawIdToken) {
+        try {
+          return await registerWithInviteUsingUserToken({
+            res,
+            rawIdToken,
+            token,
+            authUid,
+            finalName,
+            finalEmail,
+            newAthleteId,
+            nowIso,
+            newProfileDoc,
+            rateKey,
+            resetRate,
+          });
+        } catch {}
+      }
       return res.status(503).json({
         success: false,
+        code: 'invite/service-unavailable',
         error:
-          'El registro automático por invitación requiere credenciales de servidor (FIREBASE_SERVICE_ACCOUNT_JSON) configuradas.',
+          'El registro automático por invitación requiere un token de Firebase Auth válido o credenciales de servidor configuradas.',
       });
     }
     return res.status(500).json({ success: false, error: 'Error creando cuenta con invitación.' });
@@ -1104,9 +1476,32 @@ export async function handleRedeemInvite(
     });
   }
 
+  const rawIdToken = (req as any).rawIdToken as string | undefined;
+  if (
+    !deps?.getAdminServices &&
+    rawIdToken &&
+    (!parseConfiguredServiceAccount() || adminFirestorePermissionDeniedDetected)
+  ) {
+    try {
+      return await redeemInviteUsingUserToken({
+        res,
+        rawIdToken,
+        rawToken,
+        user,
+        rateLimitKey,
+        resetRate,
+      });
+    } catch (err: any) {
+      console.error('[handleRedeemInvite Starter REST error]:', err);
+      return res.status(500).json({ success: false, error: 'Error procesando canje de invitación.' });
+    }
+  }
+
   try {
     const resolveAdmin = deps?.getAdminServices || getAdminServices;
     const { db } = resolveAdmin();
+    const tokenHash = hashToken(rawToken);
+    const nowIso = new Date().toISOString();
 
     const result = await db.runTransaction(async (transaction) => {
       const { ref: inviteRef, snap: inviteSnap } = await resolveInviteDocRefAndSnap(db, rawToken, transaction);
@@ -1128,12 +1523,23 @@ export async function handleRedeemInvite(
         return { success: false, status: 410, error: 'Este código de invitación ha expirado.' };
       }
 
+      const lookupRef = db.collection('invite_lookup').doc(tokenHash);
+      const lookupSnap = await transaction.get(lookupRef);
+
       transaction.update(inviteRef, {
         used: true,
-        usedAt: new Date().toISOString(),
+        usedAt: nowIso,
         usedByUid: user.uid,
         usedByEmail: user.email || 'atleta',
       });
+
+      if (lookupSnap.exists) {
+        transaction.update(lookupRef, {
+          active: false,
+          used: true,
+          usedAt: nowIso,
+        });
+      }
 
       return { success: true, status: 200, inviteData };
     });
@@ -1150,10 +1556,24 @@ export async function handleRedeemInvite(
   } catch (error: any) {
     console.error('[handleRedeemInvite error]:', error);
     if (isFirestorePermissionDeniedError(error)) {
+      adminFirestorePermissionDeniedDetected = true;
+      if (rawIdToken) {
+        try {
+          return await redeemInviteUsingUserToken({
+            res,
+            rawIdToken,
+            rawToken,
+            user,
+            rateLimitKey,
+            resetRate,
+          });
+        } catch {}
+      }
       return res.status(503).json({
         success: false,
+        code: 'invite/service-unavailable',
         error:
-          'El canje de invitaciones requiere credenciales de servidor (FIREBASE_SERVICE_ACCOUNT_JSON) configuradas.',
+          'El canje de invitaciones requiere un token de Firebase Auth válido o credenciales de servidor configuradas.',
       });
     }
     return res.status(500).json({ success: false, error: 'Error procesando canje de invitación.' });
@@ -1398,14 +1818,67 @@ function shouldUseAdminUserTokenFastPath(
   return null;
 }
 
+async function backfillMissingInviteLookupsInBackground(
+  rawIdToken: string,
+  inviteDocs: Array<{ id: string; data: Record<string, any> }>
+): Promise<void> {
+  try {
+    const activeInvites = inviteDocs.filter(
+      (d) => d.data && d.data.token && !d.data.used && !d.data.revoked
+    );
+    if (activeInvites.length === 0) return;
+
+    const existingLookupsRes = await listCollectionWithUserToken(rawIdToken, 'invite_lookup', 250);
+    if (!existingLookupsRes.ok) return;
+    const existingLookupIds = new Set(existingLookupsRes.docs.map((d) => d.id));
+
+    const missingOps: FirestoreRestWriteOp[] = [];
+    for (const inv of activeInvites) {
+      const tokenHash = hashToken(inv.data.token);
+      if (existingLookupIds.has(tokenHash)) continue;
+      missingOps.push({
+        type: 'set',
+        collectionId: 'invite_lookup',
+        docId: tokenHash,
+        data: buildInviteLookupDoc(inv.data),
+      });
+      if (missingOps.length >= 100) break;
+    }
+
+    if (missingOps.length > 0) {
+      await commitWritesWithUserToken(rawIdToken, missingOps);
+    }
+  } catch {}
+}
+
+function buildAdminPermissionDeniedPayload(restError?: string) {
+  const target = getActiveFirebaseTargetInfo();
+  return {
+    success: false,
+    code: 'firestore/permission-denied',
+    retryWithTokenRefresh: true,
+    firebaseProjectId: target.projectId,
+    firestoreDatabaseId: target.databaseId,
+    error:
+      restError ||
+      '403 PERMISSION_DENIED: Permisos insuficientes en Firestore. Renueva tu sesión Google de Administrador.',
+  };
+}
+
 async function listInvitesWithUserToken(res: Response, rawIdToken: string) {
   const restRes = await listCollectionWithUserToken(rawIdToken, 'invites', 250);
   if (!restRes.ok) {
-    return res.status(restRes.status === 403 ? 403 : 500).json({
+    if (restRes.status === 403) {
+      return res.status(403).json(buildAdminPermissionDeniedPayload(restRes.error));
+    }
+    return res.status(restRes.status === 401 ? 401 : 500).json({
       success: false,
       error: restRes.error || 'No se pudieron consultar las invitaciones en Firestore.',
     });
   }
+  // Best-effort additive mirror backfill for legacy active invites so they can be verified/redeemed on Starter Tier
+  void backfillMissingInviteLookupsInBackground(rawIdToken, restRes.docs);
+
   const list = restRes.docs
     .map((d) => d.data)
     .filter((data) => Boolean(data && data.token));
@@ -1464,9 +1937,26 @@ async function createInviteWithUserToken(
   tokenHash: string,
   inviteDoc: Record<string, any>
 ) {
-  const restRes = await putDocumentWithUserToken(rawIdToken, 'invites', tokenHash, inviteDoc);
+  const lookupDoc = buildInviteLookupDoc(inviteDoc);
+  const restRes = await commitWritesWithUserToken(rawIdToken, [
+    {
+      type: 'set',
+      collectionId: 'invites',
+      docId: tokenHash,
+      data: inviteDoc,
+    },
+    {
+      type: 'set',
+      collectionId: 'invite_lookup',
+      docId: tokenHash,
+      data: lookupDoc,
+    },
+  ]);
   if (!restRes.ok) {
-    return res.status(restRes.status === 403 ? 403 : 500).json({
+    if (restRes.status === 403) {
+      return res.status(403).json(buildAdminPermissionDeniedPayload(restRes.error));
+    }
+    return res.status(restRes.status === 401 ? 401 : 500).json({
       success: false,
       error: restRes.error || 'No se pudo guardar la invitación en Firestore.',
     });
@@ -1511,6 +2001,9 @@ export async function handleAdminCreateInvite(
     const resolveAdmin = deps?.getAdminServices || getAdminServices;
     const { db } = resolveAdmin();
     await db.collection('invites').doc(tokenHash).set(inviteDoc);
+    try {
+      await db.collection('invite_lookup').doc(tokenHash).set(buildInviteLookupDoc(inviteDoc));
+    } catch {}
 
     return res.status(201).json({ success: true, invite: inviteDoc });
   } catch (err: any) {
@@ -1541,10 +2034,15 @@ export async function handleAdminBatchCreateInvites(
 
   const tokens: string[] = [];
   const invites: Array<Record<string, any>> = [];
-  const items: Array<{ docId: string; data: Record<string, any> }> = [];
+  const items: Array<{ docId: string; data: Record<string, any>; lookupData: Record<string, any> }> = [];
+  const seenTokens = new Set<string>();
 
   for (let i = 0; i < count; i++) {
-    const token = generateSecureInviteCode();
+    let token = generateSecureInviteCode();
+    while (seenTokens.has(token)) {
+      token = generateSecureInviteCode();
+    }
+    seenTokens.add(token);
     const inviteDoc = {
       token,
       createdAt: nowIso,
@@ -1555,16 +2053,38 @@ export async function handleAdminBatchCreateInvites(
     };
     tokens.push(token);
     invites.push(inviteDoc);
-    items.push({ docId: hashToken(token), data: inviteDoc });
+    items.push({
+      docId: hashToken(token),
+      data: inviteDoc,
+      lookupData: buildInviteLookupDoc(inviteDoc),
+    });
   }
+
+  const batchCommitOps: FirestoreRestWriteOp[] = items.flatMap((item) => [
+    {
+      type: 'set' as const,
+      collectionId: 'invites',
+      docId: item.docId,
+      data: item.data,
+    },
+    {
+      type: 'set' as const,
+      collectionId: 'invite_lookup',
+      docId: item.docId,
+      data: item.lookupData,
+    },
+  ]);
 
   const rawIdToken = (req as any).rawIdToken as string | undefined;
   const fastToken = shouldUseAdminUserTokenFastPath(req, deps);
   if (fastToken) {
     try {
-      const restRes = await batchSetDocumentsWithUserToken(fastToken, 'invites', items);
+      const restRes = await commitWritesWithUserToken(fastToken, batchCommitOps);
       if (!restRes.ok) {
-        return res.status(restRes.status === 403 ? 403 : 500).json({
+        if (restRes.status === 403) {
+          return res.status(403).json(buildAdminPermissionDeniedPayload(restRes.error));
+        }
+        return res.status(restRes.status === 401 ? 401 : 500).json({
           success: false,
           error: restRes.error || 'Error creando lote de invitaciones en Firestore.',
         });
@@ -1587,6 +2107,7 @@ export async function handleAdminBatchCreateInvites(
     const batch = db.batch();
     for (const item of items) {
       batch.set(db.collection('invites').doc(item.docId), item.data);
+      batch.set(db.collection('invite_lookup').doc(item.docId), item.lookupData);
     }
     await batch.commit();
     return res.status(201).json({
@@ -1599,7 +2120,7 @@ export async function handleAdminBatchCreateInvites(
     if (isFirestorePermissionDeniedError(err) && rawIdToken) {
       adminFirestorePermissionDeniedDetected = true;
       try {
-        const restRes = await batchSetDocumentsWithUserToken(rawIdToken, 'invites', items);
+        const restRes = await commitWritesWithUserToken(rawIdToken, batchCommitOps);
         if (restRes.ok) {
           return res.status(201).json({
             success: true,
@@ -1607,6 +2128,9 @@ export async function handleAdminBatchCreateInvites(
             invites,
             message: `¡${count} códigos de invitación generados exitosamente!`,
           });
+        }
+        if (restRes.status === 403) {
+          return res.status(403).json(buildAdminPermissionDeniedPayload(restRes.error));
         }
       } catch {}
     }
@@ -1616,15 +2140,23 @@ export async function handleAdminBatchCreateInvites(
 }
 
 async function revokeInviteWithUserToken(res: Response, rawIdToken: string, rawToken: string) {
-  const [hashedDel, rawDel] = await Promise.all([
-    deleteDocumentWithUserToken(rawIdToken, 'invites', hashToken(rawToken)),
+  const tokenHash = hashToken(rawToken);
+  const [hashedDel, rawDel, lookupDel] = await Promise.all([
+    deleteDocumentWithUserToken(rawIdToken, 'invites', tokenHash),
     deleteDocumentWithUserToken(rawIdToken, 'invites', rawToken),
+    deleteDocumentWithUserToken(rawIdToken, 'invite_lookup', tokenHash),
   ]);
-  if (!hashedDel.ok || !rawDel.ok) {
-    const status = hashedDel.status === 403 || rawDel.status === 403 ? 403 : 500;
+  if (!hashedDel.ok || !rawDel.ok || !lookupDel.ok) {
+    const status =
+      hashedDel.status === 403 || rawDel.status === 403 || lookupDel.status === 403 ? 403 : 500;
+    if (status === 403) {
+      return res
+        .status(403)
+        .json(buildAdminPermissionDeniedPayload(hashedDel.error || rawDel.error || lookupDel.error));
+    }
     return res.status(status).json({
       success: false,
-      error: hashedDel.error || rawDel.error || 'No se pudo revocar la invitación.',
+      error: hashedDel.error || rawDel.error || lookupDel.error || 'No se pudo revocar la invitación.',
     });
   }
   return res.status(200).json({ success: true });
@@ -1657,9 +2189,11 @@ export async function handleAdminRevokeInvite(
   try {
     const resolveAdmin = deps?.getAdminServices || getAdminServices;
     const { db } = resolveAdmin();
+    const tokenHash = hashToken(rawToken);
     await Promise.all([
-      db.collection('invites').doc(hashToken(rawToken)).delete(),
+      db.collection('invites').doc(tokenHash).delete(),
       db.collection('invites').doc(rawToken).delete(),
+      db.collection('invite_lookup').doc(tokenHash).delete().catch(() => {}),
     ]);
     return res.status(200).json({ success: true });
   } catch (err: any) {

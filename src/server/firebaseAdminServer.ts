@@ -567,6 +567,158 @@ function getFirestoreRestDocumentName(collectionId: string, docId: string): stri
   return `projects/${projectId}/databases/${dbId}/documents/${collectionId}/${docId}`;
 }
 
+export function getActiveFirebaseTargetInfo(): { projectId: string; databaseId: string } {
+  return {
+    projectId: process.env.FIREBASE_PROJECT_ID || firebaseConfig.projectId,
+    databaseId: process.env.FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId || '(default)',
+  };
+}
+
+export function parseFirestoreRestError(rawText: string, status: number): string {
+  const trimmed = String(rawText || '').trim();
+  if (!trimmed) {
+    if (status === 403) {
+      return 'Permisos insuficientes en Firestore (403 PERMISSION_DENIED). Verifica sesión Google Admin y reglas desplegadas.';
+    }
+    if (status === 401) {
+      return 'Token de autenticación Firebase expirado o inválido (401). Renueva tu sesión.';
+    }
+    return `Error de Firestore REST (HTTP ${status}).`;
+  }
+  try {
+    const parsed = JSON.parse(trimmed);
+    const errObj = Array.isArray(parsed) ? parsed[0]?.error : parsed?.error;
+    if (errObj && typeof errObj === 'object') {
+      const errStatus = String(errObj.status || '');
+      const errMsg = String(errObj.message || '');
+      if (status === 403 || errStatus === 'PERMISSION_DENIED') {
+        return `403 PERMISSION_DENIED: ${errMsg || 'Missing or insufficient permissions.'}`;
+      }
+      if (errMsg) {
+        return errStatus ? `${errStatus}: ${errMsg}` : errMsg;
+      }
+    }
+  } catch {}
+  return trimmed.slice(0, 300);
+}
+
+export async function getDocumentPublicRest(
+  collectionId: string,
+  docId: string
+): Promise<{
+  ok: boolean;
+  status: number;
+  exists: boolean;
+  id: string;
+  data?: Record<string, any>;
+  error?: string;
+}> {
+  const baseUrl = getFirestoreRestDocumentsUrl();
+  const res = await fetch(`${baseUrl}/${encodeURIComponent(collectionId)}/${encodeURIComponent(docId)}`, {
+    method: 'GET',
+    signal:
+      typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(8000)
+        : undefined,
+  });
+
+  if (res.status === 404) {
+    return { ok: true, status: 404, exists: false, id: docId };
+  }
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    return {
+      ok: false,
+      status: res.status,
+      exists: false,
+      id: docId,
+      error: parseFirestoreRestError(errText, res.status),
+    };
+  }
+
+  const docJson = (await res.json()) as { name?: string; fields?: Record<string, any> };
+  return {
+    ok: true,
+    status: 200,
+    exists: true,
+    id: docId,
+    data: fromFirestoreRestFields(docJson.fields || {}),
+  };
+}
+
+export type FirestoreRestWriteOp =
+  | {
+      type: 'set';
+      collectionId: string;
+      docId: string;
+      data: Record<string, any>;
+      existsPrecondition?: boolean;
+    }
+  | {
+      type: 'update';
+      collectionId: string;
+      docId: string;
+      data: Record<string, any>;
+      existsPrecondition?: boolean;
+    }
+  | {
+      type: 'delete';
+      collectionId: string;
+      docId: string;
+    };
+
+export async function commitWritesWithUserToken(
+  rawIdToken: string,
+  operations: FirestoreRestWriteOp[]
+): Promise<{ ok: boolean; status: number; error?: string }> {
+  if (operations.length === 0) return { ok: true, status: 200 };
+  const baseUrl = getFirestoreRestDocumentsUrl();
+  const writes = operations.map((op) => {
+    const docName = getFirestoreRestDocumentName(op.collectionId, op.docId);
+    if (op.type === 'delete') {
+      return { delete: docName };
+    }
+    const cleanEntries = Object.entries(op.data || {}).filter(
+      ([, v]) => v !== undefined && !(v && typeof v === 'object' && v.constructor?.name === 'DeleteTransform')
+    );
+    const cleanObj = Object.fromEntries(cleanEntries);
+    const writeObj: Record<string, any> = {
+      update: {
+        name: docName,
+        fields: toFirestoreRestFields(cleanObj),
+      },
+    };
+    if (op.type === 'update') {
+      writeObj.updateMask = {
+        fieldPaths: cleanEntries.map(([k]) => k),
+      };
+    }
+    if (typeof op.existsPrecondition === 'boolean') {
+      writeObj.currentDocument = { exists: op.existsPrecondition };
+    }
+    return writeObj;
+  });
+
+  const res = await fetch(`${baseUrl}:commit`, {
+    method: 'POST',
+    signal:
+      typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(15_000)
+        : undefined,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${rawIdToken}`,
+    },
+    body: JSON.stringify({ writes }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    return { ok: false, status: res.status, error: parseFirestoreRestError(errText, res.status) };
+  }
+  return { ok: true, status: 200 };
+}
+
 export async function listCollectionWithUserToken(
   rawIdToken: string,
   collectionId: string,
@@ -590,7 +742,7 @@ export async function listCollectionWithUserToken(
     });
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
-      return { ok: false, status: res.status, docs: [], error: errText.slice(0, 300) };
+      return { ok: false, status: res.status, docs: [], error: parseFirestoreRestError(errText, res.status) };
     }
     const json = (await res.json()) as {
       documents?: Array<{ name?: string; fields?: Record<string, any> }>;
@@ -632,7 +784,7 @@ export async function putDocumentWithUserToken(
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
-    return { ok: false, status: res.status, error: errText.slice(0, 300) };
+    return { ok: false, status: res.status, error: parseFirestoreRestError(errText, res.status) };
   }
   const docJson = (await res.json()) as { fields?: Record<string, any> };
   return {
@@ -658,7 +810,7 @@ export async function deleteDocumentWithUserToken(
   });
   if (!res.ok && res.status !== 404) {
     const errText = await res.text().catch(() => '');
-    return { ok: false, status: res.status, error: errText.slice(0, 300) };
+    return { ok: false, status: res.status, error: parseFirestoreRestError(errText, res.status) };
   }
   return { ok: true, status: res.status };
 }
@@ -669,30 +821,15 @@ export async function batchSetDocumentsWithUserToken(
   items: Array<{ docId: string; data: Record<string, any> }>
 ): Promise<{ ok: boolean; status: number; error?: string }> {
   if (items.length === 0) return { ok: true, status: 200 };
-  const baseUrl = getFirestoreRestDocumentsUrl();
-  const writes = items.map((item) => ({
-    update: {
-      name: getFirestoreRestDocumentName(collectionId, item.docId),
-      fields: toFirestoreRestFields(item.data),
-    },
-  }));
-  const res = await fetch(`${baseUrl}:commit`, {
-    method: 'POST',
-    signal:
-      typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
-        ? AbortSignal.timeout(15_000)
-        : undefined,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${rawIdToken}`,
-    },
-    body: JSON.stringify({ writes }),
-  });
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    return { ok: false, status: res.status, error: errText.slice(0, 300) };
-  }
-  return { ok: true, status: 200 };
+  return commitWritesWithUserToken(
+    rawIdToken,
+    items.map((item) => ({
+      type: 'set',
+      collectionId,
+      docId: item.docId,
+      data: item.data,
+    }))
+  );
 }
 
 // Secure SHA-256 token hashing

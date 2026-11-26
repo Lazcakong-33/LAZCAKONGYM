@@ -21,15 +21,19 @@ import {
   Lock,
   Apple,
   Bot,
+  RefreshCw,
 } from 'lucide-react';
 import {
   InviteLink,
+  AdminAuthDiagnostics,
   createSingleUseInviteDetailed,
   generateBatchInviteTokens,
   subscribeToInvites,
   revokeInviteTokenDetailed,
   fetchInvitesAdminResult,
   getPublicAppUrl,
+  getAdminAuthDiagnostics,
+  forceRenewFirebaseAuthToken,
 } from '../utils/firebaseSync';
 import { OFFICIAL_RELEASE_APK_DOWNLOAD_URL } from '../utils/otaUpdateEngine';
 
@@ -73,6 +77,8 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
   const [selectedInviteForQr, setSelectedInviteForQr] = useState<InviteLink | null>(null);
   const [batchGeneratedCodes, setBatchGeneratedCodes] = useState<string[]>([]);
   const [statusNotice, setStatusNotice] = useState<{ text: string; isError?: boolean } | null>(null);
+  const [authDiag, setAuthDiag] = useState<AdminAuthDiagnostics | null>(null);
+  const [isRenewingToken, setIsRenewingToken] = useState(false);
 
   const showNotice = (text: string, isError = false) => {
     setStatusNotice({ text, isError });
@@ -86,6 +92,16 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
       if (res.success) {
         setInvitesError(null);
         setInvites(res.invites);
+        const firstActive = res.invites.find((i) => !i.used && !i.revoked) || null;
+        if (firstActive) {
+          setSelectedInviteForQr((prev) => {
+            if (prev) {
+              const updated = res.invites.find((i) => i.token === prev.token);
+              if (updated && !updated.used && !updated.revoked) return updated;
+            }
+            return firstActive;
+          });
+        }
         return res.invites;
       }
       setInvitesError(res.error || 'No se pudieron cargar las invitaciones.');
@@ -95,12 +111,34 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
     }
   };
 
+  const handleRenewAdminToken = async () => {
+    setIsRenewingToken(true);
+    try {
+      const renewed = await forceRenewFirebaseAuthToken();
+      setAuthDiag(renewed.diagnostics);
+      if (!renewed.success) {
+        setInvitesError(renewed.error || 'No se pudo renovar el token de Firebase.');
+        showNotice(renewed.error || 'Inicia sesión con Google como Administrador.', true);
+        return;
+      }
+      const list = await refreshInvitesList();
+      if (list.length > 0 || !invitesError) {
+        showNotice('Token de Firebase renovado e invitaciones sincronizadas.');
+      }
+    } finally {
+      setIsRenewingToken(false);
+    }
+  };
+
   const handleGenerateBatch50 = async () => {
     setIsGenerating(true);
     try {
       const res = await generateBatchInviteTokens(50, adminName);
       if (res.success) {
         setBatchGeneratedCodes(res.tokens);
+        if (res.invites && res.invites.length > 0) {
+          setSelectedInviteForQr(res.invites[0]);
+        }
         await refreshInvitesList();
         showNotice(res.message || 'Lote de 50 códigos generado en Firestore.');
       } else {
@@ -139,6 +177,7 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
   useEffect(() => {
     if (!isOpen || !isAdmin) return;
     setIsLoadingInvites(true);
+    void getAdminAuthDiagnostics(false).then((diag) => setAuthDiag(diag));
     const unsubscribe = subscribeToInvites(
       (list) => {
         setIsLoadingInvites(false);
@@ -422,6 +461,36 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
         {/* TAB 1: SINGLE-USE INVITE GENERATOR & LIST */}
         {activeTab === 'invite' && (
           <div className="space-y-4 animate-in fade-in">
+            {/* Verified Firebase Admin Session Bar */}
+            <div className="p-2.5 rounded-2xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2">
+              <div className="min-w-0 flex items-center gap-2">
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    authDiag?.isGoogleVerified ? 'bg-emerald-400' : 'bg-amber-400'
+                  }`}
+                />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold text-slate-200 truncate">
+                    {authDiag?.isGoogleVerified
+                      ? `Admin Google verificado: ${authDiag.email}`
+                      : authDiag?.signedIn
+                      ? `Sesión: ${authDiag.email || 'sin correo'} (${authDiag.signInProvider || 'sin Google'})`
+                      : 'Verificando sesión Firebase Admin...'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleRenewAdminToken()}
+                disabled={isRenewingToken || isLoadingInvites}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[10px] font-bold flex items-center gap-1 shrink-0 cursor-pointer disabled:opacity-50"
+                title="Forzar renovación de token Firebase y recargar invitaciones"
+              >
+                <RefreshCw className={`w-3 h-3 ${isRenewingToken ? 'animate-spin' : ''}`} />
+                <span>{isRenewingToken ? 'Renovando...' : 'Renovar Token'}</span>
+              </button>
+            </div>
+
             {/* Coach Public App URL Config */}
             <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-amber-400 block">
@@ -582,14 +651,25 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     <span>{invitesError}</span>
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => void refreshInvitesList()}
-                    disabled={isLoadingInvites}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/30 text-xs font-bold cursor-pointer disabled:opacity-50"
-                  >
-                    <span>{isLoadingInvites ? 'Consultando...' : 'Reintentar carga de invitaciones'}</span>
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleRenewAdminToken()}
+                      disabled={isRenewingToken || isLoadingInvites}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/35 text-xs font-bold cursor-pointer disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRenewingToken ? 'animate-spin' : ''}`} />
+                      <span>{isRenewingToken ? 'Renovando...' : 'Renovar Token y Reintentar'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void refreshInvitesList()}
+                      disabled={isLoadingInvites}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/30 text-xs font-bold cursor-pointer disabled:opacity-50"
+                    >
+                      <span>{isLoadingInvites ? 'Consultando...' : 'Reintentar'}</span>
+                    </button>
+                  </div>
                 </div>
               ) : isLoadingInvites && activeInvites.length === 0 ? (
                 <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 text-center">
@@ -873,6 +953,29 @@ export const InstallApkModal: React.FC<InstallApkModalProps> = ({
                     alt={`QR Code LAZCAKONGYM ${qrPlatform}`}
                     className="w-48 h-48 mx-auto rounded-xl"
                   />
+                </div>
+
+                <div className="max-w-sm mx-auto space-y-2">
+                  <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[10px] text-slate-300 break-all select-all">
+                    {buildInviteUrl(selectedInviteForQr.token, qrPlatform)}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyLink(selectedInviteForQr.token, qrPlatform)}
+                    className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                  >
+                    {copiedAction === `${selectedInviteForQr.token}-${qrPlatform}` ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-300">¡Enlace QR Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Copiar Enlace de este QR ({qrPlatform === 'android' ? 'Android' : 'iPhone'})</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="space-y-1.5 max-w-sm mx-auto p-3 rounded-2xl bg-slate-900 border border-slate-800 text-left">

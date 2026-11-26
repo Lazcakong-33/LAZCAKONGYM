@@ -137,7 +137,7 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
         });
       }
 
-      if (url.includes('/documents/invites/') && method === 'DELETE') {
+      if ((url.includes('/documents/invites/') || url.includes('/documents/invite_lookup/')) && method === 'DELETE') {
         return new Response('{}', { status: 200 });
       }
 
@@ -235,7 +235,13 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
     expect(selfDelRes.statusCode).toBe(400);
   });
 
-  test('Public/athlete invite handlers return clear 503 diagnostic when Firestore Admin lacks IAM credentials', async () => {
+  test('Public/athlete invite handlers return clear 503 diagnostic when both Admin SDK and Starter-Tier REST fallback are unavailable', async () => {
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ error: { status: 'PERMISSION_DENIED', message: 'Missing permissions' } }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      })) as typeof fetch;
+
     const deps: any = {
       ...makePermissionDeniedServices(),
       checkRateLimitDistributed: async () => ({ allowed: true }),
@@ -245,7 +251,10 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
     const verifyRes = makeRes();
     await handleVerifyInvite({ body: { token: 'LZK-1234-5678' }, ip: '127.0.0.1' } as any, verifyRes, deps);
     expect(verifyRes.statusCode).toBe(503);
-    expect(String(verifyRes.body.error)).toContain('FIREBASE_SERVICE_ACCOUNT_JSON');
+    expect(verifyRes.body.success).toBe(false);
+    expect(verifyRes.body.code).toBe('invite/service-unavailable');
+    expect(String(verifyRes.body.error)).toContain('credenciales de servidor');
+    expect(String(verifyRes.body.error)).not.toMatch(/PERMISSION_DENIED|FIREBASE_SERVICE_ACCOUNT_JSON/);
 
     const regRes = makeRes();
     await handleRegisterWithInvite(
@@ -258,7 +267,10 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
       deps
     );
     expect(regRes.statusCode).toBe(503);
-    expect(String(regRes.body.error)).toContain('FIREBASE_SERVICE_ACCOUNT_JSON');
+    expect(regRes.body.success).toBe(false);
+    expect(regRes.body.code).toBe('invite/service-unavailable');
+    expect(String(regRes.body.error)).toContain('token de Firebase Auth válido');
+    expect(String(regRes.body.error)).not.toMatch(/PERMISSION_DENIED|FIREBASE_SERVICE_ACCOUNT_JSON/);
 
     const redeemRes = makeRes();
     await handleRedeemInvite(
@@ -270,7 +282,10 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
       deps
     );
     expect(redeemRes.statusCode).toBe(503);
-    expect(String(redeemRes.body.error)).toContain('FIREBASE_SERVICE_ACCOUNT_JSON');
+    expect(redeemRes.body.success).toBe(false);
+    expect(redeemRes.body.code).toBe('invite/service-unavailable');
+    expect(String(redeemRes.body.error)).toContain('token de Firebase Auth válido');
+    expect(String(redeemRes.body.error)).not.toMatch(/PERMISSION_DENIED|FIREBASE_SERVICE_ACCOUNT_JSON/);
   });
 
   test('Web/PWA Google Sign-In falls back to redirect only on popup-blocked / unsupported-env and surfaces auth/redirect-initiated', async () => {
@@ -325,7 +340,7 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
 
   test('SW cache poisoning guards and Express static 404 guard are properly configured', () => {
     const swSrc = fs.readFileSync(path.join(process.cwd(), 'public/sw.js'), 'utf8');
-    expect(swSrc).toContain("const CACHE_NAME = 'lazcakongym-v7.0.0-ota'");
+    expect(swSrc).toContain("const CACHE_NAME = 'lazcakongym-v7.0.5-ota'");
     expect(swSrc).toContain("contentType.includes('text/html')");
     expect(swSrc).toContain("url.pathname.startsWith('/api/')");
 
