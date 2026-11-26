@@ -1,4 +1,5 @@
 import libraryData from './exerciseLibrary.json';
+import pechoTriceps01 from './exerciseLibraryPechoTriceps01.json';
 import { NECK_EXERCISE_ADDITIONS } from './neckExerciseAdditions';
 import { getNeckMovementSpec } from '../utils/neckMovementSpec';
 import aliases from './exerciseAliases.json';
@@ -83,6 +84,7 @@ export function getExerciseFallbackAnimationUrl(id?: string): string | null {
 const rawLibrary: LibraryExercise[] = [
   ...(libraryData as LibraryExercise[]),
   ...NECK_EXERCISE_ADDITIONS,
+  ...(pechoTriceps01 as LibraryExercise[]),
 ];
 
 export const EXERCISE_LIBRARY: LibraryExercise[] = rawLibrary.map((ex) => {
