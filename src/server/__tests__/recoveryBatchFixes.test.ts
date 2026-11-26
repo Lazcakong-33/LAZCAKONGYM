@@ -251,7 +251,10 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
     const verifyRes = makeRes();
     await handleVerifyInvite({ body: { token: 'LZK-1234-5678' }, ip: '127.0.0.1' } as any, verifyRes, deps);
     expect(verifyRes.statusCode).toBe(503);
-    expect(String(verifyRes.body.error)).toContain('FIREBASE_SERVICE_ACCOUNT_JSON');
+    expect(verifyRes.body.success).toBe(false);
+    expect(verifyRes.body.code).toBe('invite/service-unavailable');
+    expect(String(verifyRes.body.error)).toContain('credenciales de servidor');
+    expect(String(verifyRes.body.error)).not.toMatch(/PERMISSION_DENIED|FIREBASE_SERVICE_ACCOUNT_JSON/);
 
     const regRes = makeRes();
     await handleRegisterWithInvite(
@@ -264,7 +267,10 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
       deps
     );
     expect(regRes.statusCode).toBe(503);
-    expect(String(regRes.body.error)).toContain('FIREBASE_SERVICE_ACCOUNT_JSON');
+    expect(regRes.body.success).toBe(false);
+    expect(regRes.body.code).toBe('invite/service-unavailable');
+    expect(String(regRes.body.error)).toContain('token de Firebase Auth válido');
+    expect(String(regRes.body.error)).not.toMatch(/PERMISSION_DENIED|FIREBASE_SERVICE_ACCOUNT_JSON/);
 
     const redeemRes = makeRes();
     await handleRedeemInvite(
@@ -276,7 +282,10 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
       deps
     );
     expect(redeemRes.statusCode).toBe(503);
-    expect(String(redeemRes.body.error)).toContain('FIREBASE_SERVICE_ACCOUNT_JSON');
+    expect(redeemRes.body.success).toBe(false);
+    expect(redeemRes.body.code).toBe('invite/service-unavailable');
+    expect(String(redeemRes.body.error)).toContain('token de Firebase Auth válido');
+    expect(String(redeemRes.body.error)).not.toMatch(/PERMISSION_DENIED|FIREBASE_SERVICE_ACCOUNT_JSON/);
   });
 
   test('Web/PWA Google Sign-In falls back to redirect only on popup-blocked / unsupported-env and surfaces auth/redirect-initiated', async () => {
