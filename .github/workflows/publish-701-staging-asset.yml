@@ -1,0 +1,50 @@
+name: Host validated 7.0.1 staging package
+on:
+  push:
+    branches: ['fix/coach-7.0.1']
+    paths: ['.github/workflows/publish-701-staging-asset.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  host:
+    if: github.ref == 'refs/heads/fix/coach-7.0.1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify approved source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/45737627222" --jq 'select(.conclusion == "success" and .head_sha == "f154d5ab288c6d1258fed26bfebd56f18da71b74") | .id' | grep -Fx 45737627222
+          mkdir -p verified
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/15079073000/zip" > artifact.zip
+          unzip -q artifact.zip -d verified
+          cd verified
+          sha256sum -c SHA256SUMS.txt
+          echo '1a08b3b45a13a32fc11f817048d8c0aa80d2429569085062f01a91415aa575df  lazcakongym-ota-7.0.1.zip' | sha256sum -c -
+          unzip -tq lazcakongym-ota-7.0.1.zip
+          python - <<'PY'
+          import zipfile, json, pathlib
+          p=pathlib.Path('lazcakongym-ota-7.0.1.zip')
+          with zipfile.ZipFile(p) as z:
+              for f in z.namelist():
+                  assert not f.startswith('/') and '..' not in pathlib.PurePosixPath(f).parts
+                  assert not any(x.startswith('.env') or x in ('google-services.json','serviceAccountKey.json') or x.endswith(('.pem','.keystore','.jks','.p12')) for x in pathlib.PurePosixPath(f).parts), f
+          m=json.loads(pathlib.Path('manifest.staging.json').read_text())
+          assert m['version']=='7.0.1' and m['channel']=='staging' and m['minNativeVersionCode']==70000 and not m['requiresApkUpdate']
+          assert not m.get('signature'), 'Unexpected signature; do not modify signed manifest'
+          m['url']='https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v7.0.1/lazcakongym-ota-7.0.1.zip'
+          pathlib.Path('manifest.staging.json').write_text(json.dumps(m,indent=2)+'\n')
+          PY
+          sha256sum lazcakongym-ota-7.0.1.zip manifest.staging.json > SHA256SUMS.txt
+      - name: Host immutable staging prerelease, do not activate any channel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create ota-staging-v7.0.1 verified/lazcakongym-ota-7.0.1.zip verified/manifest.staging.json verified/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target f154d5ab288c6d1258fed26bfebd56f18da71b74 --title "LAZCAKONG GYM 7.0.1 — staging" --notes "Validated web-only test package. SHA-256 checked; unsigned staging manifest. Not activated in the app. No production rollout." --prerelease --latest=false
+          mkdir downloaded
+          gh release download ota-staging-v7.0.1 --repo "$GITHUB_REPOSITORY" --pattern lazcakongym-ota-7.0.1.zip --dir downloaded
+          cmp downloaded/lazcakongym-ota-7.0.1.zip verified/lazcakongym-ota-7.0.1.zip
