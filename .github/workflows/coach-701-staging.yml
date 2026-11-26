@@ -1,4 +1,4 @@
-name: Coach 7.0.1 OTA staging validation
+name: Coach 7.0.2 OTA staging validation
 on:
   push:
     branches: ['fix/coach-7.0.1']
@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: coach-701-staging
+  group: coach-702-staging
   cancel-in-progress: true
 jobs:
   validate:
@@ -37,7 +37,7 @@ jobs:
           OTA_PRODUCTION_ENABLED: 'false'
         run: |
           set -euo pipefail
-          npx tsx --test src/server/__tests__/coachLocalRecovery701.test.ts
+          npx tsx --test src/server/__tests__/coachLocalRecovery701.test.ts src/server/__tests__/trainingCycleHome702.test.ts
           for suite in adminAccessRepairSuite coachChatRecoverySuite coachLaunchReadinessSuite coachNoHangSuite otaUpdateSystemSuite offlineProductionReadinessSuite; do
             npx tsx "src/server/__tests__/$suite.ts"
           done
@@ -45,7 +45,7 @@ jobs:
         env:
           VITE_API_BASE_URL: https://lazcakongym.ai.studio
           VITE_GOOGLE_WEB_CLIENT_ID: 13537846485-8j7931cki5gtlpq2eklsru35765sv3pq.apps.googleusercontent.com
-          VITE_APP_VERSION: '7.0.1'
+          VITE_APP_VERSION: '7.0.2'
           VITE_OTA_CHANNEL: staging
           VITE_OTA_PRODUCTION_ENABLED: 'false'
         run: npm run build
@@ -54,11 +54,50 @@ jobs:
           OTA_PRODUCTION_ENABLED: 'false'
         run: |
           set -euo pipefail
-          npm run ota:package -- --version 7.0.1 --channel staging --min-native 70000 --notes 'Coach: respaldo local seguro ante respuestas vacías y errores de conexión.'
-          unzip -tq dist-ota/lazcakongym-ota-7.0.1.zip
+          npm run ota:package -- --version 7.0.2 --channel staging --min-native 70000 --bundle-base-url https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v7.0.2 --notes 'Contador inteligente trasladado a Inicio; Rutinas sin duplicación.'
+          unzip -tq dist-ota/lazcakongym-ota-7.0.2.zip
           (cd dist-ota && sha256sum -c SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
-          name: coach-7.0.1-ota-staging
+          name: coach-7.0.2-ota-staging
           path: dist-ota/
           retention-days: 14
+  host:
+    needs: validate
+    if: github.ref == 'refs/heads/fix/coach-7.0.1'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: coach-7.0.2-ota-staging
+          path: verified
+      - name: Verify and host immutable staging prerelease (no channel activation)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd verified
+          sha256sum -c SHA256SUMS.txt
+          unzip -tq lazcakongym-ota-7.0.2.zip
+          python - <<'PY'
+          import json, zipfile, pathlib, hashlib
+          p=pathlib.Path('lazcakongym-ota-7.0.2.zip')
+          m=json.loads(pathlib.Path('manifest.staging.json').read_text())
+          assert m['channel']=='staging' and m['version']=='7.0.2' and m['minNativeVersionCode']==70000 and not m['requiresApkUpdate']
+          assert m['checksum']==hashlib.sha256(p.read_bytes()).hexdigest()
+          assert m['url']=='https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v7.0.2/lazcakongym-ota-7.0.2.zip'
+          with zipfile.ZipFile(p) as z:
+              for f in z.namelist():
+                  assert not f.startswith('/') and '..' not in pathlib.PurePosixPath(f).parts
+                  assert not any(x.startswith('.env') or x in ('google-services.json','serviceAccountKey.json') or x.endswith(('.pem','.keystore','.jks','.p12')) for x in pathlib.PurePosixPath(f).parts), f
+          PY
+          if gh release view ota-staging-v7.0.2 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::Version 7.0.2 already hosted; refusing to overwrite an immutable release."
+            exit 0
+          fi
+          gh release create ota-staging-v7.0.2 lazcakongym-ota-7.0.2.zip manifest.staging.json SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "LAZCAKONG GYM 7.0.2 - staging" --notes "Training cycle moved to Inicio. Test-only package; no channel activation." --prerelease --latest=false
+          mkdir downloaded
+          gh release download ota-staging-v7.0.2 --repo "$GITHUB_REPOSITORY" --pattern lazcakongym-ota-7.0.2.zip --dir downloaded
+          cmp downloaded/lazcakongym-ota-7.0.2.zip lazcakongym-ota-7.0.2.zip

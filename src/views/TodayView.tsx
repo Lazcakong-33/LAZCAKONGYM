@@ -23,6 +23,7 @@ import {
   computeOverallAthleteSummary,
 } from '../utils/muscleRecoveryEngine';
 import { CoachChatModal } from '../components/CoachChatModal';
+import { ProfileTrainingCycleCard } from '../components/ProfileTrainingCycleCard';
 import { EliteChallengesPanel } from '../components/EliteChallengesPanel';
 import {
   buildUpdatedRoutineWithReplacement,
@@ -779,6 +780,11 @@ export const TodayView: React.FC<TodayViewProps> = ({
         </div>
         )}
       </section>
+
+      {/* Ciclo de entrenamiento: solo en Inicio, conserva la configuración del atleta. */}
+      {activeProfile?.id && (
+        <ProfileTrainingCycleCard key={activeProfile.id} activeProfileId={activeProfile.id} history={history} />
+      )}
 
       {/* 3. ESTADÍSTICAS: PROGRESO SEMANAL & VOLUMEN TOTAL (2 tarjetas en una fila) */}
       <section className="grid grid-cols-2 gap-3">

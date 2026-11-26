@@ -370,7 +370,6 @@ export default function App() {
         {currentTab === 'rutinas' && (
           <RoutinesView
             key={gym.activeProfile?.id || 'no-profile'}
-            activeProfileId={gym.activeProfile?.id}
             routines={gym.routines}
             history={gym.history}
             selectedDayId={selectedDayId}
