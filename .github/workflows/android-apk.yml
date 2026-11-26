@@ -180,22 +180,32 @@ jobs:
         if: ${{ github.ref == 'refs/heads/release/7.0.0-ota' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'release') }}
         working-directory: android
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          LAZCAKONG_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          LAZCAKONG_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          LAZCAKONG_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_BASE64: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && secrets.ANDROID_DEBUG_KEYSTORE_BASE64 || secrets.ANDROID_KEYSTORE_BASE64 }}
+          LAZCAKONG_KEYSTORE_PASSWORD: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && secrets.ANDROID_DEBUG_KEYSTORE_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+          LAZCAKONG_KEY_ALIAS: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && secrets.ANDROID_DEBUG_KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
+          LAZCAKONG_KEY_PASSWORD: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && secrets.ANDROID_DEBUG_KEY_PASSWORD || secrets.ANDROID_KEY_PASSWORD }}
           LAZCAKONG_VERSION_CODE: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && '70000' || inputs.version_code }}
           LAZCAKONG_VERSION_NAME: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && '7.0.0' || inputs.version_name }}
         run: |
           set -euo pipefail
           if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ] || [ -z "${LAZCAKONG_KEYSTORE_PASSWORD:-}" ] || [ -z "${LAZCAKONG_KEY_ALIAS:-}" ] || [ -z "${LAZCAKONG_KEY_PASSWORD:-}" ]; then
-            echo "ERROR: Faltan secretos de firma release (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD)."
+            echo "ERROR: Faltan secretos de la identidad de firma configurada para esta rama."
             echo "No se generará ninguna clave nueva automáticamente."
             exit 1
           fi
           KEYSTORE_TMP="${RUNNER_TEMP}/lazcakong-release.keystore"
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_TMP"
           export LAZCAKONG_KEYSTORE_FILE="$KEYSTORE_TMP"
+          if [ "$GITHUB_REF" = "refs/heads/release/7.0.0-ota" ]; then
+            # Existing installed APK used the private debug signing identity; keep the same certificate.
+            expected="ce167ff39391c38f2e80172f8a2fa8daa7be0b437f1c738929920ba2f0b79a58"
+            actual="$(keytool -exportcert -keystore "$KEYSTORE_TMP" -storepass "$LAZCAKONG_KEYSTORE_PASSWORD" -alias "$LAZCAKONG_KEY_ALIAS" | sha256sum | cut -d' ' -f1)"
+            if [ "$actual" != "$expected" ]; then
+              echo "::error::Signing certificate does not match the previously installed APK. Refusing to build."
+              exit 1
+            fi
+            echo "Original installed APK certificate verified."
+          fi
           ./gradlew assembleRelease --no-daemon
 
       - name: Generate APK SHA-256 Checksum
@@ -214,6 +224,10 @@ jobs:
           echo "Verifying APK integrity, signature and package ID..."
           SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
           "$SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose "$APK_SRC"
+          if [ "$GITHUB_REF" = "refs/heads/release/7.0.0-ota" ]; then
+            "$SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs "$APK_SRC" | grep -Fi 'certificate SHA-256 digest: ce167ff39391c38f2e80172f8a2fa8daa7be0b437f1c738929920ba2f0b79a58'
+            "$SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK_SRC" | grep -F "versionCode='70000' versionName='7.0.0'"
+          fi
           "$SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK_SRC" | grep -F "package: name='com.lazcakong.gym'"
           unzip -tq "$APK_SRC" >/dev/null
           cp "$APK_SRC" artifacts-apk/
