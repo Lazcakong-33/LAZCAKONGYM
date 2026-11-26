@@ -64,11 +64,11 @@
       "Peso corporal",
       "Colchoneta"
     ],
-    "videoUrl": null,
+    "videoUrl": "/exercise-library/e83f2499-d624-417b-9bf0-b1f1430de20e.webp",
     "thumbnailUrl": "/exercise-library/e83f2499-d624-417b-9bf0-b1f1430de20e-poster.webp",
     "secondaryThumbnailUrl": null,
-    "url": "/exercise-library/e83f2499-d624-417b-9bf0-b1f1430de20e-poster.webp",
-    "visualResourceStatus": "pending_resource",
+    "url": "/exercise-library/e83f2499-d624-417b-9bf0-b1f1430de20e.webp",
+    "visualResourceStatus": "verified_animation",
     "tags": [
       "CERVICAL",
       "POSTURE",
@@ -102,7 +102,10 @@
     ],
     "contraindications": [
       "Evitar si existe dolor cervical agudo, mareo posicional, parestesias o radiculopatía activa."
-    ]
+    ],
+    "animationUrl": "/exercise-library/e83f2499-d624-417b-9bf0-b1f1430de20e.webp",
+    "frames": 8,
+    "durationMs": 4000
   },
   {
     "id": "68316f71-8691-4276-af57-4c6502c65738",
@@ -114,11 +117,11 @@
     "allEquipment": [
       "Peso corporal"
     ],
-    "videoUrl": null,
-    "thumbnailUrl": null,
+    "videoUrl": "/exercise-library/68316f71-8691-4276-af57-4c6502c65738.webp",
+    "thumbnailUrl": "/exercise-library/68316f71-8691-4276-af57-4c6502c65738-poster.webp",
     "secondaryThumbnailUrl": null,
-    "url": "",
-    "visualResourceStatus": "pending_resource",
+    "url": "/exercise-library/68316f71-8691-4276-af57-4c6502c65738.webp",
+    "visualResourceStatus": "verified_animation",
     "tags": [
       "CERVICAL",
       "POSTURE",
@@ -152,7 +155,10 @@
     ],
     "contraindications": [
       "Detener ante dolor punzante, mareos, zumbidos o irradiación nerviosa hacia extremidades."
-    ]
+    ],
+    "animationUrl": "/exercise-library/68316f71-8691-4276-af57-4c6502c65738.webp",
+    "frames": 8,
+    "durationMs": 4000
   },
   {
     "id": "2aa6471b-ddfc-4175-8455-1b6dd1b52fca",
