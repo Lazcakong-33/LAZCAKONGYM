@@ -9,6 +9,7 @@ import {
   parseConfiguredServiceAccount,
 } from './firebaseAdminServer.ts';
 import { getGeminiModel, getServerGeminiApiKey } from './geminiModel.ts';
+import { coachBudget } from './coachRequestBudget.ts';
 
 export interface CoachConversationTurn {
   role: 'user' | 'assistant';
@@ -605,9 +606,14 @@ export async function handleCoachChat(
   });
 
   const model = getGeminiModel();
-  const client = deps?.geminiClient || createDefaultGeminiClient(apiKey!);
-
+  // No provider call before ownership and server budget checks.
+  const permit = deps?.geminiClient ? null : coachBudget.acquire(user.uid);
+  if (permit && !permit.allowed) {
+    res.setHeader('Retry-After', String(permit.retryAfterSec));
+    return res.status(429).json({ success: false, code: 'coach/rate-limited', retryable: true, retryAfterSec: permit.retryAfterSec, error: 'El Coach alcanzó su límite temporal. Las consultas locales siguen disponibles.' });
+  }
   try {
+    const client = deps?.geminiClient || createDefaultGeminiClient(apiKey!);
     const reply = await client.generateCoachReply({
       model,
       systemInstruction,
@@ -633,6 +639,7 @@ export async function handleCoachChat(
     });
   } catch (err: any) {
     const mapped = mapGeminiErrorResponse(err);
+    if (!deps?.geminiClient && (mapped.status === 429 || mapped.status === 503)) coachBudget.pause(60);
     console.error(`[Coach LazcaKong IA] Gemini upstream error (status=${mapped.status}, code=${mapped.code})`);
     return res.status(mapped.status).json({
       success: false,
@@ -640,5 +647,7 @@ export async function handleCoachChat(
       retryable: mapped.retryable,
       error: mapped.message,
     });
+  } finally {
+    if (permit?.allowed) permit.release();
   }
 }

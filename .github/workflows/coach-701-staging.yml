@@ -54,7 +54,7 @@ jobs:
           OTA_PRODUCTION_ENABLED: 'false'
         run: |
           set -euo pipefail
-          npx tsx --test src/server/__tests__/coachLocalRecovery701.test.ts src/server/__tests__/trainingCycleHome702.test.ts src/server/__tests__/stagingReleaseDiscovery.test.ts src/server/__tests__/coachGeneralGuidance705.test.ts
+          npx tsx --test src/server/__tests__/coachLocalRecovery701.test.ts src/server/__tests__/trainingCycleHome702.test.ts src/server/__tests__/stagingReleaseDiscovery.test.ts src/server/__tests__/coachGeneralGuidance705.test.ts src/server/__tests__/coachRequestBudget705.test.ts
           for suite in adminAccessRepairSuite coachChatRecoverySuite coachLaunchReadinessSuite coachNoHangSuite otaUpdateSystemSuite offlineProductionReadinessSuite; do
             npx tsx "src/server/__tests__/$suite.ts"
           done
