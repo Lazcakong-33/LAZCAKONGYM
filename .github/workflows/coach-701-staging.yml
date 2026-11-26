@@ -1,0 +1,64 @@
+name: Coach 7.0.1 OTA staging validation
+on:
+  push:
+    branches: ['fix/coach-7.0.1']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: coach-701-staging
+  cancel-in-progress: true
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/fix/coach-7.0.1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify web-only changes against APK baseline
+        run: |
+          set -euo pipefail
+          git diff --name-only 6683b2f2c99dc766aea816da506e580f20ed3dd2 HEAD
+          if git diff --name-only 6683b2f2c99dc766aea816da506e580f20ed3dd2 HEAD | grep -E '^(android/|ios/|capacitor\.config\.|package(-lock)?\.json|firestore.*\.rules)'; then
+            echo "::error::Native or security changes require separate validation."
+            exit 1
+          fi
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - name: Coach, authentication and OTA regression tests
+        env:
+          CI_ANDROID_ONLY: 'true'
+          OTA_PRODUCTION_ENABLED: 'false'
+        run: |
+          set -euo pipefail
+          npx tsx --test src/server/__tests__/coachLocalRecovery701.test.ts
+          for suite in adminAccessRepairSuite coachChatRecoverySuite coachLaunchReadinessSuite coachNoHangSuite otaUpdateSystemSuite offlineProductionReadinessSuite; do
+            npx tsx "src/server/__tests__/$suite.ts"
+          done
+      - name: Build staging web assets
+        env:
+          VITE_API_BASE_URL: https://lazcakongym.ai.studio
+          VITE_GOOGLE_WEB_CLIENT_ID: 13537846485-8j7931cki5gtlpq2eklsru35765sv3pq.apps.googleusercontent.com
+          VITE_APP_VERSION: '7.0.1'
+          VITE_OTA_CHANNEL: staging
+          VITE_OTA_PRODUCTION_ENABLED: 'false'
+        run: npm run build
+      - name: Prepare staging OTA artifact (not published)
+        env:
+          OTA_PRODUCTION_ENABLED: 'false'
+        run: |
+          set -euo pipefail
+          npm run ota:package -- --version 7.0.1 --channel staging --min-native 70000 --notes 'Coach: respaldo local seguro ante respuestas vacías y errores de conexión.'
+          unzip -tq dist-ota/lazcakongym-ota-7.0.1.zip
+          (cd dist-ota && sha256sum -c SHA256SUMS.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coach-7.0.1-ota-staging
+          path: dist-ota/
+          retention-days: 14
