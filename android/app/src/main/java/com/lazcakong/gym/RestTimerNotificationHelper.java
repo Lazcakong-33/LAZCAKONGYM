@@ -16,7 +16,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.AudioAttributes;
-import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -44,13 +43,15 @@ public final class RestTimerNotificationHelper {
 
     public static final String CHANNEL_ONGOING_ID = "lazcakong_rest_chronometer_v2";
     public static final String LEGACY_CHANNEL_ONGOING_ID = "lazcakong_rest_live_countdown";
-    public static final String CHANNEL_FINISH_SOUND_ID = "lazcakong_rest_finish_sound_v2";
+    public static final String CHANNEL_FINISH_SOUND_ID = "lazcakong_rest_finish_alarm_v3";
     public static final String CHANNEL_FINISH_VIBRATE_ID = "lazcakong_rest_finish_vibrate_v2";
     public static final String CHANNEL_FINISH_SILENT_ID = "lazcakong_rest_finish_silent_v2";
 
     public static final int REST_ONGOING_NOTIFICATION_ID = 77001;
     public static final int REST_COMPLETE_NOTIFICATION_ID = 77002;
     public static final int ALARM_REQUEST_CODE = 77101;
+    private static final int WARNING_REQUEST_CODE = 77102;
+    static final String ACTION_REST_WARNING = "com.lazcakong.gym.REST_WARNING";
 
     public static final String EXTRA_OPEN_ACTIVE_WORKOUT = "lazcakong_open_active_workout";
     public static final String EXTRA_REST_ID = "lazcakong_rest_id";
@@ -116,10 +117,8 @@ public final class RestTimerNotificationHelper {
         }
 
         if (manager.getNotificationChannel(CHANNEL_FINISH_SOUND_ID) == null) {
-            Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            if (soundUri == null) {
-                soundUri = Settings.System.DEFAULT_NOTIFICATION_URI;
-            }
+            Uri soundUri = Uri.parse("android.resource://" + context.getPackageName()
+                + "/raw/rest_complete_alarm");
             AudioAttributes audioAttrs = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -461,6 +460,7 @@ public final class RestTimerNotificationHelper {
             } else {
                 alarmManager.set(AlarmManager.RTC_WAKEUP, targetEndTime, pi);
             }
+            scheduleRestWarning(context, alarmManager, restId, targetEndTime, canExact);
             return true;
         } catch (SecurityException se) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -472,6 +472,37 @@ public final class RestTimerNotificationHelper {
         }
     }
 
+    private static PendingIntent warningIntent(
+        Context context, int flags, String restId, long targetEndTime
+    ) {
+        Intent intent = new Intent(context, RestAlarmReceiver.class).setAction(ACTION_REST_WARNING);
+        intent.putExtra(EXTRA_REST_ID, restId);
+        intent.putExtra(EXTRA_TARGET_END_TIME, targetEndTime);
+        return PendingIntent.getBroadcast(
+            context, WARNING_REQUEST_CODE, intent, flags | PendingIntent.FLAG_IMMUTABLE
+        );
+    }
+
+    private static void scheduleRestWarning(
+        Context context, AlarmManager manager, String restId, long targetEndTime, boolean canExact
+    ) {
+        PendingIntent previous = warningIntent(context, PendingIntent.FLAG_NO_CREATE, restId, targetEndTime);
+        if (previous != null) {
+            manager.cancel(previous);
+            previous.cancel();
+        }
+        long warningTime = targetEndTime - 5000L;
+        if (!canExact || warningTime <= System.currentTimeMillis()
+            || !"sound".equals(RestTimerStore.getSnapshot(context).mode)) return;
+        PendingIntent warning = warningIntent(context, PendingIntent.FLAG_UPDATE_CURRENT, restId, targetEndTime);
+        // Reserve the idle-allowed wakeup for the final alarm.
+        try {
+            manager.setExact(AlarmManager.RTC_WAKEUP, warningTime, warning);
+        } catch (SecurityException ignored) {
+            warning.cancel();
+        }
+    }
+
     public static void cancelExactAlarm(Context context) {
         if (context == null) {
             return;
@@ -479,6 +510,11 @@ public final class RestTimerNotificationHelper {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) {
             return;
+        }
+        PendingIntent warning = warningIntent(context, PendingIntent.FLAG_NO_CREATE, null, 0L);
+        if (warning != null) {
+            alarmManager.cancel(warning);
+            warning.cancel();
         }
         Intent alarmIntent = new Intent(context, RestAlarmReceiver.class);
         int flags = PendingIntent.FLAG_NO_CREATE;

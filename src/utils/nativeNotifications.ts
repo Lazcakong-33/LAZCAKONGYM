@@ -1,6 +1,6 @@
 import { detectRuntimePlatform } from './capacitorPlatform.ts';
 
-export const REST_SOUND_CHANNEL_ID = 'lazcakong_rest_finish_sound_v2';
+export const REST_SOUND_CHANNEL_ID = 'lazcakong_rest_finish_alarm_v3';
 export const REST_VIBRATE_CHANNEL_ID = 'lazcakong_rest_finish_vibrate_v2';
 export const REST_SILENT_CHANNEL_ID = 'lazcakong_rest_finish_silent_v2';
 export const REST_LIVE_COUNTDOWN_CHANNEL_ID = 'lazcakong_rest_chronometer_v2';
