@@ -130,6 +130,7 @@ export const AdminUpdateCenter: React.FC = () => {
     setSyncingGithub(true);
     setStagingCandidate(null);
     setDiscoveryMsg('Buscando actualización preparada…');
+    setVersion(''); setBundleUrl(''); setChecksum(''); setSignature(''); setReleaseNotes('');
     try {
       const m = await discoverStagingRelease(active);
       if (!m) {
@@ -154,8 +155,8 @@ export const AdminUpdateCenter: React.FC = () => {
   const stagingActive = statusData?.channels?.staging?.activeManifest?.version || APP_VERSION;
   const stagingStatusReady = Boolean(statusData?.success);
   useEffect(() => {
-    if (stagingStatusReady) void discoverNext(stagingActive);
-  }, [stagingStatusReady, stagingActive, discoverNext]);
+    if (stagingStatusReady && selectedChannel === 'staging') void discoverNext(stagingActive);
+  }, [stagingStatusReady, stagingActive, selectedChannel, discoverNext]);
 
   const handleSyncGithub = async () => {
     if (selectedChannel === 'staging') { await discoverNext(stagingActive); return; }
@@ -223,6 +224,10 @@ export const AdminUpdateCenter: React.FC = () => {
     e.preventDefault();
     if (selectedChannel === 'production' && !statusData?.productionEnvEnabled) {
       setActionMsg({ type: 'error', text: 'Producción permanece bloqueada.' });
+      return;
+    }
+    if (selectedChannel === 'staging' && !stagingCandidate) {
+      setActionMsg({ type: 'error', text: 'Primero busca una actualización verificada.' });
       return;
     }
     if (selectedChannel === 'staging' && stagingCandidate) {
@@ -531,8 +536,15 @@ export const AdminUpdateCenter: React.FC = () => {
               <button
                 key={ch}
                 type="button"
-                onClick={() => { setSelectedChannel(ch); setStagingCandidate(null); }}
-                disabled={ch === 'production' && !statusData?.productionEnvEnabled}
+                onClick={() => {
+                  if (ch === selectedChannel) return;
+                  setSelectedChannel(ch);
+                  setStagingCandidate(null);
+                  setVersion(''); setBundleUrl(''); setChecksum(''); setSignature('');
+                  setReleaseNotes(''); setUrgency('optional'); setRequiresApkUpdate(false);
+                  setMinNativeVersionCode(ch === 'staging' ? '70000' : '1');
+                }}
+                disabled={syncingGithub || submitting || (ch === 'production' && !statusData?.productionEnvEnabled)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase cursor-pointer transition-colors ${
                   selectedChannel === ch
                     ? 'bg-[#CCFF00] text-[#090909] font-black'
@@ -553,6 +565,7 @@ export const AdminUpdateCenter: React.FC = () => {
             <input
               type="text"
               value={version}
+              readOnly={selectedChannel === 'staging'}
               onChange={(e) => setVersion(e.target.value)}
               placeholder="7.0.1"
               className="w-full text-xs font-mono font-bold bg-[#090909] border border-[#303030] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-[#CCFF00]"
@@ -566,6 +579,7 @@ export const AdminUpdateCenter: React.FC = () => {
             </label>
             <select
               value={urgency}
+              disabled={selectedChannel === 'staging'}
               onChange={(e) => setUrgency(e.target.value as OtaUrgency)}
               className="w-full text-xs font-bold bg-[#090909] border border-[#303030] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-[#CCFF00]"
             >
@@ -582,6 +596,7 @@ export const AdminUpdateCenter: React.FC = () => {
               type="number"
               min="1"
               value={minNativeVersionCode}
+              readOnly={selectedChannel === 'staging'}
               onChange={(e) => setMinNativeVersionCode(e.target.value)}
               className="w-full text-xs font-mono font-bold bg-[#090909] border border-[#303030] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-[#CCFF00]"
             />
@@ -595,6 +610,7 @@ export const AdminUpdateCenter: React.FC = () => {
           <input
             type="text"
             value={releaseNotes}
+              readOnly={selectedChannel === 'staging'}
             onChange={(e) => setReleaseNotes(e.target.value)}
             placeholder="Describe mejoras de interfaz, biblioteca o correcciones..."
             className="w-full text-xs bg-[#090909] border border-[#303030] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-[#CCFF00]"
@@ -606,6 +622,7 @@ export const AdminUpdateCenter: React.FC = () => {
           <input
             type="checkbox"
             checked={requiresApkUpdate}
+            disabled={selectedChannel === 'staging'}
             onChange={(e) => setRequiresApkUpdate(e.target.checked)}
             className="mt-0.5 accent-[#CCFF00]"
           />
@@ -628,6 +645,7 @@ export const AdminUpdateCenter: React.FC = () => {
               <input
                 type="url"
                 value={bundleUrl}
+              readOnly={selectedChannel === 'staging'}
                 onChange={(e) => setBundleUrl(e.target.value)}
                 placeholder="https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/..."
                 className="w-full text-xs font-mono bg-[#090909] border border-[#303030] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-[#CCFF00]"
@@ -642,6 +660,7 @@ export const AdminUpdateCenter: React.FC = () => {
               <input
                 type="text"
                 value={checksum}
+              readOnly={selectedChannel === 'staging'}
                 onChange={(e) => setChecksum(e.target.value)}
                 placeholder="64 caracteres hexadecimales del .zip"
                 className="w-full text-xs font-mono bg-[#090909] border border-[#303030] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-[#CCFF00]"
@@ -656,6 +675,7 @@ export const AdminUpdateCenter: React.FC = () => {
               <input
                 type="text"
                 value={signature}
+              readOnly={selectedChannel === 'staging'}
                 onChange={(e) => setSignature(e.target.value)}
                 placeholder="Generada automáticamente por package-ota-bundle.mjs si OTA_MANIFEST_PRIVATE_KEY_PEM está configurada"
                 className="w-full text-xs font-mono bg-[#090909] border border-[#303030] rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#CCFF00]"
@@ -666,7 +686,7 @@ export const AdminUpdateCenter: React.FC = () => {
 
         <button
           type="submit"
-          disabled={submitting || syncingGithub || (selectedChannel === 'production' && !statusData?.productionEnvEnabled) || (selectedChannel === 'staging' && Boolean(stagingCandidate) && compareStagingVersions(stagingCandidate!.version, stagingActive) <= 0)}
+          disabled={submitting || syncingGithub || (selectedChannel === 'production' && !statusData?.productionEnvEnabled) || (selectedChannel === 'staging' && (!stagingCandidate || compareStagingVersions(stagingCandidate.version, stagingActive) <= 0))}
           className="w-full min-h-[44px] py-3 rounded-xl bg-[#CCFF00] hover:bg-[#d9ff33] text-[#090909] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
         >
           <ShieldCheck className="w-4 h-4" />
