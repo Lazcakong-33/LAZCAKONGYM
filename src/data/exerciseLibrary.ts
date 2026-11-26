@@ -1,9 +1,10 @@
 import libraryData from './exerciseLibrary.json';
 import stage2a from './exerciseLibraryStage2a.json';
+import pechoTriceps01 from './exerciseLibraryPechoTriceps01.json';
 import aliases from './exerciseAliases.json';
 import type { LibraryExercise } from '../types';
 
-export const EXERCISE_LIBRARY: LibraryExercise[] = [...libraryData, ...stage2a];
+export const EXERCISE_LIBRARY: LibraryExercise[] = [...libraryData, ...stage2a, ...pechoTriceps01];
 export const normalizeExerciseName = (name: string) => name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, ' ');
 const byId = new Map(EXERCISE_LIBRARY.map(ex => [ex.id, ex]));
 const legacyIds: Record<string, string> = aliases.ids;

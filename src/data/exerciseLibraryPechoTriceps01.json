@@ -1,0 +1,674 @@
+[
+  {
+    "id": "b307cebc-dcfd-52cb-8ebd-be1803692a2d",
+    "sourceId": "b307cebc-dcfd-52cb-8ebd-be1803692a2d",
+    "name": "Press de banca con barra y bandas ancladas abajo",
+    "muscleGroup": "Pecho",
+    "equipment": "Barra",
+    "allEquipment": [
+      "Barra",
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Fija dos bandas iguales a la base del rack y comprueba que tiren parejo.",
+      "Baja la barra al pecho con control y empuja en la misma trayectoria contra la tensión creciente."
+    ]
+  },
+  {
+    "id": "9f39bc09-d163-5716-8c1c-d9ca696617be",
+    "sourceId": "9f39bc09-d163-5716-8c1c-d9ca696617be",
+    "name": "Press de banca con bandas de asistencia desde el rack",
+    "muscleGroup": "Pecho",
+    "equipment": "Barra",
+    "allEquipment": [
+      "Barra",
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Fija las bandas arriba del rack de forma simétrica y usa seguros a la altura apropiada.",
+      "Baja la barra al pecho con control y vuelve a extender los brazos mientras disminuye la asistencia."
+    ]
+  },
+  {
+    "id": "68fe47de-d9cb-55c4-b91f-e83d7107e9bc",
+    "sourceId": "68fe47de-d9cb-55c4-b91f-e83d7107e9bc",
+    "name": "Press de banca desde el suelo con barra y cadenas",
+    "muscleGroup": "Pecho",
+    "equipment": "Barra",
+    "allEquipment": [
+      "Barra",
+      "Cadenas"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Acuéstate en el suelo y distribuye las cadenas por igual a ambos lados.",
+      "Baja hasta que los tríceps toquen el piso suavemente y empuja sin rebotar."
+    ]
+  },
+  {
+    "id": "890c5096-91a9-56cd-8a60-694ff0922afc",
+    "sourceId": "890c5096-91a9-56cd-8a60-694ff0922afc",
+    "name": "Press de banca con barra de agarres múltiples",
+    "muscleGroup": "Pecho",
+    "equipment": "Barra multigrip",
+    "allEquipment": [
+      "Barra multigrip"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Apoya los pies y toma los agarres neutros de la barra a un ancho cómodo.",
+      "Baja el centro de la barra al pecho y presiona con las muñecas alineadas sobre los codos."
+    ]
+  },
+  {
+    "id": "865e7dc6-2e75-5a7e-aa47-c82735b7424e",
+    "sourceId": "865e7dc6-2e75-5a7e-aa47-c82735b7424e",
+    "name": "Press de banca con barra arqueada",
+    "muscleGroup": "Pecho",
+    "equipment": "Barra arqueada",
+    "allEquipment": [
+      "Barra arqueada"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Ajusta los seguros del rack para limitar el recorrido a una amplitud cómoda.",
+      "Desciende con control y empuja sin buscar más profundidad de la que permiten los hombros."
+    ]
+  },
+  {
+    "id": "c964a547-1ad4-5ed2-9269-d5cd25dfb743",
+    "sourceId": "c964a547-1ad4-5ed2-9269-d5cd25dfb743",
+    "name": "Press inclinado con barra y pausa sobre el pecho",
+    "muscleGroup": "Pecho",
+    "equipment": "Barra",
+    "allEquipment": [
+      "Barra",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Acomoda un banco con inclinación baja y asegura los pies debajo de las rodillas.",
+      "Baja al pecho superior, pausa brevemente manteniendo la tensión y vuelve a empujar."
+    ]
+  },
+  {
+    "id": "67ff78ca-9252-5bf5-8af6-e467d416f21f",
+    "sourceId": "67ff78ca-9252-5bf5-8af6-e467d416f21f",
+    "name": "Press inclinado con mancuernas alternado en posición superior",
+    "muscleGroup": "Pecho",
+    "equipment": "Mancuerna",
+    "allEquipment": [
+      "Mancuerna",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Parte con las dos mancuernas sobre los hombros en un banco inclinado.",
+      "Mantén una mancuerna arriba mientras bajas y empujas la otra. Alterna lados."
+    ]
+  },
+  {
+    "id": "34b80ab4-72fa-5f7a-b1da-d3ded3a28256",
+    "sourceId": "34b80ab4-72fa-5f7a-b1da-d3ded3a28256",
+    "name": "Press inclinado de compresión con mancuernas",
+    "muscleGroup": "Pecho",
+    "equipment": "Mancuerna",
+    "allEquipment": [
+      "Mancuerna",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Junta las dos mancuernas sobre el esternón en un banco inclinado.",
+      "Presiona una mancuerna contra la otra al bajar y subir juntas, sin separar los codos en exceso."
+    ]
+  },
+  {
+    "id": "3a6ab8d3-e614-5cb3-b144-42241acccb69",
+    "sourceId": "3a6ab8d3-e614-5cb3-b144-42241acccb69",
+    "name": "Press declinado unilateral con mancuerna",
+    "muscleGroup": "Pecho",
+    "equipment": "Mancuerna",
+    "allEquipment": [
+      "Mancuerna",
+      "Banco declinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Asegura ambos pies al banco y toma una mancuerna con un brazo.",
+      "Desciende hacia un costado del pecho y empuja manteniendo ambos hombros en el respaldo."
+    ]
+  },
+  {
+    "id": "9cc0bf41-b3d3-5108-912e-b231fc209873",
+    "sourceId": "9cc0bf41-b3d3-5108-912e-b231fc209873",
+    "name": "Press de piso alternado con dos kettlebells",
+    "muscleGroup": "Pecho",
+    "equipment": "Kettlebell",
+    "allEquipment": [
+      "Kettlebell"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Acuéstate con las rodillas flexionadas y ambas pesas sobre los hombros.",
+      "Deja una pesa arriba mientras bajas la otra hasta apoyar el tríceps. Empuja y alterna."
+    ]
+  },
+  {
+    "id": "0578a6da-c032-5cc8-9e94-c4fc01d90c85",
+    "sourceId": "0578a6da-c032-5cc8-9e94-c4fc01d90c85",
+    "name": "Press de pecho con banda sentado",
+    "muscleGroup": "Pecho",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Siéntate con los pies en el suelo y ancla la banda detrás del pecho.",
+      "Extiende los brazos al frente sin inclinar el cuerpo y regresa sin perder tensión."
+    ]
+  },
+  {
+    "id": "a83326e3-632c-5e89-bd27-550be5ef5f52",
+    "sourceId": "a83326e3-632c-5e89-bd27-550be5ef5f52",
+    "name": "Press de pecho unilateral en polea en posición de medio arrodillado",
+    "muscleGroup": "Pecho",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Arrodíllate sobre una pierna con la polea detrás del hombro activo.",
+      "Empuja al frente y vuelve despacio manteniendo la pelvis y el pecho orientados hacia delante."
+    ]
+  },
+  {
+    "id": "1b85c7de-67e0-5db2-922a-5921bae96843",
+    "sourceId": "1b85c7de-67e0-5db2-922a-5921bae96843",
+    "name": "Press de pecho de pie con banda y paso dividido",
+    "muscleGroup": "Pecho",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Ancla la banda detrás a la altura del pecho y adelanta un pie.",
+      "Empuja ambos agarres al frente sin balancear el tronco ni elevar los hombros."
+    ]
+  },
+  {
+    "id": "cea22870-da79-5f75-afba-63c94edeae25",
+    "sourceId": "cea22870-da79-5f75-afba-63c94edeae25",
+    "name": "Apertura en polea acostado en banco declinado",
+    "muscleGroup": "Pecho",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco declinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Asegura los pies en el banco y toma dos agarres desde poleas bajas.",
+      "Acerca ambas manos en arco sobre el pecho con una flexión ligera y constante de codo."
+    ]
+  },
+  {
+    "id": "f6a5dc98-ff50-558a-af4b-ca6392bf2e1a",
+    "sourceId": "f6a5dc98-ff50-558a-af4b-ca6392bf2e1a",
+    "name": "Apertura horizontal en máquina unilateral",
+    "muscleGroup": "Pecho",
+    "equipment": "Máquina contractora",
+    "allEquipment": [
+      "Máquina contractora"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Ajusta el asiento para que la empuñadura quede a la altura del pecho.",
+      "Acerca un brazo hacia el centro sin girar el torso y devuelve la palanca con control."
+    ]
+  },
+  {
+    "id": "3a7a276d-2bc8-57ff-8037-e929369da499",
+    "sourceId": "3a7a276d-2bc8-57ff-8037-e929369da499",
+    "name": "Apertura con banda elástica acostado en el suelo",
+    "muscleGroup": "Pecho",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Pasa una banda plana por detrás de la espalda y sostén los extremos a los lados.",
+      "Junta las manos sobre el pecho en arco y regresa hasta apoyar suavemente los brazos."
+    ]
+  },
+  {
+    "id": "bc8794d9-90be-5221-a557-9415d3eeefad",
+    "sourceId": "bc8794d9-90be-5221-a557-9415d3eeefad",
+    "name": "Flexión en anillas con pies elevados",
+    "muscleGroup": "Pecho",
+    "equipment": "Anillas",
+    "allEquipment": [
+      "Anillas",
+      "Banco"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Fija las anillas a igual altura y apoya los pies en un banco estable.",
+      "Baja el pecho entre las anillas manteniendo el cuerpo alineado y empuja sin que se abran."
+    ]
+  },
+  {
+    "id": "ddbcc362-b16b-5ebc-b219-3082eaa2e038",
+    "sourceId": "ddbcc362-b16b-5ebc-b219-3082eaa2e038",
+    "name": "Flexión asistida con banda en rack",
+    "muscleGroup": "Pecho",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica",
+      "Rack"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Ancla una banda arriba y úsala como apoyo bajo el torso, sobre una zona amplia.",
+      "Baja en bloque y empuja el suelo con la ayuda de la banda, manteniendo la pelvis alineada."
+    ]
+  },
+  {
+    "id": "206991cf-23b8-5795-bcb3-9dbb65ac6d62",
+    "sourceId": "206991cf-23b8-5795-bcb3-9dbb65ac6d62",
+    "name": "Flexión de arquero en superficie elevada",
+    "muscleGroup": "Pecho",
+    "equipment": "Banco",
+    "allEquipment": [
+      "Banco"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Pectoral mayor"
+    ],
+    "shortInstructions": [
+      "Apoya las manos separadas sobre un soporte firme a la altura elegida.",
+      "Lleva el pecho hacia una mano mientras el brazo opuesto se alarga. Regresa y alterna."
+    ]
+  },
+  {
+    "id": "3d9c6a14-bb46-5c17-84a3-209c1acfabe6",
+    "sourceId": "3d9c6a14-bb46-5c17-84a3-209c1acfabe6",
+    "name": "Extensión de tríceps con banda anclada arriba",
+    "muscleGroup": "Tríceps",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Fija la banda por encima de la cabeza y toma ambos extremos con los codos junto al tronco.",
+      "Estira los codos para llevar las manos hacia los muslos y regresa sin mover los brazos superiores."
+    ]
+  },
+  {
+    "id": "3e8b55e3-dee0-5bfb-bed5-9dc145cc8490",
+    "sourceId": "3e8b55e3-dee0-5bfb-bed5-9dc145cc8490",
+    "name": "Extensión de tríceps sobre la cabeza con banda en medio arrodillado",
+    "muscleGroup": "Tríceps",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Ancla la banda atrás y abajo, arrodíllate sobre una pierna y lleva las manos sobre la cabeza.",
+      "Extiende los codos manteniéndolos orientados al frente y vuelve despacio."
+    ]
+  },
+  {
+    "id": "82f8a671-70d0-5dd5-959a-8d2e0546493c",
+    "sourceId": "82f8a671-70d0-5dd5-959a-8d2e0546493c",
+    "name": "Extensión de tríceps en suelo con mancuernas y agarre neutro",
+    "muscleGroup": "Tríceps",
+    "equipment": "Mancuerna",
+    "allEquipment": [
+      "Mancuerna"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Acuéstate boca arriba con las rodillas flexionadas y las mancuernas sobre los hombros.",
+      "Flexiona los codos hasta acercar las pesas a los lados de la cabeza y vuelve a extenderlos."
+    ]
+  },
+  {
+    "id": "1ead1f3d-3b84-51aa-804d-16679470e938",
+    "sourceId": "1ead1f3d-3b84-51aa-804d-16679470e938",
+    "name": "Extensión unilateral sobre la cabeza con kettlebell sentado",
+    "muscleGroup": "Tríceps",
+    "equipment": "Kettlebell",
+    "allEquipment": [
+      "Kettlebell"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Siéntate erguido con la pesa sobre un hombro y la muñeca alineada.",
+      "Flexiona el codo para bajar la pesa detrás de la cabeza y extiéndelo sin arquear la espalda."
+    ]
+  },
+  {
+    "id": "8e11c252-b261-5119-9117-a9b80ca11136",
+    "sourceId": "8e11c252-b261-5119-9117-a9b80ca11136",
+    "name": "Patada de tríceps con mancuerna y pecho apoyado",
+    "muscleGroup": "Tríceps",
+    "equipment": "Mancuerna",
+    "allEquipment": [
+      "Mancuerna",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Apoya el pecho en el banco y lleva los codos al costado del torso.",
+      "Extiende ambos antebrazos hacia atrás sin mover los hombros y regresa de forma controlada."
+    ]
+  },
+  {
+    "id": "eb14fbfb-90d8-5965-a012-737b2794c1ad",
+    "sourceId": "eb14fbfb-90d8-5965-a012-737b2794c1ad",
+    "name": "Patada de tríceps con banda elástica unilateral",
+    "muscleGroup": "Tríceps",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Pisa un extremo de la banda, inclina el torso y fija el codo junto a las costillas.",
+      "Extiende el antebrazo hacia atrás hasta tensar la banda y vuelve despacio."
+    ]
+  },
+  {
+    "id": "3282c63f-b124-5dc9-9f49-0f5ef8e47a8a",
+    "sourceId": "3282c63f-b124-5dc9-9f49-0f5ef8e47a8a",
+    "name": "Extensión de tríceps con anillas y apoyo de rodillas",
+    "muscleGroup": "Tríceps",
+    "equipment": "Anillas",
+    "allEquipment": [
+      "Anillas"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Arrodíllate sobre una superficie acolchada y toma las anillas delante de la cara.",
+      "Flexiona los codos para acercar la frente a las manos y empuja extendiéndolos sin hundir la cintura."
+    ]
+  },
+  {
+    "id": "f1063a42-3119-5411-988b-c00353c98c00",
+    "sourceId": "f1063a42-3119-5411-988b-c00353c98c00",
+    "name": "Extensión corporal de tríceps en barra fija del rack",
+    "muscleGroup": "Tríceps",
+    "equipment": "Rack",
+    "allEquipment": [
+      "Rack"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Fija la barra a una altura cómoda y toma un agarre prono estrecho.",
+      "Inclina el cuerpo en bloque y acerca la frente a la barra doblando los codos. Empuja para regresar."
+    ]
+  },
+  {
+    "id": "bf72f073-78d8-52d2-b4f0-08dc77b86f1d",
+    "sourceId": "bf72f073-78d8-52d2-b4f0-08dc77b86f1d",
+    "name": "Extensión de tríceps en polea alta con apoyo de pecho",
+    "muscleGroup": "Tríceps",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Ubica un banco mirando a la polea alta y apoya el pecho con los codos cerca del cuerpo.",
+      "Estira los codos hacia abajo y regresa sin separarlos del torso."
+    ]
+  },
+  {
+    "id": "0de43004-e588-5737-89f5-5fd8c9071a0a",
+    "sourceId": "0de43004-e588-5737-89f5-5fd8c9071a0a",
+    "name": "Press de tríceps en suelo con barra y agarre cerrado",
+    "muscleGroup": "Tríceps",
+    "equipment": "Barra",
+    "allEquipment": [
+      "Barra"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Acuéstate bajo una barra en rack y usa un agarre aproximadamente al ancho de hombros.",
+      "Baja hasta tocar el piso con los tríceps y empuja sin abrir los codos ni rebotar."
+    ]
+  },
+  {
+    "id": "dd85d0f5-42d2-50e2-8cf9-fa822de5a7d1",
+    "sourceId": "dd85d0f5-42d2-50e2-8cf9-fa822de5a7d1",
+    "name": "Press de tríceps en suelo con mancuernas en contacto",
+    "muscleGroup": "Tríceps",
+    "equipment": "Mancuerna",
+    "allEquipment": [
+      "Mancuerna"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Tríceps braquial"
+    ],
+    "shortInstructions": [
+      "Acuéstate con ambas mancuernas juntas sobre el pecho y los codos cerca del tronco.",
+      "Sostén el contacto al bajar hasta el piso y empuja ambas mancuernas juntas hacia arriba."
+    ]
+  }
+]
