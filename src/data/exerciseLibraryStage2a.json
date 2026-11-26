@@ -1,0 +1,749 @@
+[
+  {
+    "id": "aa5dabc7-300e-4fc4-99d7-32bc05815966",
+    "sourceId": "aa5dabc7-300e-4fc4-99d7-32bc05815966",
+    "name": "Retracción cervical sentado",
+    "muscleGroup": "Cuello",
+    "canonicalGroup16": "cuello",
+    "equipment": "Peso corporal",
+    "allEquipment": [
+      "Peso corporal"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": "/exercise-library/aa5dabc7-300e-4fc4-99d7-32bc05815966-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/aa5dabc7-300e-4fc4-99d7-32bc05815966-poster.webp",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "CERVICAL",
+      "POSTURE",
+      "CONTROL",
+      "BODYWEIGHT"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Flexores cervicales profundos",
+      "Suboccipitales"
+    ],
+    "secondaryMuscles": [
+      "Trapecio medio e inferior",
+      "Estabilizadores escapulares"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "aislamiento",
+    "movementPattern": "Control Cervical",
+    "startingPosition": "Siéntate erguido con pies apoyados en el suelo, hombros relajados y mirada al frente.",
+    "activePhase": "Desliza suavemente el mentón hacia atrás en horizontal (chin tuck) alargando la nuca sin inclinar la cabeza.",
+    "returnPhase": "Sostén 3 a 5 segundos en alineación neutra y regresa lento en 2 segundos a la posición de partida.",
+    "shortInstructions": [
+      "Mantén la columna dorsal alta y el pecho abierto con mirada horizontal.",
+      "Lleva el mentón hacia atrás en línea recta sin bajar ni subir la barbilla.",
+      "Respira con fluidez sin encoger los hombros y repite de forma pausada."
+    ],
+    "safetyWarnings": [
+      "Movimiento estrictamente lento y controlado; evita tirones o movimientos balísticos del cuello.",
+      "Mantén amplitud cómoda sin forzar hiperextensión ni compresión cervical.",
+      "Guía técnica de acondicionamiento físico; no sustituye valoración médica ni fisioterapéutica individual."
+    ],
+    "contraindications": [
+      "Suspende de inmediato ante mareos, vértigo, visión borrosa, dolor agudo, hormigueo o irradiación hacia hombros o brazos.",
+      "Consultar profesional de salud antes de realizarlo en caso de hernia cervical sintomática o cirugía cervical reciente."
+    ]
+  },
+  {
+    "id": "e83f2499-d624-417b-9bf0-b1f1430de20e",
+    "sourceId": "e83f2499-d624-417b-9bf0-b1f1430de20e",
+    "name": "Retracción cervical en decúbito supino",
+    "muscleGroup": "Cuello",
+    "canonicalGroup16": "cuello",
+    "equipment": "Peso corporal",
+    "allEquipment": [
+      "Peso corporal",
+      "Colchoneta"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": "/exercise-library/e83f2499-d624-417b-9bf0-b1f1430de20e-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/e83f2499-d624-417b-9bf0-b1f1430de20e-poster.webp",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "CERVICAL",
+      "POSTURE",
+      "CONTROL",
+      "BODYWEIGHT"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Largo del cuello",
+      "Flexores cervicales profundos"
+    ],
+    "secondaryMuscles": [
+      "Esternocleidomastoideo (regulación)",
+      "Estabilizadores torácicos"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "aislamiento",
+    "movementPattern": "Control Cervical",
+    "startingPosition": "Acuéstate boca arriba con rodillas flexionadas, pies apoyados y cabeza alineada sobre la colchoneta.",
+    "activePhase": "Desciende suavemente el mentón hacia el cuello presionando de forma ligera la nuca contra el suelo sin levantar la cabeza.",
+    "returnPhase": "Mantén 5 segundos con esfuerzo suave (20–30%) y relaja lento en 2 segundos.",
+    "shortInstructions": [
+      "No despegues el occipucio del suelo ni empujes con fuerza máxima.",
+      "Alinea las orejas con los hombros evitando tensar el esternocleidomastoideo.",
+      "Exhala suavemente durante la activación profunda cervical."
+    ],
+    "safetyWarnings": [
+      "Usa apoyo bajo cómodo si tu cabeza tiende a quedar en hiperextensión al acostarte.",
+      "Cero carga externa ni movimientos bruscos; prioriza control neuromuscular ligero.",
+      "Guía técnica de acondicionamiento físico; no sustituye valoración médica ni fisioterapéutica individual."
+    ],
+    "contraindications": [
+      "Evitar si existe dolor cervical agudo, mareo posicional, parestesias o radiculopatía activa."
+    ]
+  },
+  {
+    "id": "68316f71-8691-4276-af57-4c6502c65738",
+    "sourceId": "68316f71-8691-4276-af57-4c6502c65738",
+    "name": "Retracción cervical contra pared",
+    "muscleGroup": "Cuello",
+    "canonicalGroup16": "cuello",
+    "equipment": "Peso corporal",
+    "allEquipment": [
+      "Peso corporal"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "secondaryThumbnailUrl": null,
+    "url": "",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "CERVICAL",
+      "POSTURE",
+      "CONTROL",
+      "BODYWEIGHT"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Flexores cervicales profundos",
+      "Extensores cervicales superiores"
+    ],
+    "secondaryMuscles": [
+      "Trapecio inferior",
+      "Romboides"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "aislamiento",
+    "movementPattern": "Control Cervical",
+    "startingPosition": "De pie de espaldas a una pared con talones a 10 cm, glúteos y escápulas apoyados y mirada al frente.",
+    "activePhase": "Lleva el mentón suavemente hacia atrás hasta aproximar la parte posterior de la cabeza hacia la pared sin inclinar el mentón arriba.",
+    "returnPhase": "Mantén 3 segundos de alineación neutra y retorna lentamente en 2 segundos manteniendo hombros bajos.",
+    "shortInstructions": [
+      "Mantén costillas bajas y abdomen ligeramente activo para no arquear la zona lumbar.",
+      "Evita empujar con fuerza excesiva contra la pared; busca alineación axial suave.",
+      "Descansa 1 segundo entre repeticiones conservando los hombros lejos de las orejas."
+    ],
+    "safetyWarnings": [
+      "No fuerces el contacto occipital si tu cifosis dorsal no lo permite cómodamente.",
+      "Realiza solo desplazamientos suaves, nunca impactos contra la pared.",
+      "Guía técnica de acondicionamiento físico; no sustituye valoración médica ni fisioterapéutica individual."
+    ],
+    "contraindications": [
+      "Detener ante dolor punzante, mareos, zumbidos o irradiación nerviosa hacia extremidades."
+    ]
+  },
+  {
+    "id": "2aa6471b-ddfc-4175-8455-1b6dd1b52fca",
+    "sourceId": "2aa6471b-ddfc-4175-8455-1b6dd1b52fca",
+    "name": "Flexión cervical isométrica con resistencia manual ligera",
+    "muscleGroup": "Cuello",
+    "canonicalGroup16": "cuello",
+    "equipment": "Peso corporal",
+    "allEquipment": [
+      "Peso corporal"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": "/exercise-library/2aa6471b-ddfc-4175-8455-1b6dd1b52fca-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/2aa6471b-ddfc-4175-8455-1b6dd1b52fca-poster.webp",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "CERVICAL",
+      "ISOMETRIC",
+      "CONTROL",
+      "BODYWEIGHT"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Flexores cervicales anteriores",
+      "Largo del cuello"
+    ],
+    "secondaryMuscles": [
+      "Esternocleidomastoideo",
+      "Estabilizadores profundos del cuello"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "isometrico",
+    "movementPattern": "Control Cervical",
+    "startingPosition": "Sentado o de pie en postura neutra; coloca la palma de una mano suavemente sobre la frente sin inclinar la cabeza.",
+    "activePhase": "Genera un empuje isométrico ligero del mentón/frente hacia la mano (20–40% de esfuerzo) manteniendo la cabeza totalmente inmóvil.",
+    "returnPhase": "Sostén 5 a 8 segundos respirando continuo y libera la presión de forma progresiva.",
+    "shortInstructions": [
+      "Conserva la columna cervical en posición neutra durante toda la isometría.",
+      "Aplica resistencia manual moderada, sin temblor ni bloqueo respiratorio.",
+      "Descansa 20 a 30 segundos entre series antes de repetir."
+    ],
+    "safetyWarnings": [
+      "Nunca apliques cargas máximas ni empuje brusco sobre la frente.",
+      "Evita contener la respiración (maniobra de Valsalva) durante la contracción.",
+      "Guía técnica de acondicionamiento físico; no sustituye valoración médica ni fisioterapéutica individual."
+    ],
+    "contraindications": [
+      "Contraindicado en dolor cervical agudo, inestabilidad cervical, vértigo, cefalea tensional intensa o síntomas neurológicos."
+    ]
+  },
+  {
+    "id": "53165adb-d65b-4372-988a-911a9d5a2c92",
+    "sourceId": "53165adb-d65b-4372-988a-911a9d5a2c92",
+    "name": "Extensión cervical isométrica con resistencia manual ligera",
+    "muscleGroup": "Cuello",
+    "canonicalGroup16": "cuello",
+    "equipment": "Peso corporal",
+    "allEquipment": [
+      "Peso corporal"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": "/exercise-library/53165adb-d65b-4372-988a-911a9d5a2c92-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/53165adb-d65b-4372-988a-911a9d5a2c92-poster.webp",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "CERVICAL",
+      "ISOMETRIC",
+      "CONTROL",
+      "BODYWEIGHT"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Extensores cervicales profundos",
+      "Esplenio de la cabeza"
+    ],
+    "secondaryMuscles": [
+      "Semiespinoso de la cabeza",
+      "Trapecio superior (estabilizador)"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "isometrico",
+    "movementPattern": "Control Cervical",
+    "startingPosition": "Sentado con espalda erguida y cuello neutro; apoya ambas manos entrelazadas ligeramente detrás de la nuca/occipucio.",
+    "activePhase": "Presiona suave hacia atrás contra tus manos (20–40% de esfuerzo) sin inclinar la cabeza ni perder la alineación del mentón.",
+    "returnPhase": "Mantén la tensión controlada 5 a 8 segundos y reduce gradualmente la fuerza hasta quedar en reposo.",
+    "shortInstructions": [
+      "Asegura que los codos permanezcan relajados y no tires de la cabeza hacia adelante.",
+      "Mantén la mirada horizontal evitando extender en exceso la parte alta de la nuca.",
+      "Respira de forma continua durante los segundos de sostén."
+    ],
+    "safetyWarnings": [
+      "Prohibida la hiperextensión forzada o presión manual elevada detrás de la cabeza.",
+      "Detén ante cualquier molestia en la base del cráneo o articulaciones facetarias.",
+      "Guía técnica de acondicionamiento físico; no sustituye valoración médica ni fisioterapéutica individual."
+    ],
+    "contraindications": [
+      "No realizar ante dolor cervical agudo, mareos al mirar atrás, radiculopatía o antecedente traumático sin alta clínica."
+    ]
+  },
+  {
+    "id": "ecfc75bd-87b8-4d33-8a86-288d1260d682",
+    "sourceId": "ecfc75bd-87b8-4d33-8a86-288d1260d682",
+    "name": "Inclinación lateral cervical isométrica con resistencia manual ligera",
+    "muscleGroup": "Cuello",
+    "canonicalGroup16": "cuello",
+    "equipment": "Peso corporal",
+    "allEquipment": [
+      "Peso corporal"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": "/exercise-library/ecfc75bd-87b8-4d33-8a86-288d1260d682-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/ecfc75bd-87b8-4d33-8a86-288d1260d682-poster.webp",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "CERVICAL",
+      "ISOMETRIC",
+      "CONTROL",
+      "BODYWEIGHT"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Escalenos",
+      "Esternocleidomastoideo (lateral)"
+    ],
+    "secondaryMuscles": [
+      "Elevador de la escápula",
+      "Trapecio superior"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "isometrico",
+    "movementPattern": "Control Cervical",
+    "startingPosition": "Sentado erguido con hombros nivelados; coloca la palma de una mano sobre la sien lateral manteniendo la cabeza neutra.",
+    "activePhase": "Realiza una presión lateral suave hacia la mano sin desplazar la oreja hacia el hombro y sin elevar el trapecio.",
+    "returnPhase": "Sostén 5 a 8 segundos en equilibrio isométrico, suelta progresivo y repite simétricamente en el lado contrario.",
+    "shortInstructions": [
+      "El hombro contralateral permanece abajo y estable durante toda la serie.",
+      "Dosifica la presión manual al 20–35% de esfuerzo para evitar sobrecarga lateral.",
+      "Realiza exactamente las mismas series y segundos por ambos lados."
+    ],
+    "safetyWarnings": [
+      "Evita comprimir el cuello inclinando la cabeza; la articulación permanece neutra e inmóvil.",
+      "Sin movimientos balísticos ni cargas máximas.",
+      "Guía técnica de acondicionamiento físico; no sustituye valoración médica ni fisioterapéutica individual."
+    ],
+    "contraindications": [
+      "Detener si aparece hormigueo en brazo o dedos, dolor cervical lateral agudo o mareo."
+    ]
+  },
+  {
+    "id": "48140902-6723-4831-82e1-7896e8b281f0",
+    "sourceId": "48140902-6723-4831-82e1-7896e8b281f0",
+    "name": "Rotación cervical isométrica con resistencia manual ligera",
+    "muscleGroup": "Cuello",
+    "canonicalGroup16": "cuello",
+    "equipment": "Peso corporal",
+    "allEquipment": [
+      "Peso corporal"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "secondaryThumbnailUrl": null,
+    "url": "",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "CERVICAL",
+      "ISOMETRIC",
+      "CONTROL",
+      "BODYWEIGHT"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Esternocleidomastoideo",
+      "Esplenio del cuello"
+    ],
+    "secondaryMuscles": [
+      "Oblicuos suboccipitales",
+      "Multífidos cervicales"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "isometrico",
+    "movementPattern": "Control Cervical",
+    "startingPosition": "Sentado con mirada al frente y mentón levemente retraído; apoya dos dedos o palma ligera en el lateral de la sien/mejilla.",
+    "activePhase": "Intenta girar suavemente la cabeza hacia ese lado contra la resistencia de la mano sin que exista rotación real ni torsión del tronco.",
+    "returnPhase": "Mantén 5 a 8 segundos de tensión ligera controlada, relaja gradualmente y alterna el lado.",
+    "shortInstructions": [
+      "Aplica la resistencia sobre la parte lateral del cráneo/sien, nunca empujando fuerte la mandíbula.",
+      "Mantén la cabeza centrada en línea con el esternón.",
+      "Alterna izquierda y derecha manteniendo respiración constante."
+    ],
+    "safetyWarnings": [
+      "Cero rotaciones rápidas o forzadas; la isometría evita cizallamiento en rango extremo.",
+      "Evita ejercer presión sobre la articulación temporomandibular (mandíbula).",
+      "Guía técnica de acondicionamiento físico; no sustituye valoración médica ni fisioterapéutica individual."
+    ],
+    "contraindications": [
+      "Contraindicado ante vértigo rotacional, insuficiencia vertebrobasilar sospechada, dolor agudo o síntomas radiculares."
+    ]
+  },
+  {
+    "id": "26624b2b-aed8-4ce1-ad06-dd86fe0b5222",
+    "sourceId": "26624b2b-aed8-4ce1-ad06-dd86fe0b5222",
+    "name": "Pull-apart con banda elástica",
+    "muscleGroup": "Hombro",
+    "canonicalGroup16": "hombros",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": "/exercise-library/26624b2b-aed8-4ce1-ad06-dd86fe0b5222-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/26624b2b-aed8-4ce1-ad06-dd86fe0b5222-poster.webp",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "SHOULDERS",
+      "BAND",
+      "SCAPULAR",
+      "POSTERIOR"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Deltoides posterior",
+      "Romboides"
+    ],
+    "secondaryMuscles": [
+      "Trapecio medio",
+      "Infraespinoso"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "aislamiento",
+    "movementPattern": "Estabilización Escapular y Rotación Externa",
+    "startingPosition": "De pie erguido, sujeta la banda elástica al ancho de los hombros frente al pecho con codos casi extendidos y palmas hacia abajo o neutras.",
+    "activePhase": "Separa los brazos horizontalmente abriendo el pecho y juntando las escápulas atrás hasta que la banda toque ligeramente el esternón.",
+    "returnPhase": "Sostén 1 segundo atrás manteniendo hombros bajos y retorna lento en 3 segundos manteniendo tensión en la banda.",
+    "shortInstructions": [
+      "Mantén las costillas abajo y evita arquear la espalda lumbar al abrir los brazos.",
+      "Guía el movimiento desde los deltoides posteriores y escápulas, sin encoger el cuello.",
+      "Ajusta la tensión separando o juntando el agarre sobre la banda."
+    ],
+    "safetyWarnings": [
+      "Elige una resistencia que permita completar el rango sin flexionar los codos en exceso ni encoger trapecios.",
+      "Revisa la banda antes de cada serie para detectar cortes o grietas."
+    ],
+    "contraindications": [
+      "Moderar amplitud si existe pinzamiento acromioclavicular agudo o dolor posterior de hombro."
+    ]
+  },
+  {
+    "id": "e59e9e42-db8f-4294-8b13-ef75567dd614",
+    "sourceId": "e59e9e42-db8f-4294-8b13-ef75567dd614",
+    "name": "Face pull con banda elástica",
+    "muscleGroup": "Hombro",
+    "canonicalGroup16": "hombros",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": "/exercise-library/e59e9e42-db8f-4294-8b13-ef75567dd614-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/e59e9e42-db8f-4294-8b13-ef75567dd614-poster.webp",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "SHOULDERS",
+      "BAND",
+      "ROTATOR_CUFF",
+      "SCAPULAR"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Deltoides posterior",
+      "Manguito rotador (infraespinoso y redondo menor)"
+    ],
+    "secondaryMuscles": [
+      "Trapecio medio e inferior",
+      "Romboides"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "compuesto",
+    "movementPattern": "Estabilización Escapular y Rotación Externa",
+    "startingPosition": "Ancla la banda a la altura de la cara; tómala con agarre neutro, da un paso atrás hasta tensar ligeramente y activa el abdomen.",
+    "activePhase": "Tira de la banda hacia la frente/orejas separando las manos mientras rotas externamente los hombros con los codos a la altura de los hombros.",
+    "returnPhase": "Pausa 1 segundo con escápulas retraídas y vuelve en 3 segundos controlando la fase excéntrica.",
+    "shortInstructions": [
+      "Asegura que los pulgares apunten hacia atrás en la posición final (rotación externa real).",
+      "Evita adelantar la cabeza o el cuello hacia la banda al tirar.",
+      "Mantén la base estable (en postura escalonada si lo prefieres) para no perder equilibrio."
+    ],
+    "safetyWarnings": [
+      "Comprueba que el anclaje soporte con seguridad el tirón hacia tu rostro antes de empezar.",
+      "No sobrepases una resistencia que obligue a elevar los codos por encima de las orejas."
+    ],
+    "contraindications": [
+      "Detener ante dolor agudo anterior o superior de hombro o molestia en el tendón bicipital."
+    ]
+  },
+  {
+    "id": "098b2137-c29e-40ec-8c34-284a6067a4a0",
+    "sourceId": "098b2137-c29e-40ec-8c34-284a6067a4a0",
+    "name": "Rotación externa de hombro con banda, codo pegado al cuerpo",
+    "muscleGroup": "Hombro",
+    "canonicalGroup16": "hombros",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "secondaryThumbnailUrl": null,
+    "url": "",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "SHOULDERS",
+      "ROTATOR_CUFF",
+      "BAND",
+      "CONTROL"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Infraespinoso",
+      "Redondo menor"
+    ],
+    "secondaryMuscles": [
+      "Deltoides posterior",
+      "Trapecio inferior"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "aislamiento",
+    "movementPattern": "Estabilización Escapular y Rotación Externa",
+    "startingPosition": "De pie lateral al anclaje a la altura del codo; flexiona el codo del brazo externo a 90° pegado a las costillas (opcional una toalla entre codo y tronco).",
+    "activePhase": "Rota el antebrazo hacia afuera separándolo del abdomen sin despegar el codo del costado ni girar el torso.",
+    "returnPhase": "Pausa 1 segundo al final de tu rango cómodo y regresa en 3 segundos controlando la banda.",
+    "shortInstructions": [
+      "El húmero gira sobre su eje; el codo actúa como bisagra fija junto al costado.",
+      "Mantén la muñeca recta y la escápula ligeramente deprimida atrás.",
+      "Completa todas las repeticiones por un brazo antes de cambiar de lado."
+    ],
+    "safetyWarnings": [
+      "Utiliza banda ligera para evitar compensaciones del deltoides o torsión lumbar.",
+      "No fuerces el rango extremo si percibes rigidez o molestia capsular."
+    ],
+    "contraindications": [
+      "Evitar carga externa elevada ante tendinopatía aguda del manguito rotador o luxación reciente sin alta médica."
+    ]
+  },
+  {
+    "id": "85efdcb3-a50f-4f53-b106-4215651fc522",
+    "sourceId": "85efdcb3-a50f-4f53-b106-4215651fc522",
+    "name": "Rotación externa de hombro con banda, brazo elevado",
+    "muscleGroup": "Hombro",
+    "canonicalGroup16": "hombros",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "secondaryThumbnailUrl": null,
+    "url": "",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "SHOULDERS",
+      "ROTATOR_CUFF",
+      "BAND",
+      "OVERHEAD_STABILITY"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Infraespinoso",
+      "Redondo menor",
+      "Supraespinoso"
+    ],
+    "secondaryMuscles": [
+      "Deltoides posterior y lateral",
+      "Trapecio inferior"
+    ],
+    "difficultyLevel": "intermedio",
+    "movementType": "aislamiento",
+    "movementPattern": "Estabilización Escapular y Rotación Externa",
+    "startingPosition": "De pie frente al anclaje a altura media; eleva el codo a 90° de abducción (plano escapular, 30° al frente) con el codo doblado a 90°.",
+    "activePhase": "Rota el antebrazo hacia arriba y atrás en arco manteniendo el codo estable a la altura del hombro.",
+    "returnPhase": "Sostén 1 segundo arriba con el antebrazo casi vertical y desciende controlado en 3 segundos.",
+    "shortInstructions": [
+      "Sitúa el brazo ligeramente por delante del plano lateral (plano escapular) para proteger la articulación.",
+      "No dejes caer el codo ni encorves el pecho hacia atrás durante el giro.",
+      "Prioriza resistencia baja y técnica impecable de 12 a 15 repeticiones."
+    ],
+    "safetyWarnings": [
+      "Asegura un calentamiento previo en rotación neutra antes de trabajar a 90° de elevación.",
+      "Suspende si sientes pinzamiento subacromial o chasquido doloroso."
+    ],
+    "contraindications": [
+      "Precaución o abstención ante inestabilidad anterior de hombro o pinzamiento subacromial agudo."
+    ]
+  },
+  {
+    "id": "d3bc89d6-e5c0-41e7-93d0-45980cda1411",
+    "sourceId": "d3bc89d6-e5c0-41e7-93d0-45980cda1411",
+    "name": "Remo escapular con banda elástica",
+    "muscleGroup": "Espalda",
+    "canonicalGroup16": "espalda",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "secondaryThumbnailUrl": null,
+    "url": "",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "BACK",
+      "BAND",
+      "SCAPULAR",
+      "POSTURE"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Romboides",
+      "Trapecio medio"
+    ],
+    "secondaryMuscles": [
+      "Trapecio inferior",
+      "Dorsal ancho"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "aislamiento",
+    "movementPattern": "Tracción Horizontal",
+    "startingPosition": "Ancla la banda a la altura del pecho o sujétala bajo los pies sentado con piernas estiradas; mantén los codos completamente extendidos al frente.",
+    "activePhase": "Sin doblar los codos, desliza ambos hombros hacia atrás y abajo acercando las escápulas hacia la columna.",
+    "returnPhase": "Pausa 2 segundos en retracción escapular y permite que los hombros se adelanten lento en 2 a 3 segundos.",
+    "shortInstructions": [
+      "Los brazos permanecen largos; el único desplazamiento ocurre en las escápulas sobre la parrilla costal.",
+      "Evita encoger los hombros hacia las orejas al retraer.",
+      "Mantén el cuello relajado y el torso inmóvil."
+    ],
+    "safetyWarnings": [
+      "Si sujetas la banda con las plantas de los pies sentado, asegura un apoyo profundo para evitar que escape.",
+      "Usa tensión controlable que permita sostener 2 segundos atrás sin sacudidas."
+    ],
+    "contraindications": [
+      "Detener ante dolor agudo interescapular o molestia cervical irradiada."
+    ]
+  },
+  {
+    "id": "701abdc3-0cdb-4f76-ae8f-ae9a1e427b54",
+    "sourceId": "701abdc3-0cdb-4f76-ae8f-ae9a1e427b54",
+    "name": "Deslizamiento de brazos en pared con minibanda",
+    "muscleGroup": "Hombro",
+    "canonicalGroup16": "hombros",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica",
+      "Minibanda"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "secondaryThumbnailUrl": null,
+    "url": "",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "SHOULDERS",
+      "SCAPULAR",
+      "MINIBAND",
+      "CONTROL"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Serrato anterior",
+      "Trapecio inferior"
+    ],
+    "secondaryMuscles": [
+      "Manguito rotador",
+      "Deltoides anterior y lateral"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "aislamiento",
+    "movementPattern": "Estabilización Escapular y Rotación Externa",
+    "startingPosition": "De pie frente a una pared con una minibanda alrededor de las muñecas; apoya los antebrazos verticales en la pared ejerciendo ligera tensión hacia afuera.",
+    "activePhase": "Desliza los antebrazos hacia arriba por la pared manteniendo la presión lateral contra la minibanda y llevando las escápulas en rotación ascendente suave.",
+    "returnPhase": "Detente antes de que los hombros se encojan, sostén 1 segundo arriba y desliza lento abajo en 3 segundos.",
+    "shortInstructions": [
+      "Mantén el abdomen tenso y las costillas bajas para no hiperextender la zona lumbar al subir.",
+      "Los antebrazos permanecen paralelos separando ligeramente la minibanda todo el tiempo.",
+      "Sube únicamente hasta el rango donde conservas control escapular sin dolor."
+    ],
+    "safetyWarnings": [
+      "Usa una minibanda de tensión ligera o media para conservar el patrón serrato-trapecio inferior.",
+      "Evita presionar demasiado fuerte contra la pared si genera sobrecarga cervical."
+    ],
+    "contraindications": [
+      "Reducir rango de elevación o suspender si aparece pinzamiento de hombro por encima de 120°."
+    ]
+  },
+  {
+    "id": "5b53a888-f1de-407f-a422-cdef8f836a9c",
+    "sourceId": "5b53a888-f1de-407f-a422-cdef8f836a9c",
+    "name": "Elevación en Y con banda elástica",
+    "muscleGroup": "Hombro",
+    "canonicalGroup16": "hombros",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": "/exercise-library/5b53a888-f1de-407f-a422-cdef8f836a9c-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/5b53a888-f1de-407f-a422-cdef8f836a9c-poster.webp",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "SHOULDERS",
+      "SCAPULAR",
+      "BAND",
+      "LOWER_TRAPS"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Trapecio inferior",
+      "Deltoides anterior y medio"
+    ],
+    "secondaryMuscles": [
+      "Serrato anterior",
+      "Manguito rotador"
+    ],
+    "difficultyLevel": "intermedio",
+    "movementType": "aislamiento",
+    "movementPattern": "Estabilización Escapular y Rotación Externa",
+    "startingPosition": "Pisa el centro de la banda elástica con postura erguida o anclada baja frente a ti; sujeta los extremos frente a los muslos con pulgares hacia arriba.",
+    "activePhase": "Eleva ambos brazos en diagonal formando una letra Y abierta (unos 30°–45° al frente y arriba) manteniendo los codos casi extendidos.",
+    "returnPhase": "Pausa 1 segundo a la altura de la diagonal superior sin encoger el cuello y desciende controlado en 3 segundos.",
+    "shortInstructions": [
+      "Mantén los pulgares apuntando hacia arriba/atrás para optimizar el espacio subacromial.",
+      "Activa glúteos y core para evitar hiperextender la columna baja al subir los brazos.",
+      "El trapecio superior debe permanecer relajado; siente el anclaje en la zona media-baja de la espalda."
+    ],
+    "safetyWarnings": [
+      "Empieza con resistencia muy ligera: la palanca larga del brazo genera alta demanda escapular.",
+      "No balancees la cadera para impulsar la elevación."
+    ],
+    "contraindications": [
+      "Suspender ante dolor agudo en elevación por encima de la horizontal o tendinopatía del supraespinoso."
+    ]
+  },
+  {
+    "id": "2cd7d9d7-7a7e-4b4e-9d9b-1e1ee7a32441",
+    "sourceId": "2cd7d9d7-7a7e-4b4e-9d9b-1e1ee7a32441",
+    "name": "Press Pallof con banda elástica",
+    "muscleGroup": "Abdomen",
+    "canonicalGroup16": "abdomen_core",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": null,
+    "thumbnailUrl": "/exercise-library/2cd7d9d7-7a7e-4b4e-9d9b-1e1ee7a32441-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/2cd7d9d7-7a7e-4b4e-9d9b-1e1ee7a32441-poster.webp",
+    "visualResourceStatus": "pending_resource",
+    "tags": [
+      "CORE",
+      "BAND",
+      "ANTI_ROTATION",
+      "ISOMETRIC"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Oblicuos internos y externos",
+      "Transverso del abdomen"
+    ],
+    "secondaryMuscles": [
+      "Recto abdominal",
+      "Glúteo medio",
+      "Estabilizadores escapulares"
+    ],
+    "difficultyLevel": "principiante",
+    "movementType": "isometrico",
+    "movementPattern": "Core / Anti-Rotación",
+    "startingPosition": "De pie lateral al anclaje a la altura del esternón; sujeta la banda con ambas manos pegadas al centro del pecho y rodillas suavemente flexionadas.",
+    "activePhase": "Extiende ambos brazos en línea recta al frente resistiendo por completo la tracción lateral de la banda sin dejar que hombros o pelvis roten.",
+    "returnPhase": "Sostén 2 a 3 segundos con brazos extendidos y regresa las manos al esternón en 2 segundos; repite hacia ambos lados.",
+    "shortInstructions": [
+      "Exhala suavemente al extender los brazos manteniendo las costillas conectadas con la pelvis.",
+      "La banda busca girarte hacia el anclaje: tu objetivo es mantener el torso como un bloque inmóvil.",
+      "Trabaja ambos perfiles con el mismo número de repeticiones y distancia al anclaje."
+    ],
+    "safetyWarnings": [
+      "Verifica que el anclaje lateral esté firme antes de dar el paso de tensión.",
+      "Evita encoger los hombros hacia las orejas al empujar las manos al frente."
+    ],
+    "contraindications": [
+      "Ajustar distancia o tensión si aparece molestia lumbar aguda o inestabilidad lateral."
+    ]
+  }
+]

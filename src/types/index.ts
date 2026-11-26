@@ -179,6 +179,7 @@ export interface RestTimerState {
 }
 
 export interface LibraryExercise {
+  shortInstructions?: string[];
   id: string;
   sourceId?: string;
   animationUrl?: string;

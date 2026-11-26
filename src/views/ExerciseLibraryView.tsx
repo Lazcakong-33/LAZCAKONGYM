@@ -115,7 +115,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
               Biblioteca de Ejercicios
             </h1>
             <p className="text-xs text-slate-400 mt-1 max-w-xl">
-              {EXERCISE_LIBRARY.length} movimientos de gimnasio con animaciones originales: ocho poses en cuatro segundos, disponibles dentro de la app.
+              Consulta las fichas de técnica y reproduce las animaciones disponibles.
             </p>
           </div>
 
@@ -414,7 +414,7 @@ const ExerciseCardItem: React.FC<ExerciseCardItemProps> = ({
         {/* Video badge */}
         <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-lg text-[10px] font-bold text-[#CCFF00] flex items-center gap-1 border border-white/10">
           <Play className="w-2.5 h-2.5 fill-current" />
-          <span>8 poses · 4 s</span>
+          <span>{exercise.videoUrl && !videoFailed ? '8 poses · 4 s' : 'Animación pendiente'}</span>
         </div>
 
         {/* Overlay scrim */}
@@ -535,6 +535,15 @@ const ExerciseDetailQuickModal: React.FC<ExerciseDetailQuickModalProps> = ({
             </div>
           )}
         </div>
+
+        {exercise.shortInstructions?.length ? (
+          <section className="mb-4 text-sm text-slate-300">
+            <h3 className="mb-2 font-bold text-white">Ejecución</h3>
+            <ol className="list-decimal space-y-1 pl-5">
+              {exercise.shortInstructions.map((instruction) => <li key={instruction}>{instruction}</li>)}
+            </ol>
+          </section>
+        ) : null}
 
         {/* Details & Specs */}
         <div className="grid grid-cols-2 gap-2 text-xs mb-4">
