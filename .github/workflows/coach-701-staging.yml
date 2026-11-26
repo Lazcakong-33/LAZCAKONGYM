@@ -33,7 +33,20 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags
-          existing="$(git tag --points-at HEAD --list 'ota-staging-v7.0.*' | grep -E '^ota-staging-v7\.0\.[0-9]+
+          python - <<'PY'
+          import os, re, subprocess
+          def tags(*args):
+              return subprocess.check_output(['git','tag',*args], text=True).splitlines()
+          def versions(items):
+              return [int(m[1]) for t in items if (m:=re.fullmatch(r'ota-staging-v7\.0\.(\d+)',t))]
+          existing=versions(tags('--points-at','HEAD'))
+          patch=max(existing) if existing else max([2]+versions(tags('--list')))+1
+          version=f'7.0.{patch}'
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write(f'VITE_APP_VERSION={version}\nOTA_VERSION={version}\n')
+              f.write('OTA_RELEASE_NOTES=Mejoras web verificadas de LAZCAKONG GYM. Consulta los cambios de la release.\n')
+          PY
+      - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - name: Coach, authentication and OTA regression tests
         env:
