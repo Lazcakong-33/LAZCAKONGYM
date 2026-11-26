@@ -215,8 +215,8 @@ export function playRestCompleteAlarm() {
     }
 
     const notes = [
-      { freq: 659.25, time: 0.0, dur: 0.18 },
-      { freq: 880.0, time: 0.15, dur: 0.2 },
+      { freq: 659.25, time: 0.0, dur: 0.15 },
+      { freq: 880.0, time: 0.15, dur: 0.17 },
       { freq: 1046.5, time: 0.32, dur: 0.42 },
     ];
 
@@ -227,7 +227,8 @@ export function playRestCompleteAlarm() {
       const gain1 = ctx.createGain();
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(n.freq, startTime);
-      gain1.gain.setValueAtTime(0.75, startTime);
+      gain1.gain.setValueAtTime(0.68, startTime);
+      gain1.gain.setValueAtTime(0.68, startTime + n.dur * 0.45);
       gain1.gain.exponentialRampToValueAtTime(0.001, startTime + n.dur);
       osc1.connect(gain1);
       gain1.connect(ctx.destination);
@@ -238,7 +239,8 @@ export function playRestCompleteAlarm() {
       const gain2 = ctx.createGain();
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(n.freq, startTime);
-      gain2.gain.setValueAtTime(0.35, startTime);
+      gain2.gain.setValueAtTime(0.27, startTime);
+      gain2.gain.setValueAtTime(0.27, startTime + n.dur * 0.45);
       gain2.gain.exponentialRampToValueAtTime(0.001, startTime + n.dur);
       osc2.connect(gain2);
       gain2.connect(ctx.destination);

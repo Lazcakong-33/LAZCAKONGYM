@@ -433,8 +433,8 @@ async function runCoachIntelligenceProSuite() {
   };
 
   assert(
-    loadCoachVoiceMode(mockStorageAdapter) === 'important_only',
-    'Modo de voz por defecto debe ser important_only'
+    loadCoachVoiceMode(mockStorageAdapter) === 'full_coach',
+    'Modo de voz por defecto debe ser full_coach'
   );
   saveCoachVoiceMode('full_coach', mockStorageAdapter);
   assert(

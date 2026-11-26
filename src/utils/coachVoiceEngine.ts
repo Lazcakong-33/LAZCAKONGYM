@@ -840,10 +840,7 @@ export function loadCoachVoiceMode(
     return raw;
   }
   const legacyAuto = adapter.getItem(COACH_AUTO_TTS_STORAGE_KEY);
-  if (legacyAuto === 'true') {
-    return 'full_coach';
-  }
-  return 'important_only';
+  return legacyAuto === 'false' ? 'silent' : 'full_coach';
 }
 
 export function saveCoachVoiceMode(
@@ -990,10 +987,10 @@ export function speakProactiveCoachMessage(params: {
     };
   }
 
-  if (params.eventKey) {
+  const ok = adapter.speak(formattedText, { lang: 'es-CL', rate: 1.0 });
+  if (ok && params.eventKey) {
     params.spokenEventKeys.add(params.eventKey);
   }
-  const ok = adapter.speak(formattedText, { lang: 'es-CL', rate: 1.0 });
   return {
     spoken: ok,
     reason: 'ok',

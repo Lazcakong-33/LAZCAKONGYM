@@ -118,6 +118,7 @@ import {
   loadCoachVoiceMode,
   saveCoachVoiceMode,
   speakProactiveCoachMessage,
+  speakTechniqueInstructionText,
 } from '../utils/coachVoiceEngine';
 
 interface ActiveWorkoutViewProps {
@@ -634,6 +635,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
   const [resolvedCoachEvalStatus, setResolvedCoachEvalStatus] = useState<
     Record<string, 'accepted' | 'rejected'>
   >({});
+  const [coachReplayError, setCoachReplayError] = useState<string | null>(null);
   const spokenCoachEventKeysRef = useRef<Set<string>>(new Set());
 
   const handleSelectCoachVoiceMode = (nextMode: CoachVoiceMode) => {
@@ -2044,7 +2046,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
 
     if (willBeCompleted) {
       const nextUncompleted = ex.sets.findIndex((s, i) => i > setIndex && !s.completed);
-      const fallbackUncompleted = ex.sets.findIndex((s) => !s.completed);
+      const fallbackUncompleted = ex.sets.findIndex((s, i) => i !== setIndex && !s.completed);
       const targetNext = nextUncompleted >= 0 ? nextUncompleted : (fallbackUncompleted >= 0 ? fallbackUncompleted : setIndex);
       setSelectedSetIndexMap((prev) => ({
         ...prev,
@@ -2117,7 +2119,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
           isImportant: liveEval.isImportant,
           eventKey: liveEval.evaluationId,
           spokenEventKeys: spokenCoachEventKeysRef.current,
-          restTimerActive: restTimer.active,
+          restTimerActive: !autoRestEnabled && restTimer.active,
           restTimerPaused: restTimer.paused,
           restTimerRemainingSeconds: restTimer.remainingSeconds,
           restAlertRecentlyTriggeredAt: restCompleteNotice?.triggeredAt,
@@ -3387,6 +3389,20 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                     <p className="text-xs text-zinc-200 leading-snug">
                       {liveEval.rationale}
                     </p>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-accent-text"
+                      onClick={() => {
+                        setCoachReplayError(null);
+                        speakTechniqueInstructionText(liveEval.voiceSummaryText, {
+                          onError: (message) => setCoachReplayError(message),
+                        });
+                      }}
+                    >
+                      <Volume2 className="h-4 w-4" /> Escuchar consejo
+                    </button>
+                    {coachReplayError && <p role="status" className="text-xs text-zinc-300">{coachReplayError}</p>}
+
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                       <div className="rounded-xl bg-[#171717] border border-[#303030] p-2.5 space-y-0.5">
