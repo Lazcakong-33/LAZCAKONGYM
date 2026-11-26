@@ -1,3 +1,4 @@
+import { isTreadmill, treadmillGoal, validMinutes } from '../utils/treadmill';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Play,
@@ -152,7 +153,7 @@ interface ActiveWorkoutViewProps {
   onUpdateSet: (
     exerciseId: string,
     setIndex: number,
-    field: 'weight' | 'reps' | 'rpe' | 'completed',
+    field: 'durationMinutes' | 'weight' | 'reps' | 'rpe' | 'completed',
     value: unknown
   ) => void;
   onAddSet: (exerciseId: string) => void;
@@ -899,6 +900,8 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
       activeProfile,
     });
 
+    const initialLoads = preWorkoutBriefing.initialLoadRecommendations.filter(item => !isTreadmill(item.exerciseName));
+
     return (
       <div className="space-y-4 pb-36 font-['Plus_Jakarta_Sans',sans-serif] text-[#F5F5F5]">
         {/* 1. ENCABEZADO COMPACTO ENTRENAMIENTO ELITE */}
@@ -1159,14 +1162,14 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
               ))}
             </div>
 
-            {preWorkoutBriefing.initialLoadRecommendations.length > 0 && (
+            {initialLoads.length > 0 && (
               <button
                 type="button"
                 onClick={() => setIsPreCoachLoadsExpanded((prev) => !prev)}
                 className="min-h-[32px] px-2.5 py-1 rounded-lg bg-[#090909] border border-[#303030] hover:border-accent/60 text-[11px] font-bold text-accent-text flex items-center gap-1 cursor-pointer"
               >
                 <span>
-                  Cargas iniciales ({preWorkoutBriefing.initialLoadRecommendations.length})
+                  Cargas iniciales ({initialLoads.length})
                 </span>
                 {isPreCoachLoadsExpanded ? (
                   <ChevronUp className="w-3.5 h-3.5" />
@@ -1178,9 +1181,9 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
           </div>
 
           {isPreCoachLoadsExpanded &&
-            preWorkoutBriefing.initialLoadRecommendations.length > 0 && (
+            initialLoads.length > 0 && (
               <div className="space-y-1.5 pt-1">
-                {preWorkoutBriefing.initialLoadRecommendations.map((item) => (
+                {initialLoads.map((item) => (
                   <div
                     key={item.exerciseId}
                     className="rounded-xl bg-[#090909] border border-[#303030] p-2.5 space-y-1"
@@ -1277,7 +1280,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                     <div className="pt-2 border-t border-[#303030]/80 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums min-w-0">
                         <span className="font-bold text-[#F5F5F5] truncate">
-                          {ex.defaultSets} series × {ex.repRange}
+                          {isTreadmill(ex.name) ? treadmillGoal(ex.targetMinutes, ex.repRange) : `${ex.defaultSets} series × ${ex.repRange}`}
                         </span>
                         <span className="text-zinc-600 shrink-0" aria-hidden="true">
                           ·
@@ -1584,7 +1587,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                         {idx + 1}. {ex.name}
                       </p>
                       <p className="text-[10px] text-accent-text font-semibold">
-                        {ex.targetMuscles} · {ex.defaultSets} × {ex.repRange}
+                        {ex.targetMuscles} · {isTreadmill(ex.name) ? treadmillGoal(ex.targetMinutes, ex.repRange) : `${ex.defaultSets} × ${ex.repRange}`}
                       </p>
                     </div>
                     <button
@@ -2021,11 +2024,12 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
 
     const willBeCompleted = !targetSet.completed;
 
-    if (willBeCompleted && !isValidSetValues(targetSet.weight, targetSet.reps)) {
+    const timed = isTreadmill(ex.activeExerciseName);
+    if (willBeCompleted && (timed ? !validMinutes(targetSet.durationMinutes) : !isValidSetValues(targetSet.weight, targetSet.reps))) {
       setSetValidationError({
         exerciseId,
         setIndex,
-        message: `Ingresa peso (kg) y repeticiones (> 0) para completar la Serie ${targetSet.setNumber}.`,
+        message: timed ? "Ingresa la duración en minutos." : `Ingresa peso (kg) y repeticiones (> 0) para completar la Serie ${targetSet.setNumber}.`,
       });
       return;
     }
@@ -2051,7 +2055,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
         [exerciseId]: targetNext,
       }));
 
-      if (autoRestEnabled) {
+      if (autoRestEnabled && (!timed || nextUncompleted >= 0)) {
         const restToUse = targetSet.isWarmup ? 45 : exerciseRestSec;
         const nextSetCandidate = ex.sets[targetNext];
         const explicitNextSetNumber =
@@ -2503,7 +2507,8 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
             exerciseState.sets.every((s) => s.completed);
 
           const hasWarmupSets = exerciseState.sets.some((s) => s.isWarmup);
-          const repRangeTarget = exerciseState.repRange || rawExercise?.repRange || '8 - 12 reps';
+          const timed = isTreadmill(exerciseState.activeExerciseName);
+          const repRangeTarget = timed ? treadmillGoal(rawExercise?.targetMinutes, exerciseState.repRange || rawExercise?.repRange) : exerciseState.repRange || rawExercise?.repRange || '8 - 12 reps';
           const isRdl =
             isRdlBarbellExercise(exerciseState.activeExerciseName) ||
             isRdlBarbellExercise(exerciseState.exerciseName) ||
@@ -2754,13 +2759,13 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                       <strong className="text-[#F5F5F5] font-mono tabular-nums">
                         {workingSetsCount}
                       </strong>{' '}
-                      series ·{' '}
+                      {timed ? 'bloque(s) · ' : 'series · '}
                       <span className="font-mono tabular-nums">{repRangeTarget}</span>
                     </span>
                     <span className="text-zinc-600" aria-hidden="true">
                       ·
                     </span>
-                    <button
+                    {!timed && (<button
                       type="button"
                       onClick={() =>
                         setExpandedHistoryByEx((prev) => ({
@@ -2772,7 +2777,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                     >
                       <History className="w-3 h-3 text-accent-text" />
                       <span>{isHistoryOpen ? 'Menos historial' : 'Más historial'}</span>
-                    </button>
+                    </button>)}
                   </div>
 
                   <button
@@ -2896,7 +2901,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                       </button>
                     )}
 
-                    {!hasWarmupSets && (
+                    {!timed && !hasWarmupSets && (
                       <button
                         type="button"
                         onClick={() => onAddWarmupSets(exerciseState.exerciseId)}
@@ -2907,7 +2912,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                       </button>
                     )}
 
-                    <button
+                    {!timed && (<button
                       type="button"
                       onClick={() => {
                         const firstWeight = exerciseState.sets.find(
@@ -2921,7 +2926,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                     >
                       <Disc className="w-3.5 h-3.5 text-accent-text" />
                       <span>Discos</span>
-                    </button>
+                    </button>)}
 
                     {activeSession.exercises.length > 1 && (
                       <button
@@ -2940,6 +2945,29 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
 
               <div className="border-t border-[#303030]" />
 
+              {timed ? (
+                <div className="space-y-3">
+                  {exerciseState.sets.map((set, index) => (
+                    <div key={set.id || index} className="flex flex-wrap items-center gap-3">
+                      <label className="text-sm font-bold">Duración {exerciseState.sets.length > 1 ? index + 1 : ''} (min)
+                        <input type="number" step="any" min="0" inputMode="decimal" placeholder="Minutos"
+                          disabled={set.completed} value={set.durationMinutes ?? ''}
+                          onChange={event => {
+                            const minutes = event.currentTarget.valueAsNumber;
+                            onUpdateSet(exerciseState.exerciseId, index, 'durationMinutes', validMinutes(minutes) ? minutes : undefined);
+                            setSetValidationError(null);
+                          }}
+                          className="ml-2 w-20 rounded bg-[#090909] p-2 text-accent-text" />
+                      </label>
+                      <button type="button" className="rounded-xl bg-accent px-4 py-2 font-bold text-accent-contrast"
+                        onClick={() => handleCompleteSetSafely(exerciseState.exerciseId, index, exerciseState.activeExerciseName, exerciseRestSec)}>
+                        {set.completed ? 'Desmarcar' : 'Completar'}
+                      </button>
+                    </div>
+                  ))}
+                  {setValidationError?.exerciseId === exerciseState.exerciseId && <p role="alert">{setValidationError.message}</p>}
+                </div>
+              ) : <>
               {/* 3. ÚLTIMA SESIÓN + SUGERENCIA DE PROGRESIÓN (Visible antes de registrar series) */}
               <RecommendedLoadForecastWidget
                 exerciseId={exerciseState.exerciseId}
@@ -3902,6 +3930,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                   )}
               </div>
 
+              </>}
               {/* Controles sutiles de series + nota técnica */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
                 <div className="flex items-center gap-2">

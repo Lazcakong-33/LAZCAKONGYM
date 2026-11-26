@@ -69,7 +69,7 @@ interface TodayViewProps {
   onUpdateSet?: (
     exerciseId: string,
     setIndex: number,
-    field: 'weight' | 'reps' | 'rpe' | 'completed',
+    field: 'durationMinutes' | 'weight' | 'reps' | 'rpe' | 'completed',
     value: unknown
   ) => void;
   unreadRecoveryCount?: number;

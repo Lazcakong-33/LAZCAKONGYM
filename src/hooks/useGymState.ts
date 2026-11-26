@@ -1,3 +1,4 @@
+import { isTreadmill, validMinutes } from '../utils/treadmill';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Profile,
@@ -3127,7 +3128,7 @@ export function useGymState() {
           : `${matched.maxReps} reps`
         : '';
 
-      const sets = Array.from({ length: ex.defaultSets || 3 }).map((_, idx) => {
+      const sets = Array.from({ length: isTreadmill(activeName) ? 1 : ex.defaultSets || 3 }).map((_, idx) => {
         const detailSnap = matched?.setsDetail?.[idx];
         const previousHint = detailSnap
           ? `${detailSnap.weight} kg × ${detailSnap.reps}`
@@ -3242,7 +3243,7 @@ export function useGymState() {
           : `${matched.maxReps} reps`
         : '';
 
-      const sets = Array.from({ length: ex.defaultSets || 3 }).map((_, idx) => {
+      const sets = Array.from({ length: isTreadmill(ex.name) ? 1 : ex.defaultSets || 3 }).map((_, idx) => {
         const detailSnap = matched?.setsDetail?.[idx];
         const previousHint = detailSnap
           ? `${detailSnap.weight} kg × ${detailSnap.reps}`
@@ -3340,7 +3341,7 @@ export function useGymState() {
             ? `${ex.id}-${Date.now()}`
             : ex.id;
 
-          const sets = Array.from({ length: ex.defaultSets || 3 }).map((_, idx) => {
+          const sets = Array.from({ length: isTreadmill(ex.name) ? 1 : ex.defaultSets || 3 }).map((_, idx) => {
             const detailSnap = matched?.setsDetail?.[idx];
             const previousHint = detailSnap
               ? `${detailSnap.weight} kg × ${detailSnap.reps}`
@@ -3486,7 +3487,7 @@ export function useGymState() {
 
   // Update set in live session (persists immediately locally + syncs/queues when set is completed)
   const updateSet = useCallback(
-    (exerciseId: string, setIndex: number, field: 'weight' | 'reps' | 'rpe' | 'completed', value: unknown) => {
+    (exerciseId: string, setIndex: number, field: 'durationMinutes' | 'weight' | 'reps' | 'rpe' | 'completed', value: unknown) => {
       const prev = activeSessionRef.current;
       if (!prev) return;
 
@@ -3513,6 +3514,7 @@ export function useGymState() {
           ...existingSet,
           id: existingSet.id || generateStableId('set'),
           [field]: value,
+          ...(field === 'durationMinutes' ? { weight: '' as const, reps: '' as const } : {}),
           ...(nextRir !== undefined ? { rir: nextRir } : {}),
           ...(field === 'completed' && value === true ? { completedAt: nowIso } : {}),
           ...(field === 'completed' && value === false ? { completedAt: undefined } : {}),
@@ -3789,6 +3791,7 @@ export function useGymState() {
             weight: typeof s.weight === 'number' ? s.weight : 0,
             reps: typeof s.reps === 'number' ? s.reps : 0,
             completed: true,
+            ...(validMinutes(s.durationMinutes) ? { durationMinutes: s.durationMinutes } : {}),
           };
           if (typeof s.completedAt === 'string' && s.completedAt.trim()) {
             snap.completedAt = s.completedAt.trim();

@@ -88,6 +88,7 @@ export interface Exercise {
   DESCANSO?: string | number;
   rest?: string | number;
   defaultWeight?: number;
+  targetMinutes?: number;
   prevWeight?: number;
   defaultReps?: number;
 }
@@ -125,6 +126,7 @@ export interface Routine {
 export type WorkoutSyncStatus = 'saved_local' | 'pending_sync' | 'synced' | 'error';
 
 export interface LoggedSet {
+  durationMinutes?: number;
   id?: string;
   setNumber: number;
   weight: number | '';
@@ -138,6 +140,7 @@ export interface LoggedSet {
 }
 
 export interface ExerciseSetSnapshot {
+  durationMinutes?: number;
   id?: string;
   setNumber: number;
   weight: number;
