@@ -1,0 +1,10 @@
+{
+  "sourceRepository": "Lazcakong-33/LAZCAKONGYM-AISTUDIO",
+  "sourceCommit": "b609a1d23133f1a832e763b5a0cc8998502a3151",
+  "approvedPaths": [
+    "src/utils/weeklyCycleManager.ts",
+    "src/views/RoutinesView.tsx",
+    "src/components/IntelligentTrainingCycleCard.tsx"
+  ],
+  "notes": "Initial reviewed import of cycle UI; target profile isolation and accurate local advice labels retained."
+}

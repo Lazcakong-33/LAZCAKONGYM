@@ -254,8 +254,8 @@ export interface WorkoutLogEntryMinimal {
 export interface ActiveRoutineConfig {
   /** Cantidad de días asignados a la rutina por semana (N, ej. 4 o 5 días/semana) */
   daysPerWeek: number;
-  /** Duración total del mesociclo o bloque en semanas (ej. 8 o 12 semanas) */
-  totalWeeks?: number;
+  /** Duración total del mesociclo o bloque en semanas (ej. 8, 12 o 'indefinite') */
+  totalWeeks?: number | 'indefinite';
   /** Nombre opcional de la rutina o programa activo */
   routineProgramName?: string;
   /** Fecha opcional de inicio del programa ('YYYY-MM-DD') para filtrar solo sesiones del bloque actual */
@@ -266,7 +266,7 @@ export interface ExecutedWeekCalculationResult {
   /** Semana actual en ejecución: Math.floor(uniqueDaysCount / N) + 1 */
   currentExecutedWeek: number;
   /** Total de semanas programadas en el bloque/mesociclo */
-  totalWeeks: number;
+  totalWeeks: number | 'indefinite';
   /** Cantidad total de días únicos calendario (YYYY-MM-DD) entrenados */
   uniqueDaysCount: number;
   /** Días asignados por semana en la rutina (N) */
@@ -327,7 +327,7 @@ export function calculateExecutedWeekStatus(
 ): ExecutedWeekCalculationResult {
   // Asegurar N >= 1 (por defecto 4 días/semana si no se especifica o es 0)
   const daysPerWeek = Math.max(1, Math.round(routineConfig.daysPerWeek || 4));
-  const totalWeeks = Math.max(1, Math.round(routineConfig.totalWeeks || 8));
+  const totalWeeks: number | 'indefinite' = routineConfig.totalWeeks === 'indefinite' ? 'indefinite' : Math.max(1, Math.round(Number(routineConfig.totalWeeks || 8)));
   const minStartDateKey = routineConfig.startDate
     ? normalizeToCalendarDateYYYYMMDD(routineConfig.startDate)
     : null;
@@ -372,11 +372,11 @@ export function calculateExecutedWeekStatus(
   const currentWeekProgressPct = Math.round((daysInCurrentWeek / daysPerWeek) * 100);
 
   // Porcentaje de progreso total del mesociclo (basado en días únicos sobre totalWeeks * N)
-  const totalTargetDays = totalWeeks * daysPerWeek;
-  const totalProgramProgressPct = Math.min(
-    100,
-    Math.round((uniqueDaysCount / totalTargetDays) * 100)
-  );
+  const numericTotalWeeks = typeof totalWeeks === 'number' ? totalWeeks : 52;
+  const totalTargetDays = numericTotalWeeks * daysPerWeek;
+  const totalProgramProgressPct = totalWeeks === 'indefinite'
+    ? Math.min(100, uniqueDaysCount * 2)
+    : Math.min(100, Math.round((uniqueDaysCount / totalTargetDays) * 100));
 
   return {
     currentExecutedWeek,

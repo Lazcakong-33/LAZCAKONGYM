@@ -70,7 +70,9 @@ import RoutineUploader from '../components/RoutineUploader';
 import { ImageRoutineImporterModal } from '../components/ImageRoutineImporterModal';
 import { ExerciseThumbnail, preloadExerciseImage } from '../components/ExerciseThumbnail';
 import { QuickRoutineBuilderPanel } from '../components/QuickRoutineBuilderPanel';
+import { IntelligentTrainingCycleCard } from '../components/IntelligentTrainingCycleCard';
 import { findPreviousExerciseSessions } from '../utils/progressionEngine';
+import { ActiveRoutineConfig } from '../utils/weeklyCycleManager';
 
 interface RoutinesViewProps {
   routines: Routine[];
@@ -91,6 +93,7 @@ interface RoutinesViewProps {
   onAddRoutine?: (routine: Routine) => void;
   onImportCsv?: (result: CsvImportResult | SafeImportPayload) => any;
   activeProfileName?: string;
+  activeProfileId?: string;
   preImportBackup?: PreImportBackupSnapshot | null;
   onRestorePreImportBackup?: () => { success: boolean; message: string };
 }
@@ -114,6 +117,7 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
   onAddRoutine,
   onImportCsv,
   activeProfileName,
+  activeProfileId,
   preImportBackup,
   onRestorePreImportBackup,
 }) => {
@@ -126,6 +130,41 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
   const [dismissedBackupId, setDismissedBackupId] = useState<string | null>(null);
   const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [showRoutineMenu, setShowRoutineMenu] = useState(false);
+
+  // App remounts this view on profile change. Never read or write a shared athlete key.
+  const cycleStorageKey = activeProfileId
+    ? `lazcakon_perfil_${activeProfileId}_active_routine_config`
+    : null;
+  const [routineConfig, setRoutineConfig] = useState<ActiveRoutineConfig>(() => {
+    const defaults: ActiveRoutineConfig = {
+      routineProgramName: 'Bloque Activo de Entrenamiento LAZCAKONG',
+      daysPerWeek: 4,
+      totalWeeks: 8,
+    };
+    if (typeof window !== 'undefined' && cycleStorageKey) {
+      try {
+        const raw = localStorage.getItem(cycleStorageKey);
+        if (!raw) return defaults;
+        const stored = JSON.parse(raw);
+        if (!stored || typeof stored !== 'object') return defaults;
+        return {
+          routineProgramName: typeof stored.routineProgramName === 'string' ? stored.routineProgramName : defaults.routineProgramName,
+          daysPerWeek: Number.isInteger(stored.daysPerWeek) && stored.daysPerWeek >= 1 && stored.daysPerWeek <= 7 ? stored.daysPerWeek : defaults.daysPerWeek,
+          totalWeeks: stored.totalWeeks === 'indefinite' || [4, 6, 8, 10, 12].includes(stored.totalWeeks) ? stored.totalWeeks : defaults.totalWeeks,
+          startDate: typeof stored.startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(stored.startDate) ? stored.startDate : undefined,
+        };
+      } catch { /* unavailable local storage or invalid data */ }
+    }
+    return defaults;
+  });
+
+  const handleUpdateRoutineConfig = (nextConfig: ActiveRoutineConfig) => {
+    setRoutineConfig(nextConfig);
+    if (typeof window !== 'undefined' && cycleStorageKey) {
+      try { localStorage.setItem(cycleStorageKey, JSON.stringify(nextConfig)); }
+      catch { /* keep the in-memory configuration; do not touch other athlete data */ }
+    }
+  };
 
   useEffect(() => {
     routines.forEach((r) => {
@@ -685,6 +724,13 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
             </div>
           </div>
         )}
+
+      {/* Intelligent Training Cycle Card */}
+      <IntelligentTrainingCycleCard
+        history={history}
+        routineConfig={routineConfig}
+        onUpdateRoutineConfig={handleUpdateRoutineConfig}
+      />
 
       {/* 3. CONSTRUCTOR RÁPIDO (CONSTRUCTOR ELITE PLEGABLE) */}
       {onAddRoutine && (
