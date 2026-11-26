@@ -42,4 +42,4 @@ const groups = new Map<string, string[]>();
 for (const ex of EXERCISE_LIBRARY) { const key = normalizeExerciseName(ex.name); groups.set(key, [...(groups.get(key) || []), ex.id]); }
 for (const [name, ids] of groups) if (ids.length > 1) assert.equal(resolveLibraryExercise(name), undefined, 'Nombres duplicados requieren ID');
 assert(isObsoleteLibraryMedia('https://api.' + 'smartworkout.app/asset/old'));
-console.log(JSON.stringify({ catalog:695, mediaFiles:1369, legacyIdsVerified:report.mapping.length, historyAndRoutineIdsPreserved:true, fuzzyMatchesDisabled:true, excludedLegacyRecordsPreserved:true }));
+console.log(JSON.stringify({ catalog:695, mediaFiles:1370, legacyIdsVerified:report.mapping.length, historyAndRoutineIdsPreserved:true, fuzzyMatchesDisabled:true, excludedLegacyRecordsPreserved:true }));

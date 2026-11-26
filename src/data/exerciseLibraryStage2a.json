@@ -9,11 +9,11 @@
     "allEquipment": [
       "Peso corporal"
     ],
-    "videoUrl": null,
+    "videoUrl": "/exercise-library/aa5dabc7-300e-4fc4-99d7-32bc05815966.webp",
     "thumbnailUrl": "/exercise-library/aa5dabc7-300e-4fc4-99d7-32bc05815966-poster.webp",
     "secondaryThumbnailUrl": null,
-    "url": "/exercise-library/aa5dabc7-300e-4fc4-99d7-32bc05815966-poster.webp",
-    "visualResourceStatus": "pending_resource",
+    "url": "/exercise-library/aa5dabc7-300e-4fc4-99d7-32bc05815966.webp",
+    "visualResourceStatus": "verified_animation",
     "tags": [
       "CERVICAL",
       "POSTURE",
@@ -48,7 +48,10 @@
     "contraindications": [
       "Suspende de inmediato ante mareos, vértigo, visión borrosa, dolor agudo, hormigueo o irradiación hacia hombros o brazos.",
       "Consultar profesional de salud antes de realizarlo en caso de hernia cervical sintomática o cirugía cervical reciente."
-    ]
+    ],
+    "animationUrl": "/exercise-library/aa5dabc7-300e-4fc4-99d7-32bc05815966.webp",
+    "frames": 8,
+    "durationMs": 4000
   },
   {
     "id": "e83f2499-d624-417b-9bf0-b1f1430de20e",
