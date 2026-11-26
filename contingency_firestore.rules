@@ -17,7 +17,8 @@ service cloud.firestore {
         ('email_verified' in request.auth.token) &&
         request.auth.token.email_verified == true &&
         ('email' in request.auth.token) &&
-        request.auth.token.email == 'kmiloko19@gmail.com' &&
+        request.auth.token.email is string &&
+        request.auth.token.email.lower() == 'kmiloko19@gmail.com' &&
         ('firebase' in request.auth.token) &&
         request.auth.token.firebase.get('sign_in_provider', '') == 'google.com';
     }

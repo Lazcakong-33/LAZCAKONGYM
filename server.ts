@@ -510,8 +510,8 @@ app.get('/api/version', async (_req, res) => {
     broadcast = getServerBroadcastState();
   } catch {}
   res.status(200).json({
-    version: broadcast?.version || '7.0.0',
-    buildId: broadcast?.buildId || '7.0.0-ota-release',
+    version: broadcast?.version || '7.0.5',
+    buildId: broadcast?.buildId || '7.0.5-ota-release',
     broadcastId: broadcast?.broadcastId || null,
     broadcastMessage: broadcast?.message || null,
     buildDate: broadcast?.updatedAt || new Date().toISOString(),

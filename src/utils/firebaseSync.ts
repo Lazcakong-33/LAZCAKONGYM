@@ -8,6 +8,7 @@ import {
   where,
   limit,
   onSnapshot,
+  writeBatch,
   type Firestore,
 } from 'firebase/firestore';
 import { auth, db, firebaseConfig } from '../firebase.ts';
@@ -114,16 +115,283 @@ export function getFirestoreDB(): Firestore | null {
   return db;
 }
 
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId: string | undefined;
+    email: string | null | undefined;
+    emailVerified: boolean | undefined;
+    isAnonymous: boolean | undefined;
+    tenantId: string | null | undefined;
+    providerInfo: Array<{
+      providerId: string;
+      displayName: string | null;
+      email: string | null;
+      photoUrl: string | null;
+    }>;
+  };
+}
+
+export function formatFirestoreErrorInfo(
+  error: unknown,
+  operationType: OperationType,
+  path: string | null
+): FirestoreErrorInfo {
+  return {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo:
+        auth.currentUser?.providerData.map((provider) => ({
+          providerId: provider.providerId,
+          displayName: provider.displayName,
+          email: provider.email,
+          photoUrl: provider.photoURL,
+        })) || [],
+    },
+    operationType,
+    path,
+  };
+}
+
+export function handleFirestoreError(
+  error: unknown,
+  operationType: OperationType,
+  path: string | null
+): never {
+  const errInfo = formatFirestoreErrorInfo(error, operationType, path);
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+export interface AdminAuthDiagnostics {
+  signedIn: boolean;
+  uid: string | null;
+  email: string | null;
+  emailVerified: boolean;
+  signInProvider: string | null;
+  isGoogleVerified: boolean;
+  tokenExpiresAt: string | null;
+  projectId: string;
+  databaseId: string;
+}
+
+async function waitForAuthUserReady(timeoutMs = 2500) {
+  if (auth.currentUser) return auth.currentUser;
+  try {
+    const authAny = auth as any;
+    if (typeof authAny.authStateReady === 'function') {
+      await Promise.race([
+        authAny.authStateReady(),
+        new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+      ]);
+    }
+  } catch {}
+  return auth.currentUser;
+}
+
+export async function getAdminAuthDiagnostics(
+  forceRefresh = false
+): Promise<AdminAuthDiagnostics> {
+  const projectId = DEFAULT_FIREBASE_CONFIG.projectId;
+  const databaseId = DEFAULT_FIREBASE_CONFIG.firestoreDatabaseId || '(default)';
+  const currentUser = await waitForAuthUserReady();
+  if (!currentUser) {
+    return {
+      signedIn: false,
+      uid: null,
+      email: null,
+      emailVerified: false,
+      signInProvider: null,
+      isGoogleVerified: false,
+      tokenExpiresAt: null,
+      projectId,
+      databaseId,
+    };
+  }
+  try {
+    const tokenResult = await currentUser.getIdTokenResult(forceRefresh);
+    const firebaseClaims = tokenResult?.claims?.firebase as
+      | { sign_in_provider?: string }
+      | undefined;
+    const signInProvider =
+      tokenResult?.signInProvider || firebaseClaims?.sign_in_provider || null;
+    const emailVerified = Boolean(
+      tokenResult?.claims?.email_verified ?? currentUser.emailVerified
+    );
+    return {
+      signedIn: true,
+      uid: currentUser.uid,
+      email: currentUser.email || null,
+      emailVerified,
+      signInProvider,
+      isGoogleVerified: signInProvider === 'google.com' && emailVerified,
+      tokenExpiresAt: tokenResult?.expirationTime || null,
+      projectId,
+      databaseId,
+    };
+  } catch {
+    return {
+      signedIn: true,
+      uid: currentUser.uid,
+      email: currentUser.email || null,
+      emailVerified: Boolean(currentUser.emailVerified),
+      signInProvider: null,
+      isGoogleVerified: false,
+      tokenExpiresAt: null,
+      projectId,
+      databaseId,
+    };
+  }
+}
+
+export async function forceRenewFirebaseAuthToken(): Promise<{
+  success: boolean;
+  diagnostics: AdminAuthDiagnostics;
+  error?: string;
+}> {
+  try {
+    const currentUser = await waitForAuthUserReady();
+    if (!currentUser) {
+      return {
+        success: false,
+        diagnostics: await getAdminAuthDiagnostics(false),
+        error: 'No hay sesión activa en Firebase Authentication. Inicia sesión con Google.',
+      };
+    }
+    await currentUser.getIdToken(true);
+    const diagnostics = await getAdminAuthDiagnostics(false);
+    return { success: true, diagnostics };
+  } catch (err: any) {
+    return {
+      success: false,
+      diagnostics: await getAdminAuthDiagnostics(false),
+      error: err?.message || 'No se pudo renovar el token de Firebase Authentication.',
+    };
+  }
+}
+
 async function getBearerAuthHeaders(forceRefresh = false): Promise<Record<string, string>> {
-  const currentUser = auth.currentUser;
+  const currentUser = await waitForAuthUserReady();
   if (!currentUser) {
     throw new Error('Debes iniciar sesión con Firebase Authentication primero.');
   }
-  const idToken = await currentUser.getIdToken(forceRefresh);
+  let shouldForce = forceRefresh;
+  if (!shouldForce) {
+    try {
+      const result = await currentUser.getIdTokenResult(false);
+      const expMs = result?.expirationTime ? Date.parse(result.expirationTime) : 0;
+      // Renew automatically if token expires within 5 minutes
+      if (!expMs || expMs - Date.now() < 5 * 60 * 1000) {
+        shouldForce = true;
+      }
+    } catch {
+      shouldForce = true;
+    }
+  }
+  const idToken = await currentUser.getIdToken(shouldForce);
   return {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${idToken}`,
   };
+}
+
+async function sha256HexClient(input: string): Promise<string> {
+  const normalized = String(input || '').trim().toUpperCase();
+  const encoder = new TextEncoder();
+  const data = encoder.encode(normalized);
+  if (typeof crypto !== 'undefined' && crypto.subtle?.digest) {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+  throw new Error('Web Crypto SHA-256 no disponible en este entorno.');
+}
+
+function generateClientInviteCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = new Uint8Array(8);
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  let raw = '';
+  for (let i = 0; i < 8; i++) {
+    raw += chars[bytes[i] % chars.length];
+  }
+  return `LZK-${raw.slice(0, 4)}-${raw.slice(4, 8)}`;
+}
+
+function buildClientInviteLookupDoc(invite: InviteLink): Record<string, any> {
+  return {
+    active: !invite.used && !invite.revoked,
+    used: Boolean(invite.used),
+    revoked: Boolean(invite.revoked),
+    createdAt: invite.createdAt,
+  };
+}
+
+function formatAdminInviteErrorMessage(
+  rawError: string | undefined,
+  status: number,
+  diagnostics?: AdminAuthDiagnostics
+): string {
+  const msg = String(rawError || '').trim();
+  if (status === 401) {
+    return 'Tu token de Firebase expiró. Toca "Renovar Token" o vuelve a iniciar sesión con Google.';
+  }
+  if (status === 403 || msg.includes('PERMISSION_DENIED') || msg.includes('Missing or insufficient permissions')) {
+    if (diagnostics && !diagnostics.signedIn) {
+      return 'No hay sesión activa en Firebase Auth. Inicia sesión como Administrador con Google.';
+    }
+    if (diagnostics && !diagnostics.isGoogleVerified) {
+      return `Sesión actual (${diagnostics.email || 'sin correo'}, proveedor: ${diagnostics.signInProvider || 'desconocido'}) sin verificación Google Admin. Inicia sesión con Google.`;
+    }
+    return '403 PERMISSION_DENIED: Permisos insuficientes en Firestore. Toca "Renovar Token" o verifica tu cuenta Google de Administrador.';
+  }
+  return msg || 'Error de comunicación gestionando invitaciones.';
+}
+
+async function fetchAdminApiWithTokenRetry<T = Record<string, any>>(
+  path: string,
+  init: { method: string; body?: string; timeoutMs?: number }
+) {
+  let headers = await getBearerAuthHeaders(false);
+  let result = await safeApiFetchJson<T>(path, {
+    ...init,
+    headers,
+  });
+
+  if (result.status === 401 || result.status === 403) {
+    try {
+      headers = await getBearerAuthHeaders(true);
+      result = await safeApiFetchJson<T>(path, {
+        ...init,
+        headers,
+      });
+    } catch {}
+  }
+
+  return result;
 }
 
 /**
@@ -499,8 +767,8 @@ export function extractInviteTokenFromInput(input: string): string {
 }
 
 /**
- * Verify if an invite token exists and has NOT been used or revoked via server Admin SDK API.
- * Browser never reads /invites directly and NEVER uses local regex bypasses.
+ * Verify if an invite token exists and has NOT been used or revoked.
+ * Uses server API first and falls back to zero-PII /invite_lookup/{sha256} on Starter Tier.
  */
 export async function verifyInviteToken(
   rawToken: string
@@ -515,6 +783,45 @@ export async function verifyInviteToken(
     return { valid: false, status: 'not_found' };
   }
 
+  const verifyViaZeroPiiLookup = async (): Promise<{
+    valid: boolean;
+    status: 'valid' | 'used' | 'revoked' | 'not_found';
+    invite?: InviteLink;
+    error?: string;
+  } | null> => {
+    try {
+      if (!db) return null;
+      const tokenHash = await sha256HexClient(token);
+      const snap = await getDoc(doc(db, 'invite_lookup', tokenHash));
+      if (!snap.exists()) {
+        return { valid: false, status: 'not_found' };
+      }
+      const data = snap.data() || {};
+      if (data.revoked === true) {
+        return { valid: false, status: 'revoked' };
+      }
+      if (data.used === true || data.active === false) {
+        return { valid: false, status: 'used' };
+      }
+      if (data.expiresAt && new Date(data.expiresAt).getTime() < Date.now()) {
+        return { valid: false, status: 'revoked' };
+      }
+      return {
+        valid: true,
+        status: 'valid',
+        invite: {
+          token,
+          createdAt: String(data.createdAt || new Date().toISOString()),
+          createdBy: 'Coach Camilo Lazcano',
+          used: false,
+        },
+      };
+    } catch (err) {
+      console.warn('[verifyInviteToken lookup fallback error]:', err);
+      return null;
+    }
+  };
+
   try {
     const result = await safeApiFetchJson<{
       valid?: boolean;
@@ -523,31 +830,44 @@ export async function verifyInviteToken(
       error?: string;
     }>('/api/invites/verify', {
       method: 'POST',
+      timeoutMs: 10_000,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
     const data = result.data;
+    if (result.ok && result.isJson && data) {
+      return {
+        valid: Boolean(data.valid),
+        status: data.status || 'not_found',
+        invite: data.invite,
+        error: data.error,
+      };
+    }
+    // Starter Tier resilient fallback if API returned 503/network/HTML error
+    if (result.status === 0 || result.status === 503 || result.status === 502 || result.isHtml) {
+      const direct = await verifyViaZeroPiiLookup();
+      if (direct) return direct;
+    }
     if (!result.isJson || !data) {
       return { valid: false, status: 'not_found', error: result.error };
-    }
-    if (!result.ok && !data.status) {
-      return { valid: false, status: 'not_found', error: data.error || result.error };
     }
     return {
       valid: Boolean(data.valid),
       status: data.status || 'not_found',
       invite: data.invite,
-      error: data.error,
+      error: data.error || result.error,
     };
   } catch (err: any) {
     console.warn('[verifyInviteToken network error]:', err);
+    const direct = await verifyViaZeroPiiLookup();
+    if (direct) return direct;
     return { valid: false, status: 'not_found', error: 'Error de red verificando código.' };
   }
 }
 
 /**
- * Atomic single-use registration via server Admin SDK API (/api/invites/register).
- * Starter Tier compatible: requires active Firebase Client SDK session (`Authorization: Bearer <idToken>`).
+ * Atomic single-use registration via server API (/api/invites/register) with automatic token refresh
+ * and Starter-Tier atomic Firestore batch fallback protected by hardened firestore.rules.
  */
 export async function registerAthleteWithInvite(payload: {
   token: string;
@@ -563,6 +883,115 @@ export async function registerAthleteWithInvite(payload: {
   profile?: Profile;
   error?: string;
 }> {
+  const redeemViaDirectFirestoreBatch = async (): Promise<{
+    success: boolean;
+    athleteId?: string;
+    authUid?: string;
+    isAdmin?: boolean;
+    profile?: Profile;
+    error?: string;
+  }> => {
+    const currentUser = await waitForAuthUserReady();
+    if (!db || !currentUser) {
+      return {
+        success: false,
+        error: 'Autenticación de Firebase Auth requerida para canjear la invitación.',
+      };
+    }
+    const cleanToken = extractInviteTokenFromInput(payload.token);
+    const tokenHash = await sha256HexClient(cleanToken);
+    const lookupRef = doc(db, 'invite_lookup', tokenHash);
+    const lookupSnap = await getDoc(lookupRef);
+    if (!lookupSnap.exists()) {
+      return { success: false, error: 'Código de invitación inválido o no encontrado.' };
+    }
+    const lookupData = lookupSnap.data() || {};
+    if (lookupData.revoked === true) {
+      return { success: false, error: 'Este código de invitación fue revocado.' };
+    }
+    if (lookupData.used === true || lookupData.active === false) {
+      return { success: false, error: 'Este código de invitación ya fue utilizado anteriormente.' };
+    }
+
+    const existingOwnSnap = await getDocs(
+      query(collection(db, 'athletes'), where('authUid', '==', currentUser.uid), limit(1))
+    );
+    if (!existingOwnSnap.empty) {
+      return {
+        success: false,
+        error: 'Esta cuenta de Firebase Auth ya tiene un perfil de atleta activo. Inicia sesión.',
+      };
+    }
+
+    const nowIso = new Date().toISOString();
+    const finalEmail = String(currentUser.email || payload.email || '').toLowerCase().trim();
+    const finalName = String(payload.name || finalEmail.split('@')[0] || 'Atleta').trim();
+    const newAthleteId = `perfil_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+
+    const newProfile: Profile = {
+      id: newAthleteId,
+      name: finalName,
+      email: finalEmail,
+      authUid: currentUser.uid,
+      migrationStatus: 'confirmed',
+      avatar: payload.avatar || '🦍',
+      goal: payload.goal || 'Hipertrofia & Masa',
+      weeklyTargetDays: 5,
+      soundEnabled: true,
+      vibrationEnabled: true,
+      weightUnit: 'kg',
+      isAdmin: false,
+      createdAt: nowIso,
+    };
+
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'invites', tokenHash), {
+      used: true,
+      usedAt: nowIso,
+      usedByUid: currentUser.uid,
+      usedByName: finalName,
+      usedByEmail: finalEmail,
+    });
+    batch.update(lookupRef, {
+      active: false,
+      used: true,
+      usedAt: nowIso,
+    });
+    batch.set(doc(db, 'athletes', newAthleteId), {
+      ...newProfile,
+      routines: [],
+      history: [],
+      prs: {},
+      bodyWeightLogs: [],
+      lastSyncedAt: nowIso,
+    });
+
+    try {
+      await batch.commit();
+      return {
+        success: true,
+        athleteId: newAthleteId,
+        authUid: currentUser.uid,
+        isAdmin: false,
+        profile: newProfile,
+      };
+    } catch (err: any) {
+      const recheck = await getDoc(lookupRef).catch(() => null);
+      if (recheck?.exists() && (recheck.data()?.used === true || recheck.data()?.active === false)) {
+        return {
+          success: false,
+          error: 'Este código de invitación ya fue utilizado anteriormente.',
+        };
+      }
+      const errInfo = formatFirestoreErrorInfo(err, OperationType.WRITE, `invites/${tokenHash}`);
+      console.error('Firestore Error: ', JSON.stringify(errInfo));
+      return {
+        success: false,
+        error: 'No se pudo canjear el código de invitación. Verifica que esté vigente y sin usar.',
+      };
+    }
+  };
+
   try {
     const headers = await getBearerAuthHeaders(true);
     const result = await safeApiFetchJson<{
@@ -574,28 +1003,36 @@ export async function registerAthleteWithInvite(payload: {
       error?: string;
     }>('/api/invites/register', {
       method: 'POST',
+      timeoutMs: 15_000,
       headers,
       body: JSON.stringify(payload),
     });
     const data = result.data;
-    if (!result.ok || !result.isJson || !data?.success) {
+    if (result.ok && result.isJson && data?.success) {
       return {
-        success: false,
-        error: result.error || data?.error || 'No se pudo completar el registro con invitación.',
+        success: true,
+        athleteId: data.athleteId,
+        authUid: data.authUid,
+        isAdmin: data.isAdmin,
+        profile: data.profile,
       };
     }
-    return {
-      success: true,
-      athleteId: data.athleteId,
-      authUid: data.authUid,
-      isAdmin: data.isAdmin,
-      profile: data.profile,
-    };
-  } catch (err: any) {
+    if (result.status === 0 || result.status === 503 || result.status === 502 || result.isHtml) {
+      return await redeemViaDirectFirestoreBatch();
+    }
     return {
       success: false,
-      error: err?.message || 'Error de conexión al registrar cuenta.',
+      error: data?.error || result.error || 'No se pudo completar el registro con invitación.',
     };
+  } catch (err: any) {
+    try {
+      return await redeemViaDirectFirestoreBatch();
+    } catch {
+      return {
+        success: false,
+        error: err?.message || 'Error de conexión al registrar cuenta.',
+      };
+    }
   }
 }
 
@@ -671,32 +1108,202 @@ export async function linkLegacyProfileWithServer(payload: {
   }
 }
 
+async function createSingleInviteDirectFirestoreAdmin(
+  createdBy: string,
+  note?: string
+): Promise<{ success: boolean; invite: InviteLink | null; error?: string }> {
+  const diagnostics = await getAdminAuthDiagnostics(true);
+  if (!db || !diagnostics.signedIn || !diagnostics.isGoogleVerified) {
+    return {
+      success: false,
+      invite: null,
+      error: formatAdminInviteErrorMessage(undefined, 403, diagnostics),
+    };
+  }
+  const token = generateClientInviteCode();
+  const cleanNote = String(note || '').trim();
+  const invite: InviteLink = {
+    token,
+    createdAt: new Date().toISOString(),
+    createdBy: String(createdBy || diagnostics.email || 'Coach Admin').trim(),
+    ...(cleanNote ? { note: cleanNote } : {}),
+    used: false,
+    revoked: false,
+  };
+  const tokenHash = await sha256HexClient(token);
+  try {
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'invites', tokenHash), invite);
+    batch.set(doc(db, 'invite_lookup', tokenHash), buildClientInviteLookupDoc(invite));
+    await batch.commit();
+    return { success: true, invite };
+  } catch (err: any) {
+    const errInfo = formatFirestoreErrorInfo(err, OperationType.CREATE, `invites/${tokenHash}`);
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    return {
+      success: false,
+      invite: null,
+      error: formatAdminInviteErrorMessage(err?.message, 403, diagnostics),
+    };
+  }
+}
+
+async function generateBatchInvitesDirectFirestoreAdmin(
+  count: number,
+  createdBy: string
+): Promise<{ success: boolean; tokens: string[]; invites?: InviteLink[]; message: string }> {
+  const diagnostics = await getAdminAuthDiagnostics(true);
+  if (!db || !diagnostics.signedIn || !diagnostics.isGoogleVerified) {
+    return {
+      success: false,
+      tokens: [],
+      message: formatAdminInviteErrorMessage(undefined, 403, diagnostics),
+    };
+  }
+  const safeCount = Math.min(50, Math.max(1, Number(count || 50)));
+  const nowIso = new Date().toISOString();
+  const cleanCreatedBy = String(createdBy || diagnostics.email || 'Coach Admin').trim();
+  const tokens: string[] = [];
+  const invites: InviteLink[] = [];
+  const seen = new Set<string>();
+
+  try {
+    const batch = writeBatch(db);
+    for (let i = 0; i < safeCount; i++) {
+      let token = generateClientInviteCode();
+      while (seen.has(token)) {
+        token = generateClientInviteCode();
+      }
+      seen.add(token);
+      const invite: InviteLink = {
+        token,
+        createdAt: nowIso,
+        createdBy: cleanCreatedBy,
+        note: `Pase Beta Exclusivo #${i + 1}`,
+        used: false,
+        revoked: false,
+      };
+      const tokenHash = await sha256HexClient(token);
+      batch.set(doc(db, 'invites', tokenHash), invite);
+      batch.set(doc(db, 'invite_lookup', tokenHash), buildClientInviteLookupDoc(invite));
+      tokens.push(token);
+      invites.push(invite);
+    }
+    await batch.commit();
+    return {
+      success: true,
+      tokens,
+      invites,
+      message: `¡${safeCount} códigos de invitación generados exitosamente en Firestore!`,
+    };
+  } catch (err: any) {
+    const errInfo = formatFirestoreErrorInfo(err, OperationType.WRITE, 'invites');
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    return {
+      success: false,
+      tokens: [],
+      message: formatAdminInviteErrorMessage(err?.message, 403, diagnostics),
+    };
+  }
+}
+
+async function revokeInviteDirectFirestoreAdmin(
+  token: string
+): Promise<{ success: boolean; error?: string }> {
+  const diagnostics = await getAdminAuthDiagnostics(true);
+  if (!db || !diagnostics.signedIn || !diagnostics.isGoogleVerified) {
+    return {
+      success: false,
+      error: formatAdminInviteErrorMessage(undefined, 403, diagnostics),
+    };
+  }
+  const cleanToken = extractInviteTokenFromInput(token);
+  const tokenHash = await sha256HexClient(cleanToken);
+  try {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'invites', tokenHash));
+    batch.delete(doc(db, 'invites', cleanToken));
+    batch.delete(doc(db, 'invite_lookup', tokenHash));
+    await batch.commit();
+    return { success: true };
+  } catch (err: any) {
+    const errInfo = formatFirestoreErrorInfo(err, OperationType.DELETE, `invites/${tokenHash}`);
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    return {
+      success: false,
+      error: formatAdminInviteErrorMessage(err?.message, 403, diagnostics),
+    };
+  }
+}
+
+async function listInvitesDirectFirestoreAdmin(): Promise<{
+  success: boolean;
+  invites: InviteLink[];
+  error?: string;
+}> {
+  const diagnostics = await getAdminAuthDiagnostics(true);
+  if (!db || !diagnostics.signedIn || !diagnostics.isGoogleVerified) {
+    return {
+      success: false,
+      invites: [],
+      error: formatAdminInviteErrorMessage(undefined, 403, diagnostics),
+    };
+  }
+  try {
+    const snap = await getDocs(collection(db, 'invites'));
+    const list: InviteLink[] = [];
+    snap.forEach((docSnap) => {
+      const data = docSnap.data() as InviteLink;
+      if (data && data.token) {
+        list.push(data);
+      }
+    });
+    list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    return { success: true, invites: list };
+  } catch (err: any) {
+    const errInfo = formatFirestoreErrorInfo(err, OperationType.LIST, 'invites');
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    return {
+      success: false,
+      invites: [],
+      error: formatAdminInviteErrorMessage(err?.message, 403, diagnostics),
+    };
+  }
+}
+
 export async function createSingleUseInviteDetailed(
   createdBy: string,
   note?: string
 ): Promise<{ success: boolean; invite: InviteLink | null; error?: string }> {
   try {
-    const headers = await getBearerAuthHeaders();
-    const result = await safeApiFetchJson<{ success?: boolean; invite?: InviteLink; error?: string }>(
-      '/api/admin/invites',
-      {
-        method: 'POST',
-        timeoutMs: 12_000,
-        headers,
-        body: JSON.stringify({ createdBy, note }),
-      }
-    );
+    const result = await fetchAdminApiWithTokenRetry<{
+      success?: boolean;
+      invite?: InviteLink;
+      error?: string;
+    }>('/api/admin/invites', {
+      method: 'POST',
+      timeoutMs: 12_000,
+      body: JSON.stringify({ createdBy, note }),
+    });
     const data = result.data;
-    if (!result.ok || !result.isJson || !data?.success || !data.invite) {
-      return {
-        success: false,
-        invite: null,
-        error: data?.error || result.error || 'No autorizado para generar invitaciones.',
-      };
+    if (result.ok && result.isJson && data?.success && data.invite) {
+      return { success: true, invite: data.invite };
     }
-    return { success: true, invite: data.invite };
+    // Direct Firestore fallback ONLY for verified Google Admin (strictly guarded server-side by firestore.rules)
+    const directRes = await createSingleInviteDirectFirestoreAdmin(createdBy, note);
+    if (directRes.success) {
+      return directRes;
+    }
+    const diagnostics = await getAdminAuthDiagnostics(false);
+    return {
+      success: false,
+      invite: null,
+      error: formatAdminInviteErrorMessage(data?.error || result.error || directRes.error, result.status, diagnostics),
+    };
   } catch (err: any) {
     console.warn('[createSingleUseInvite error]:', err);
+    const directRes = await createSingleInviteDirectFirestoreAdmin(createdBy, note).catch(() => null);
+    if (directRes?.success) return directRes;
     return {
       success: false,
       invite: null,
@@ -716,34 +1323,41 @@ export async function createSingleUseInvite(
 export async function generateBatchInviteTokens(
   count = 50,
   createdBy = 'Coach Camilo Lazcano (Admin)'
-): Promise<{ success: boolean; tokens: string[]; message: string }> {
+): Promise<{ success: boolean; tokens: string[]; invites?: InviteLink[]; message: string }> {
   try {
-    const headers = await getBearerAuthHeaders();
-    const result = await safeApiFetchJson<{
+    const result = await fetchAdminApiWithTokenRetry<{
       success?: boolean;
       tokens?: string[];
+      invites?: InviteLink[];
       message?: string;
       error?: string;
     }>('/api/admin/invites/batch', {
       method: 'POST',
-      timeoutMs: 15_000,
-      headers,
+      timeoutMs: 18_000,
       body: JSON.stringify({ count, createdBy }),
     });
     const data = result.data;
-    if (!result.ok || !result.isJson || !data?.success) {
+    if (result.ok && result.isJson && data?.success) {
       return {
-        success: false,
-        tokens: [],
-        message: data?.error || result.error || 'Error generando lote de invitaciones.',
+        success: true,
+        tokens: data.tokens || [],
+        invites: data.invites,
+        message: data.message || `¡${count} códigos generados!`,
       };
     }
+    const directRes = await generateBatchInvitesDirectFirestoreAdmin(count, createdBy);
+    if (directRes.success) {
+      return directRes;
+    }
+    const diagnostics = await getAdminAuthDiagnostics(false);
     return {
-      success: true,
-      tokens: data.tokens || [],
-      message: data.message || `¡${count} códigos generados!`,
+      success: false,
+      tokens: [],
+      message: formatAdminInviteErrorMessage(data?.error || result.error || directRes.message, result.status, diagnostics),
     };
   } catch (err: any) {
+    const directRes = await generateBatchInvitesDirectFirestoreAdmin(count, createdBy).catch(() => null);
+    if (directRes?.success) return directRes;
     return {
       success: false,
       tokens: [],
@@ -756,24 +1370,29 @@ export async function revokeInviteTokenDetailed(
   token: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const headers = await getBearerAuthHeaders();
-    const result = await safeApiFetchJson<{ success?: boolean; error?: string }>(
+    const result = await fetchAdminApiWithTokenRetry<{ success?: boolean; error?: string }>(
       `/api/admin/invites/${encodeURIComponent(token)}`,
       {
         method: 'DELETE',
         timeoutMs: 12_000,
-        headers,
       }
     );
-    if (!result.ok || !result.isJson || !result.data?.success) {
-      return {
-        success: false,
-        error: result.data?.error || result.error || 'No se pudo revocar la invitación.',
-      };
+    if (result.ok && result.isJson && result.data?.success) {
+      return { success: true };
     }
-    return { success: true };
+    const directRes = await revokeInviteDirectFirestoreAdmin(token);
+    if (directRes.success) {
+      return directRes;
+    }
+    const diagnostics = await getAdminAuthDiagnostics(false);
+    return {
+      success: false,
+      error: formatAdminInviteErrorMessage(result.data?.error || result.error || directRes.error, result.status, diagnostics),
+    };
   } catch (err: any) {
     console.warn('[revokeInviteToken error]:', err);
+    const directRes = await revokeInviteDirectFirestoreAdmin(token).catch(() => null);
+    if (directRes?.success) return directRes;
     return {
       success: false,
       error: err?.message || 'Error de conexión revocando invitación.',
@@ -792,31 +1411,37 @@ export async function fetchInvitesAdminResult(): Promise<{
   error?: string;
 }> {
   try {
-    const headers = await getBearerAuthHeaders();
-    const result = await safeApiFetchJson<{
+    const result = await fetchAdminApiWithTokenRetry<{
       success?: boolean;
       invites?: InviteLink[];
       error?: string;
     }>('/api/admin/invites', {
       method: 'GET',
       timeoutMs: 12_000,
-      headers,
     });
-    if (!result.ok || !result.isJson) {
+    if (result.ok && result.isJson) {
       return {
-        success: false,
-        invites: [],
-        error:
-          result.data?.error ||
-          result.error ||
-          'No se pudieron cargar las invitaciones desde el servidor.',
+        success: true,
+        invites: Array.isArray(result.data?.invites) ? result.data.invites : [],
       };
     }
+    const directRes = await listInvitesDirectFirestoreAdmin();
+    if (directRes.success) {
+      return directRes;
+    }
+    const diagnostics = await getAdminAuthDiagnostics(false);
     return {
-      success: true,
-      invites: Array.isArray(result.data?.invites) ? result.data.invites : [],
+      success: false,
+      invites: [],
+      error: formatAdminInviteErrorMessage(
+        result.data?.error || result.error || directRes.error,
+        result.status,
+        diagnostics
+      ),
     };
   } catch (err: any) {
+    const directRes = await listInvitesDirectFirestoreAdmin().catch(() => null);
+    if (directRes?.success) return directRes;
     return {
       success: false,
       invites: [],
@@ -831,20 +1456,21 @@ export async function fetchInvitesAdmin(): Promise<InviteLink[]> {
 }
 
 /**
- * Poll Admin-only /api/admin/invites for Invite Management UI (strictly server-verified Admin only).
+ * Poll Admin-only invitations with automatic token renewal (strictly verified Google Admin only).
  */
 export function subscribeToInvites(
   onUpdate: (invites: InviteLink[]) => void,
   onError?: (error: string | null) => void
 ): () => void {
-  if (!auth.currentUser) {
-    onUpdate([]);
-    onError?.('Debes iniciar sesión como Administrador para consultar invitaciones.');
-    return () => {};
-  }
-
   let cancelled = false;
   const pull = async () => {
+    const currentUser = await waitForAuthUserReady();
+    if (cancelled) return;
+    if (!currentUser) {
+      onUpdate([]);
+      onError?.('Debes iniciar sesión como Administrador con Google para consultar invitaciones.');
+      return;
+    }
     const res = await fetchInvitesAdminResult();
     if (cancelled) return;
     if (res.success) {

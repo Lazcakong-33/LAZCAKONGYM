@@ -29,11 +29,26 @@
         "note": { "type": "string", "description": "Optional recipient label" },
         "used": { "type": "boolean", "description": "True once consumed by an athlete" },
         "usedAt": { "type": "string", "description": "ISO timestamp when consumed" },
-        "usedByName": { "type": "string", "description": "Name of athlete who used the invite" },
-        "usedByEmail": { "type": "string", "description": "Email of athlete who used the invite" },
+        "usedByUid": { "type": "string", "description": "Firebase Auth UID of athlete who consumed the invite", "maxLength": 128 },
+        "usedByName": { "type": "string", "description": "Name of athlete who used the invite", "maxLength": 160 },
+        "usedByEmail": { "type": "string", "description": "Email of athlete who used the invite", "maxLength": 200 },
         "revoked": { "type": "boolean", "description": "True if manually expired by Admin" }
       },
       "required": ["token", "createdAt", "createdBy", "used"]
+    },
+    "InviteLookup": {
+      "title": "InviteLookup",
+      "description": "Zero-PII capability-hash mirror keyed by SHA-256(token) allowing Starter-Tier verification and atomic single-use redemption without exposing /invites.",
+      "type": "object",
+      "properties": {
+        "active": { "type": "boolean", "description": "True while invite is unused and not revoked" },
+        "used": { "type": "boolean", "description": "True once atomically consumed by an athlete" },
+        "revoked": { "type": "boolean", "description": "True if revoked by Admin" },
+        "createdAt": { "type": "string", "description": "ISO creation timestamp", "maxLength": 64 },
+        "expiresAt": { "type": "string", "description": "Optional ISO expiration timestamp", "maxLength": 64 },
+        "usedAt": { "type": "string", "description": "ISO timestamp when consumed", "maxLength": 64 }
+      },
+      "required": ["active", "used", "revoked", "createdAt"]
     },
     "DeletedAthlete": {
       "title": "DeletedAthlete",
@@ -133,6 +148,10 @@
     "/invites/{inviteId}": {
       "schema": { "$ref": "#/entities/InviteLink" },
       "description": "Single-use invitation links created by the Administrator"
+    },
+    "/invite_lookup/{tokenHash}": {
+      "schema": { "$ref": "#/entities/InviteLookup" },
+      "description": "Zero-PII capability-hash mirror enabling Starter-Tier invite verification and atomic single-use redemption"
     }
   }
 }
