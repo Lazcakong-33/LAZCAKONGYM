@@ -14,6 +14,7 @@ import {
 import { auth } from '../firebase';
 import { safeApiFetchJson } from '../utils/safeApiFetch';
 import { APP_VERSION } from '../utils/updateApp';
+import { discoverStagingRelease, compareStagingVersions } from '../utils/stagingReleaseDiscovery';
 import {
   OFFICIAL_GITHUB_RELEASES_URL,
   OFFICIAL_RELEASE_APK_DOWNLOAD_URL,
@@ -66,7 +67,7 @@ export const AdminUpdateCenter: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [selectedChannel, setSelectedChannel] = useState<OtaChannel>('development');
+  const [selectedChannel, setSelectedChannel] = useState<OtaChannel>('staging');
   const [version, setVersion] = useState('7.0.1');
   const [releaseNotes, setReleaseNotes] = useState(
     'Mejoras visuales, optimización de biblioteca y estabilidad.'
@@ -80,6 +81,8 @@ export const AdminUpdateCenter: React.FC = () => {
 
   const [submitting, setSubmitting] = useState(false);
   const [syncingGithub, setSyncingGithub] = useState(false);
+  const [stagingCandidate, setStagingCandidate] = useState<OtaManifestPayload | null>(null);
+  const [discoveryMsg, setDiscoveryMsg] = useState('Buscando actualización preparada…');
   const [rollingBackBuildId, setRollingBackBuildId] = useState<string | null>(null);
   const [confirmRollbackId, setConfirmRollbackId] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
@@ -123,7 +126,39 @@ export const AdminUpdateCenter: React.FC = () => {
     void fetchOtaStatus();
   }, [fetchOtaStatus]);
 
+  const discoverNext = useCallback(async (active: string) => {
+    setSyncingGithub(true);
+    setStagingCandidate(null);
+    setDiscoveryMsg('Buscando actualización preparada…');
+    try {
+      const m = await discoverStagingRelease(active);
+      if (!m) {
+        setDiscoveryMsg('STAGING está al día. No hay una versión superior disponible.');
+        return;
+      }
+      setSelectedChannel('staging');
+      setVersion(m.version);
+      setBundleUrl(m.url);
+      setChecksum(m.checksum);
+      setSignature(m.signature || '');
+      setUrgency('optional');
+      setRequiresApkUpdate(false);
+      setMinNativeVersionCode(String(m.minNativeVersionCode));
+      setReleaseNotes(m.releaseNotes!);
+      setStagingCandidate(m);
+      setDiscoveryMsg('Paquete verificado. Solo falta tu autorización.');
+    } catch {
+      setDiscoveryMsg('No se pudo verificar la última release de staging. Usa Buscar actualización para reintentar.');
+    } finally { setSyncingGithub(false); }
+  }, []);
+  const stagingActive = statusData?.channels?.staging?.activeManifest?.version || APP_VERSION;
+  const stagingStatusReady = Boolean(statusData?.success);
+  useEffect(() => {
+    if (stagingStatusReady) void discoverNext(stagingActive);
+  }, [stagingStatusReady, stagingActive, discoverNext]);
+
   const handleSyncGithub = async () => {
+    if (selectedChannel === 'staging') { await discoverNext(stagingActive); return; }
     setSyncingGithub(true);
     setActionMsg(null);
     try {
@@ -186,6 +221,20 @@ export const AdminUpdateCenter: React.FC = () => {
 
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedChannel === 'production' && !statusData?.productionEnvEnabled) {
+      setActionMsg({ type: 'error', text: 'Producción permanece bloqueada.' });
+      return;
+    }
+    if (selectedChannel === 'staging' && stagingCandidate) {
+      if (compareStagingVersions(stagingCandidate.version, stagingActive) <= 0 ||
+          version !== stagingCandidate.version || bundleUrl !== stagingCandidate.url ||
+          checksum !== stagingCandidate.checksum || minNativeVersionCode !== String(stagingCandidate.minNativeVersionCode) ||
+          requiresApkUpdate || urgency !== 'optional' || signature !== (stagingCandidate.signature || '') ||
+          releaseNotes !== stagingCandidate.releaseNotes) {
+        setActionMsg({ type: 'error', text: 'Los datos cambiaron. Vuelve a buscar la actualización verificada.' });
+        return;
+      }
+    }
     setSubmitting(true);
     setActionMsg(null);
     try {
@@ -204,6 +253,7 @@ export const AdminUpdateCenter: React.FC = () => {
         headers,
         body: JSON.stringify({
           channel: selectedChannel,
+          ...(selectedChannel === 'staging' && stagingCandidate ? { buildId: stagingCandidate.buildId } : {}),
           version: version.trim(),
           releaseNotes: releaseNotes.trim(),
           urgency,
@@ -454,6 +504,21 @@ export const AdminUpdateCenter: React.FC = () => {
         </div>
       )}
 
+      {/* Automatic staging discovery: reading a release never activates it. */}
+      <div className="p-4 rounded-2xl border border-[#CCFF00]/35 bg-[#121212] space-y-2" data-testid="ota-auto-discovery">
+        <h4 className="font-black text-white text-sm">Actualizaciones listas para autorizar</h4>
+        <p className="text-xs text-slate-300">{discoveryMsg}</p>
+        {stagingCandidate && (
+          <div className="space-y-1 text-xs">
+            <div className="text-[#CCFF00] font-black">v{stagingActive.replace(/^v/, '')} → v{stagingCandidate.version} · STAGING</div>
+            <p className="text-white">{stagingCandidate.releaseNotes}</p>
+            <p className="text-slate-300">SHA-256 cotejado con GitHub · {stagingCandidate.signature ? 'Firma incluida (validación del servidor pendiente)' : 'Sin firma Ed25519; solo prueba'}</p>
+          </div>
+        )}
+        <button type="button" disabled={syncingGithub || submitting || !stagingStatusReady} onClick={() => void discoverNext(stagingActive)} className="px-3 py-2 border border-[#303030] rounded-xl text-xs font-bold text-white disabled:opacity-50">
+          {syncingGithub ? 'Comprobando…' : 'Buscar actualización'}
+        </button>
+      </div>
       {/* Controlled Publish Form */}
       <form onSubmit={handlePublish} className="p-4 rounded-2xl bg-[#121212] border border-[#262626] space-y-3.5">
         <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -466,7 +531,8 @@ export const AdminUpdateCenter: React.FC = () => {
               <button
                 key={ch}
                 type="button"
-                onClick={() => setSelectedChannel(ch)}
+                onClick={() => { setSelectedChannel(ch); setStagingCandidate(null); }}
+                disabled={ch === 'production' && !statusData?.productionEnvEnabled}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase cursor-pointer transition-colors ${
                   selectedChannel === ch
                     ? 'bg-[#CCFF00] text-[#090909] font-black'
@@ -600,7 +666,7 @@ export const AdminUpdateCenter: React.FC = () => {
 
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || syncingGithub || (selectedChannel === 'production' && !statusData?.productionEnvEnabled) || (selectedChannel === 'staging' && Boolean(stagingCandidate) && compareStagingVersions(stagingCandidate!.version, stagingActive) <= 0)}
           className="w-full min-h-[44px] py-3 rounded-xl bg-[#CCFF00] hover:bg-[#d9ff33] text-[#090909] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
         >
           <ShieldCheck className="w-4 h-4" />
@@ -609,7 +675,7 @@ export const AdminUpdateCenter: React.FC = () => {
               ? 'Validando y publicando...'
               : requiresApkUpdate
                 ? `Publicar aviso de APK nueva (${selectedChannel})`
-                : `Publicar paquete OTA en ${selectedChannel}`}
+                : selectedChannel === 'staging' && stagingCandidate ? `Autorizar actualización ${stagingCandidate.version} (STAGING)` : `Publicar paquete OTA en ${selectedChannel}`}
           </span>
         </button>
       </form>

@@ -1,4 +1,4 @@
-name: Coach 7.0.2 OTA staging validation
+name: Automatic OTA staging preparation
 on:
   push:
     branches: ['fix/coach-7.0.1']
@@ -6,8 +6,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: coach-702-staging
-  cancel-in-progress: true
+  group: ota-staging-sequential
+  cancel-in-progress: false
 jobs:
   validate:
     if: github.ref == 'refs/heads/fix/coach-7.0.1'
@@ -29,7 +29,11 @@ jobs:
             echo "::error::Native or security changes require separate validation."
             exit 1
           fi
-      - run: npm ci --no-audit --no-fund
+      - name: Allocate immutable next staging version
+        run: |
+          set -euo pipefail
+          git fetch --tags
+          existing="$(git tag --points-at HEAD --list 'ota-staging-v7.0.*' | grep -E '^ota-staging-v7\.0\.[0-9]+
       - run: npm run lint
       - name: Coach, authentication and OTA regression tests
         env:
@@ -37,7 +41,7 @@ jobs:
           OTA_PRODUCTION_ENABLED: 'false'
         run: |
           set -euo pipefail
-          npx tsx --test src/server/__tests__/coachLocalRecovery701.test.ts src/server/__tests__/trainingCycleHome702.test.ts
+          npx tsx --test src/server/__tests__/coachLocalRecovery701.test.ts src/server/__tests__/trainingCycleHome702.test.ts src/server/__tests__/stagingReleaseDiscovery.test.ts
           for suite in adminAccessRepairSuite coachChatRecoverySuite coachLaunchReadinessSuite coachNoHangSuite otaUpdateSystemSuite offlineProductionReadinessSuite; do
             npx tsx "src/server/__tests__/$suite.ts"
           done
@@ -45,7 +49,6 @@ jobs:
         env:
           VITE_API_BASE_URL: https://lazcakongym.ai.studio
           VITE_GOOGLE_WEB_CLIENT_ID: 13537846485-8j7931cki5gtlpq2eklsru35765sv3pq.apps.googleusercontent.com
-          VITE_APP_VERSION: '7.0.2'
           VITE_OTA_CHANNEL: staging
           VITE_OTA_PRODUCTION_ENABLED: 'false'
         run: npm run build
@@ -54,12 +57,12 @@ jobs:
           OTA_PRODUCTION_ENABLED: 'false'
         run: |
           set -euo pipefail
-          npm run ota:package -- --version 7.0.2 --channel staging --min-native 70000 --bundle-base-url https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v7.0.2 --notes 'Contador inteligente trasladado a Inicio; Rutinas sin duplicación.'
-          unzip -tq dist-ota/lazcakongym-ota-7.0.2.zip
+          npm run ota:package -- --version "$OTA_VERSION" --channel staging --min-native 70000 --bundle-base-url "https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v$OTA_VERSION" --notes "$OTA_RELEASE_NOTES"
+          unzip -tq "dist-ota/lazcakongym-ota-$OTA_VERSION.zip"
           (cd dist-ota && sha256sum -c SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
-          name: coach-7.0.2-ota-staging
+          name: ota-staging-package
           path: dist-ota/
           retention-days: 14
   host:
@@ -71,7 +74,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: coach-7.0.2-ota-staging
+          name: ota-staging-package
           path: verified
       - name: Verify and host immutable staging prerelease (no channel activation)
         env:
@@ -80,24 +83,31 @@ jobs:
           set -euo pipefail
           cd verified
           sha256sum -c SHA256SUMS.txt
-          unzip -tq lazcakongym-ota-7.0.2.zip
+          version="$(python -c 'import json; print(json.load(open("manifest.staging.json"))["version"])')"
+          [[ "$version" =~ ^7\.0\.[0-9]+$ ]]
+          tag="ota-staging-v$version"
+          zip="lazcakongym-ota-$version.zip"
+          unzip -tq "$zip"
           python - <<'PY'
-          import json, zipfile, pathlib, hashlib
-          p=pathlib.Path('lazcakongym-ota-7.0.2.zip')
+          import json, zipfile, pathlib, hashlib, re
           m=json.loads(pathlib.Path('manifest.staging.json').read_text())
-          assert m['channel']=='staging' and m['version']=='7.0.2' and m['minNativeVersionCode']==70000 and not m['requiresApkUpdate']
+          version=m['version']
+          assert re.fullmatch(r'7\.0\.\d+',version)
+          p=pathlib.Path('lazcakongym-ota-'+version+'.zip')
+          assert m['channel']=='staging' and m['minNativeVersionCode']==70000 and not m['requiresApkUpdate']
           assert m['checksum']==hashlib.sha256(p.read_bytes()).hexdigest()
-          assert m['url']=='https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v7.0.2/lazcakongym-ota-7.0.2.zip'
+          assert m['url']=='https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v'+version+'/'+p.name
           with zipfile.ZipFile(p) as z:
               for f in z.namelist():
                   assert not f.startswith('/') and '..' not in pathlib.PurePosixPath(f).parts
                   assert not any(x.startswith('.env') or x in ('google-services.json','serviceAccountKey.json') or x.endswith(('.pem','.keystore','.jks','.p12')) for x in pathlib.PurePosixPath(f).parts), f
           PY
-          if gh release view ota-staging-v7.0.2 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "::notice::Version 7.0.2 already hosted; refusing to overwrite an immutable release."
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::Already hosted; refusing to overwrite immutable release."
             exit 0
           fi
-          gh release create ota-staging-v7.0.2 lazcakongym-ota-7.0.2.zip manifest.staging.json SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "LAZCAKONG GYM 7.0.2 - staging" --notes "Training cycle moved to Inicio. Test-only package; no channel activation." --prerelease --latest=false
+          printf 'Validated staging package. No channel activation.\n\n<!-- LAZCAKONG_STAGING_MANIFEST_BASE64:%s -->\n' "$(base64 -w0 manifest.staging.json)" > release-notes.txt
+          gh release create "$tag" "$zip" manifest.staging.json SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "LAZCAKONG GYM $version - staging" --notes-file release-notes.txt --prerelease --latest=false
           mkdir downloaded
-          gh release download ota-staging-v7.0.2 --repo "$GITHUB_REPOSITORY" --pattern lazcakongym-ota-7.0.2.zip --dir downloaded
-          cmp downloaded/lazcakongym-ota-7.0.2.zip lazcakongym-ota-7.0.2.zip
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern "$zip" --dir downloaded
+          cmp "downloaded/$zip" "$zip"
