@@ -1,6 +1,6 @@
 /* LAZCAKONGYM - Progressive Web App Service Worker */
-/* Version: v7.0.5 - OTA & Shell Cache Recovery & Invite System Fix */
-const CACHE_NAME = 'lazcakongym-v7.0.5-ota';
+/* Version: v7.0.6 - Indicador de rutinas y fecha de Chile */
+const CACHE_NAME = 'lazcakongym-v7.0.6-ota';
 const EXERCISE_LIB_CACHE_PREFIX = 'lazcakon-exercise-lib-';
 const EXERCISE_LIB_CACHE_NAME = 'lazcakon-exercise-lib-v1';
 const REST_ACTIVE_NOTIFICATION_TAG = 'lazcakon-rest-active';
@@ -248,7 +248,7 @@ self.addEventListener('activate', (event) => {
       .then(async () => {
         const clients = await self.clients.matchAll({ type: 'window' });
         for (const client of clients) {
-          client.postMessage({ type: 'SW_ACTIVATED', version: 'v7.0.5' });
+          client.postMessage({ type: 'SW_ACTIVATED', version: 'v7.0.6' });
         }
       })
   );
