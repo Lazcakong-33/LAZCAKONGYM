@@ -1,3 +1,4 @@
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import {
   ActiveWorkoutSession,
   CoachPlatformStorageAdapter,
@@ -173,9 +174,19 @@ export function detectCoachVoiceCapabilities(): CoachVoiceCapabilities {
   };
 }
 
+const coachSpeech = registerPlugin<{
+  speak(options: { text: string }): Promise<void>;
+  stop(): Promise<void>;
+}>('CoachSpeech');
+
+function hasNativeCoachSpeech(): boolean {
+  return Capacitor.getPlatform() === 'android' && Capacitor.isPluginAvailable('CoachSpeech');
+}
+
 let activeTechniqueUtterance: SpeechSynthesisUtterance | null = null;
 
 export function stopActiveSpeechSynthesis(): void {
+  if (hasNativeCoachSpeech()) void coachSpeech.stop().catch(() => {});
   if (typeof window === 'undefined' || !isSpeechSynthesisAvailable()) return;
   try {
     window.speechSynthesis.cancel();
@@ -198,6 +209,22 @@ export function speakTechniqueInstructionText(
     onError?: (reason: string) => void;
   }
 ): boolean {
+  if (hasNativeCoachSpeech()) {
+    const text = formatCoachTextForSpeech(rawText);
+    if (!text) {
+      callbacks?.onError?.('No hay instrucciones para reproducir.');
+      return false;
+    }
+    callbacks?.onStart?.();
+    void coachSpeech.speak({ text }).then(
+      () => callbacks?.onEnd?.(),
+      (error) => {
+        if (error?.code === 'CANCELLED') callbacks?.onEnd?.();
+        else callbacks?.onError?.(error?.message || 'Android no pudo reproducir el consejo.');
+      }
+    );
+    return true;
+  }
   if (typeof window === 'undefined' || !isSpeechSynthesisAvailable()) {
     callbacks?.onError?.('El motor de síntesis de voz no está disponible en este dispositivo.');
     return false;
@@ -820,7 +847,7 @@ export function createBrowserVoiceAdapter(
 ): CoachPlatformVoiceAdapter {
   if (customAdapter) return customAdapter;
   return {
-    isAvailable: () => isSpeechSynthesisAvailable(),
+    isAvailable: () => hasNativeCoachSpeech() || isSpeechSynthesisAvailable(),
     speak: (text, options) =>
       speakTechniqueInstructionText(text, {
         onStart: options?.onStart,

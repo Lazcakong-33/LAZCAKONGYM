@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(RestTimerNotificationPlugin.class);
+        registerPlugin(CoachSpeechPlugin.class);
         super.onCreate(savedInstanceState);
         RestTimerNotificationPlugin.handleLaunchIntent(getIntent());
     }
