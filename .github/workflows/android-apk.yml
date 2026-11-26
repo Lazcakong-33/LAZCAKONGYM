@@ -27,7 +27,7 @@ on:
         default: ''
         type: string
   push:
-    branches: [ "main", "master", "dev", "ci/**", "release/7.0.0-ota" ]
+    branches: [ "main", "master", "dev", "ci/**", "migration/zero-cost", "release/7.0.0-ota" ]
   pull_request:
     branches: [ "main", "master", "dev", "ci/**" ]
 
