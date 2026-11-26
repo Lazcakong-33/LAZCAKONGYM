@@ -873,9 +873,8 @@ async function verifyInviteViaStarterLookupRest(res: Response, token: string) {
       success: false,
       valid: false,
       status: 'not_found',
-      error:
-        lookupRes.error ||
-        'No se pudo verificar la invitación en Firestore en este momento. Intenta nuevamente.',
+      code: 'invite/service-unavailable',
+      error: 'No se pudo verificar la invitación en Firestore. El servicio requiere credenciales de servidor o reglas de invite_lookup correctamente configuradas.',
     });
   }
   if (!lookupRes.exists) {
@@ -1175,6 +1174,7 @@ export async function handleVerifyInvite(
         success: false,
         valid: false,
         status: 'not_found',
+        code: 'invite/service-unavailable',
         error: 'Error de conexión verificando invitación en Firestore.',
       });
     }
@@ -1223,6 +1223,7 @@ export async function handleVerifyInvite(
         success: false,
         valid: false,
         status: 'not_found',
+        code: 'invite/service-unavailable',
         error:
           'El servicio de verificación de invitaciones requiere credenciales de servidor o reglas públicas de invite_lookup activas.',
       });
@@ -1436,6 +1437,7 @@ export async function handleRegisterWithInvite(
       }
       return res.status(503).json({
         success: false,
+        code: 'invite/service-unavailable',
         error:
           'El registro automático por invitación requiere un token de Firebase Auth válido o credenciales de servidor configuradas.',
       });
@@ -1569,6 +1571,7 @@ export async function handleRedeemInvite(
       }
       return res.status(503).json({
         success: false,
+        code: 'invite/service-unavailable',
         error:
           'El canje de invitaciones requiere un token de Firebase Auth válido o credenciales de servidor configuradas.',
       });
