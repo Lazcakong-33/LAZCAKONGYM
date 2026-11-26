@@ -21,6 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -40,21 +41,78 @@ jobs:
         run: |
           set -euo pipefail
           npx tsx --test src/server/__tests__/coachLocalRecovery701.test.ts src/server/__tests__/trainingCycleHome702.test.ts src/server/__tests__/stagingReleaseDiscovery.test.ts src/server/__tests__/coachGeneralGuidance705.test.ts src/server/__tests__/coachRequestBudget705.test.ts
-          npx jest --config '{"testEnvironment":"node","transform":{"^.+\\\\.(ts|tsx)$":"<rootDir>/app/applet/jest.transform.cjs"},"moduleFileExtensions":["ts","tsx","js","json"]}' --runInBand --runTestsByPath src/server/__tests__/recoveryBatchFixes.test.ts
+          NODE_OPTIONS=--experimental-vm-modules npx jest --config '{"testEnvironment":"node","extensionsToTreatAsEsm":[".ts",".tsx"],"transform":{"^.+\\\\.(ts|tsx)$":"<rootDir>/scripts/jest-esm-transform.cjs"},"moduleFileExtensions":["ts","tsx","js","json"]}' --runInBand --runTestsByPath src/server/__tests__/recoveryBatchFixes.test.ts
+      - name: Allocate next immutable staging version
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os, re, subprocess
+          tags = subprocess.check_output(['git','tag','--list','ota-staging-v7.0.*'],text=True).splitlines()
+          patches = [int(m[1]) for t in tags if (m:=re.fullmatch(r'ota-staging-v7\.0\.(\d+)',t))]
+          version = f'7.0.{max([5]+patches)+1}'
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write(f'OTA_VERSION={version}\nVITE_APP_VERSION={version}\n')
+          PY
       - name: Build candidate web assets
         env:
-          VITE_APP_VERSION: '7.0.6'
+          VITE_API_BASE_URL: https://lazcakongym.ai.studio
+          VITE_GOOGLE_WEB_CLIENT_ID: 13537846485-8j7931cki5gtlpq2eklsru35765sv3pq.apps.googleusercontent.com
           VITE_OTA_CHANNEL: staging
           VITE_OTA_PRODUCTION_ENABLED: 'false'
         run: npm run build
       - name: Package isolated staging candidate (not a release)
         run: |
           set -euo pipefail
-          npm run ota:package -- --version 7.0.6 --channel staging --min-native 70000 --notes "Invitation repair validation candidate; do not distribute"
-          unzip -tq dist-ota/lazcakongym-ota-7.0.6.zip
+          npm run ota:package -- --version "$OTA_VERSION" --channel staging --min-native 70000 --bundle-base-url "https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v$OTA_VERSION" --notes "AI Studio: validated staging candidate; production not activated."
+          unzip -tq "dist-ota/lazcakongym-ota-$OTA_VERSION.zip"
           (cd dist-ota && sha256sum -c SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
         with:
           name: invitation-staging-validation-only
           path: dist-ota/
           retention-days: 7
+  host:
+    needs: validate
+    if: github.ref == 'refs/heads/integration/aistudio-7.0.5-invites'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: invitation-staging-validation-only
+          path: verified
+      - name: Verify and host staging package without activating production
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd verified
+          sha256sum -c SHA256SUMS.txt
+          version="$(python -c 'import json; print(json.load(open("manifest.staging.json"))["version"])')"
+          [[ "$version" =~ ^7\.0\.[0-9]+$ ]]
+          tag="ota-staging-v$version"
+          zip="lazcakongym-ota-$version.zip"
+          unzip -tq "$zip"
+          python - <<'PY'
+          import json, zipfile, pathlib, hashlib
+          m=json.loads(pathlib.Path('manifest.staging.json').read_text())
+          p=pathlib.Path('lazcakongym-ota-'+m['version']+'.zip')
+          assert m['channel']=='staging' and m['minNativeVersionCode']==70000 and not m['requiresApkUpdate']
+          assert m['checksum']==hashlib.sha256(p.read_bytes()).hexdigest()
+          assert m['url']=='https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v'+m['version']+'/'+p.name
+          with zipfile.ZipFile(p) as z:
+              for f in z.namelist():
+                  parts=pathlib.PurePosixPath(f).parts
+                  assert not f.startswith('/') and '..' not in parts
+                  assert not any(x.startswith('.env') or x in ('google-services.json','serviceAccountKey.json') or x.endswith(('.pem','.keystore','.jks','.p12')) for x in parts), f
+          PY
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Version already exists; never overwrite another release."
+            exit 1
+          fi
+          printf 'Validated staging package. No channel activation.\n\n<!-- LAZCAKONG_STAGING_MANIFEST_BASE64:%s -->\n' "$(base64 -w0 manifest.staging.json)" > release-notes.txt
+          gh release create "$tag" "$zip" manifest.staging.json SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "LAZCAKONG GYM $version - staging" --notes-file release-notes.txt --prerelease --latest=false
+          mkdir downloaded
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern "$zip" --dir downloaded
+          cmp "downloaded/$zip" "$zip"
