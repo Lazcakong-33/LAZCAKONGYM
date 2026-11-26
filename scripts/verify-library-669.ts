@@ -5,8 +5,8 @@ import { EXERCISE_LIBRARY, resolveLibraryExercise, isObsoleteLibraryMedia, norma
 import { enrichExerciseWithLibrary, getEnrichedDefaultRoutines } from '../src/utils/enrichRoutines';
 import type { Exercise, Routine } from '../src/types';
 
-assert.equal(EXERCISE_LIBRARY.length, 725);
-assert.equal(new Set(EXERCISE_LIBRARY.map(ex => ex.sourceId)).size, 725);
+assert.equal(EXERCISE_LIBRARY.length, 755);
+assert.equal(new Set(EXERCISE_LIBRARY.map(ex => ex.sourceId)).size, 755);
 for (const ex of EXERCISE_LIBRARY) {
   assert.equal(resolveLibraryExercise({ sourceId: ex.sourceId })?.id, ex.id);
   for (const url of [ex.videoUrl, ex.thumbnailUrl]) {
@@ -42,4 +42,4 @@ const groups = new Map<string, string[]>();
 for (const ex of EXERCISE_LIBRARY) { const key = normalizeExerciseName(ex.name); groups.set(key, [...(groups.get(key) || []), ex.id]); }
 for (const [name, ids] of groups) if (ids.length > 1) assert.equal(resolveLibraryExercise(name), undefined, 'Nombres duplicados requieren ID');
 assert(isObsoleteLibraryMedia('https://api.' + 'smartworkout.app/asset/old'));
-console.log(JSON.stringify({ catalog:725, mediaFiles:1373, legacyIdsVerified:report.mapping.length, historyAndRoutineIdsPreserved:true, fuzzyMatchesDisabled:true, excludedLegacyRecordsPreserved:true }));
+console.log(JSON.stringify({ catalog:755, mediaFiles:1373, legacyIdsVerified:report.mapping.length, historyAndRoutineIdsPreserved:true, fuzzyMatchesDisabled:true, excludedLegacyRecordsPreserved:true }));

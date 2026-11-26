@@ -1,0 +1,680 @@
+[
+  {
+    "id": "8a5f062e-d671-536a-9318-0e29cf9ccb2b",
+    "sourceId": "8a5f062e-d671-536a-9318-0e29cf9ccb2b",
+    "name": "Remo unilateral en polea baja sentado en banco sin plataforma",
+    "muscleGroup": "Espalda",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Siéntate en un banco frente a la polea con los pies firmes en el suelo.",
+      "Tira hacia la cadera sin girar el tronco ni impulsarte con las piernas."
+    ]
+  },
+  {
+    "id": "c75855b4-1709-502d-91fd-f2be411d69a3",
+    "sourceId": "c75855b4-1709-502d-91fd-f2be411d69a3",
+    "name": "Remo unilateral en polea baja con pecho apoyado",
+    "muscleGroup": "Espalda",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Orienta un banco inclinado hacia la polea y apoya el pecho.",
+      "Lleva el codo hacia la cadera y vuelve sin despegar el pecho del banco."
+    ]
+  },
+  {
+    "id": "7d71fb99-d953-5676-b201-29a12e13b85b",
+    "sourceId": "7d71fb99-d953-5676-b201-29a12e13b85b",
+    "name": "Remo alto bilateral en polea con pecho apoyado",
+    "muscleGroup": "Espalda",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Sitúa el banco frente a dos poleas y apoya todo el pecho.",
+      "Lleva los codos hacia atrás y afuera, con las manos a la altura de las costillas altas."
+    ]
+  },
+  {
+    "id": "680e1854-3cc2-5383-880b-ae9ec44804a9",
+    "sourceId": "680e1854-3cc2-5383-880b-ae9ec44804a9",
+    "name": "Remo con dos kettlebells y pecho apoyado",
+    "muscleGroup": "Espalda",
+    "equipment": "Kettlebell",
+    "allEquipment": [
+      "Kettlebell",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Apoya el pecho en el banco con una pesa colgando de cada mano.",
+      "Lleva ambas pesas hacia las costillas y bájalas sin balancear el torso."
+    ]
+  },
+  {
+    "id": "26c408e6-bb8b-5d10-bf21-eec0c8beffb7",
+    "sourceId": "26c408e6-bb8b-5d10-bf21-eec0c8beffb7",
+    "name": "Remo con barra multigrip y agarre neutro",
+    "muscleGroup": "Espalda",
+    "equipment": "Barra multigrip",
+    "allEquipment": [
+      "Barra multigrip"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Inclina el torso desde las caderas y toma un par de asas neutras.",
+      "Acerca la barra al abdomen y bájala sin cambiar la inclinación del tronco."
+    ]
+  },
+  {
+    "id": "33ee4e5c-d541-57d0-9193-9f72f2ae0819",
+    "sourceId": "33ee4e5c-d541-57d0-9193-9f72f2ae0819",
+    "name": "Remo en landmine con apoyo de pecho y agarre ancho",
+    "muscleGroup": "Espalda",
+    "equipment": "Landmine",
+    "allEquipment": [
+      "Landmine",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Alinea un banco inclinado sobre la barra anclada y toma las asas anchas.",
+      "Tira hacia el pecho con los codos abiertos y baja sin despegar el torso."
+    ]
+  },
+  {
+    "id": "9aefcdee-82d8-5992-af32-eceb9c1aa242",
+    "sourceId": "9aefcdee-82d8-5992-af32-eceb9c1aa242",
+    "name": "Remo en landmine unilateral con rodilla apoyada en banco",
+    "muscleGroup": "Espalda",
+    "equipment": "Landmine",
+    "allEquipment": [
+      "Landmine",
+      "Banco"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Apoya la rodilla y la mano contrarias en un banco, junto al extremo libre de la barra.",
+      "Tira del extremo hacia la cadera y vuelve sin rotar la pelvis."
+    ]
+  },
+  {
+    "id": "b26eff01-da40-5c83-a103-3a749ad85d08",
+    "sourceId": "b26eff01-da40-5c83-a103-3a749ad85d08",
+    "name": "Remo con banda sentado y anclaje frontal",
+    "muscleGroup": "Espalda",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica",
+      "Banco"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Siéntate con los pies firmes y fija la banda al frente a la altura del abdomen.",
+      "Tira llevando ambos codos atrás y regresa sin inclinar el torso."
+    ]
+  },
+  {
+    "id": "8202aee1-5172-5a94-84f3-8eb316681e04",
+    "sourceId": "8202aee1-5172-5a94-84f3-8eb316681e04",
+    "name": "Remo unilateral con banda en posición de medio arrodillado",
+    "muscleGroup": "Espalda",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Ancla la banda frente al hombro activo y apoya una rodilla en el suelo.",
+      "Lleva el codo hacia las costillas y vuelve sin girar el tronco."
+    ]
+  },
+  {
+    "id": "206fe528-01f7-5275-9fe5-b4008d9cb97a",
+    "sourceId": "206fe528-01f7-5275-9fe5-b4008d9cb97a",
+    "name": "Remo en anillas con agarre giratorio",
+    "muscleGroup": "Espalda",
+    "equipment": "Anillas",
+    "allEquipment": [
+      "Anillas"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Cuélgate de las anillas con el cuerpo recto y agarre prono.",
+      "Tira del pecho hacia las anillas mientras giras las manos a neutro. Invierte el giro al bajar."
+    ]
+  },
+  {
+    "id": "b20e6875-39ac-5ab7-9b82-08d4adda4498",
+    "sourceId": "b20e6875-39ac-5ab7-9b82-08d4adda4498",
+    "name": "Remo invertido con rodillas flexionadas y pausa",
+    "muscleGroup": "Espalda",
+    "equipment": "Rack",
+    "allEquipment": [
+      "Rack"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Toma una barra fija, flexiona las rodillas y apoya toda la planta de los pies.",
+      "Sube el pecho hacia la barra, sostén un segundo y desciende en bloque."
+    ]
+  },
+  {
+    "id": "ae9e27d7-adbb-51e3-941e-a786f1659851",
+    "sourceId": "ae9e27d7-adbb-51e3-941e-a786f1659851",
+    "name": "Remo invertido unilateral con ayuda de correa",
+    "muscleGroup": "Espalda",
+    "equipment": "Rack",
+    "allEquipment": [
+      "Rack",
+      "Correa de suspensión"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho y trapecio medio"
+    ],
+    "shortInstructions": [
+      "Toma la barra con una mano y una correa colgada con la otra.",
+      "Tira principalmente con el brazo de la barra y usa la correa solo para asistir y estabilizar."
+    ]
+  },
+  {
+    "id": "2272c050-e1c5-5637-bc94-f57379012432",
+    "sourceId": "2272c050-e1c5-5637-bc94-f57379012432",
+    "name": "Jalón unilateral en polea sentado de lado",
+    "muscleGroup": "Espalda",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho"
+    ],
+    "shortInstructions": [
+      "Siéntate de lado debajo de una polea alta y toma el agarre con la mano más cercana.",
+      "Baja el codo hacia tu costado sin inclinarte y vuelve a extender el brazo con control."
+    ]
+  },
+  {
+    "id": "7be45147-4a5b-55a9-889e-6993fdf28875",
+    "sourceId": "7be45147-4a5b-55a9-889e-6993fdf28875",
+    "name": "Jalón dorsal con dos bandas en posición de rodillas",
+    "muscleGroup": "Espalda",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho"
+    ],
+    "shortInstructions": [
+      "Ancla dos bandas arriba, apoya ambas rodillas y toma un extremo con cada mano.",
+      "Baja los codos hacia los costados y estira los brazos sin perder el control."
+    ]
+  },
+  {
+    "id": "ec1a01c0-a695-5a8a-a4ed-56f1858a7e83",
+    "sourceId": "ec1a01c0-a695-5a8a-a4ed-56f1858a7e83",
+    "name": "Jalón con brazos rectos en polea y pecho apoyado",
+    "muscleGroup": "Espalda",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho"
+    ],
+    "shortInstructions": [
+      "Coloca un banco inclinado frente a una polea alta y apoya el pecho.",
+      "Mantén los codos levemente doblados y lleva el agarre hacia los muslos en un arco."
+    ]
+  },
+  {
+    "id": "cd16d813-b3d1-5151-a05a-c53903725ed8",
+    "sourceId": "cd16d813-b3d1-5151-a05a-c53903725ed8",
+    "name": "Jalón con brazos rectos con banda unilateral",
+    "muscleGroup": "Espalda",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho"
+    ],
+    "shortInstructions": [
+      "Fija la banda arriba, toma un extremo y adelanta un pie.",
+      "Lleva la mano hacia la cadera manteniendo casi fijo el codo. Regresa sin girar el torso."
+    ]
+  },
+  {
+    "id": "8409c79d-405c-5a3a-8eb8-834e8113f56f",
+    "sourceId": "8409c79d-405c-5a3a-8eb8-834e8113f56f",
+    "name": "Dominada neutra asistida con un pie sobre cajón",
+    "muscleGroup": "Espalda",
+    "equipment": "Barra de dominadas",
+    "allEquipment": [
+      "Barra de dominadas",
+      "Cajón"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho"
+    ],
+    "shortInstructions": [
+      "Toma las asas neutras y apoya un pie en un cajón estable.",
+      "Tira hacia arriba y aporta solo la ayuda necesaria con la pierna. Baja lentamente."
+    ]
+  },
+  {
+    "id": "517a06f5-9b16-56ab-aaba-f3ee000cac62",
+    "sourceId": "517a06f5-9b16-56ab-aaba-f3ee000cac62",
+    "name": "Dominada en anillas con pausa en la mitad",
+    "muscleGroup": "Espalda",
+    "equipment": "Anillas",
+    "allEquipment": [
+      "Anillas"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Dorsal ancho"
+    ],
+    "shortInstructions": [
+      "Cuélgate de las anillas con brazos extendidos y manos en posición neutra.",
+      "Sube hasta media altura, sostén un segundo, completa la dominada y baja controladamente."
+    ]
+  },
+  {
+    "id": "dc004f72-8c88-5fe1-91f0-b6e1a2667b27",
+    "sourceId": "dc004f72-8c88-5fe1-91f0-b6e1a2667b27",
+    "name": "Depresión escapular en polea alta sentado",
+    "muscleGroup": "Espalda",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Trapecio inferior"
+    ],
+    "shortInstructions": [
+      "Siéntate bajo una polea alta y toma el agarre con los codos extendidos.",
+      "Baja los hombros unos centímetros sin doblar los codos y deja que vuelvan a subir con control."
+    ]
+  },
+  {
+    "id": "1ec41eed-930f-5c9a-9422-c2801d4edf17",
+    "sourceId": "1ec41eed-930f-5c9a-9422-c2801d4edf17",
+    "name": "Curl con barra multigrip y agarre neutro",
+    "muscleGroup": "Bíceps",
+    "equipment": "Barra multigrip",
+    "allEquipment": [
+      "Barra multigrip"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Toma las asas neutras y mantén los codos cerca de las costillas.",
+      "Eleva la barra doblando los codos y baja sin llevarlos hacia delante."
+    ]
+  },
+  {
+    "id": "403bd3b8-2eb0-5a7b-86d4-71e8148743bd",
+    "sourceId": "403bd3b8-2eb0-5a7b-86d4-71e8148743bd",
+    "name": "Curl inclinado con mancuerna alternado con pausa superior",
+    "muscleGroup": "Bíceps",
+    "equipment": "Mancuerna",
+    "allEquipment": [
+      "Mancuerna",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Apoya la espalda en el banco y deja caer ambos brazos a los lados.",
+      "Eleva una mancuerna, mantén un segundo arriba y bájala antes de cambiar de brazo."
+    ]
+  },
+  {
+    "id": "8e8fe3f6-174c-5e66-82c6-431d5889b7a7",
+    "sourceId": "8e8fe3f6-174c-5e66-82c6-431d5889b7a7",
+    "name": "Curl martillo con banda anclada abajo unilateral",
+    "muscleGroup": "Bíceps",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Fija la banda abajo y toma el extremo con el pulgar apuntando hacia arriba.",
+      "Flexiona el codo sin girar la muñeca ni mover el hombro. Regresa manteniendo tensión."
+    ]
+  },
+  {
+    "id": "6daedb87-8fad-59d5-a875-60add2ec03bc",
+    "sourceId": "6daedb87-8fad-59d5-a875-60add2ec03bc",
+    "name": "Curl araña unilateral en polea baja",
+    "muscleGroup": "Bíceps",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco inclinado"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Apoya el pecho en un banco orientado hacia la polea y toma el agarre con una mano.",
+      "Flexiona el codo sin apoyar el brazo superior en el banco y desciende despacio."
+    ]
+  },
+  {
+    "id": "2e62d650-0481-5736-9a13-ec9948a9870d",
+    "sourceId": "2e62d650-0481-5736-9a13-ec9948a9870d",
+    "name": "Curl unilateral en banco predicador con banda",
+    "muscleGroup": "Bíceps",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica",
+      "Banco predicador"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Ancla la banda abajo y apoya el brazo superior sobre el banco.",
+      "Eleva la mano sin despegar el brazo del apoyo y vuelve sin bloquear el codo."
+    ]
+  },
+  {
+    "id": "8273a2ab-2f21-5387-a2fd-930c73c5a4bd",
+    "sourceId": "8273a2ab-2f21-5387-a2fd-930c73c5a4bd",
+    "name": "Curl predicador con kettlebell y agarre en cuerno",
+    "muscleGroup": "Bíceps",
+    "equipment": "Kettlebell",
+    "allEquipment": [
+      "Kettlebell",
+      "Banco predicador"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Apoya un brazo en el banco y sujeta un lateral del asa de la pesa.",
+      "Flexiona el codo manteniendo la muñeca neutra y baja con control."
+    ]
+  },
+  {
+    "id": "b9ca1862-3798-546e-8a47-518dc1a0385b",
+    "sourceId": "b9ca1862-3798-546e-8a47-518dc1a0385b",
+    "name": "Curl de concentración con banda sentado",
+    "muscleGroup": "Bíceps",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica",
+      "Banco"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Pisa un extremo de la banda y apoya el codo en la cara interna del muslo.",
+      "Acerca la mano al hombro sin mover la pierna ni despegar el codo."
+    ]
+  },
+  {
+    "id": "34792b99-81a1-516b-bf9a-2b28f692ee94",
+    "sourceId": "34792b99-81a1-516b-bf9a-2b28f692ee94",
+    "name": "Curl bayesiano con banda en paso dividido",
+    "muscleGroup": "Bíceps",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Ancla la banda abajo detrás del cuerpo y adelanta un pie con el brazo ligeramente retrasado.",
+      "Dobla el codo sin adelantar el hombro y regresa hasta sentir tensión moderada."
+    ]
+  },
+  {
+    "id": "7ebb24da-726d-5c68-89b6-2fbf44a8804d",
+    "sourceId": "7ebb24da-726d-5c68-89b6-2fbf44a8804d",
+    "name": "Curl inverso unilateral en polea con brazo apoyado",
+    "muscleGroup": "Bíceps",
+    "equipment": "Polea",
+    "allEquipment": [
+      "Polea",
+      "Banco predicador"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Apoya el brazo superior y toma un agarre de polea baja con la palma hacia abajo.",
+      "Flexiona el codo manteniendo recta la muñeca y vuelve sin extenderlo de golpe."
+    ]
+  },
+  {
+    "id": "c7bd4100-3a26-5576-9611-a05a69b3b219",
+    "sourceId": "c7bd4100-3a26-5576-9611-a05a69b3b219",
+    "name": "Curl corporal en anillas con rodillas flexionadas",
+    "muscleGroup": "Bíceps",
+    "equipment": "Anillas",
+    "allEquipment": [
+      "Anillas"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Agarra las anillas con palmas hacia ti y apoya los pies con las rodillas dobladas.",
+      "Acerca las manos a la frente flexionando los codos y regresa sin encoger los hombros."
+    ]
+  },
+  {
+    "id": "584a0179-3ddd-5ff5-9ecd-fced9b4247b9",
+    "sourceId": "584a0179-3ddd-5ff5-9ecd-fced9b4247b9",
+    "name": "Curl supino unilateral isométrico a media altura con banda",
+    "muscleGroup": "Bíceps",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "url": "",
+    "videoUrl": null,
+    "thumbnailUrl": null,
+    "visualResourceStatus": "pending_resource",
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "Bíceps braquial"
+    ],
+    "shortInstructions": [
+      "Pisa la banda y eleva la mano hasta dejar el codo cerca de 90 grados.",
+      "Mantén la tensión sin mover el hombro ni girar la muñeca. Baja para terminar la repetición."
+    ]
+  }
+]
