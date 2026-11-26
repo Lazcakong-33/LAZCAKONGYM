@@ -262,7 +262,7 @@ async function main() {
     assert.equal(summary.weekDays.find((d) => d.dateKey === '2026-11-20')?.calories, 0);
   });
 
-  await runCase('6. evaluateWeeklyDaysCompletion y dailyCaloriesController respetan día real de ejecución en Chile', () => {
+  await runCase('6. evaluateWeeklyDaysCompletion marca la rutina ejecutada (Viernes) mientras dailyCaloriesController asigna calorías al Jueves real en Chile', () => {
     const routines: Routine[] = [
       { id: 'routine-viernes-id', dayName: 'Viernes', title: 'Viernes', tagline: 'Pierna', exercises: [] },
     ];
@@ -272,9 +272,11 @@ async function main() {
       new Date('2026-11-20T00:45:00.000Z')
     );
     assert.equal(completion.byDayName['Jueves'].isToday, true);
-    assert.equal(completion.byDayName['Jueves'].isCompleted, true);
+    assert.equal(completion.byDayName['Jueves'].isCompleted, false);
     assert.equal(completion.byDayName['Viernes'].isToday, false);
-    assert.equal(completion.byDayName['Viernes'].isCompleted, false);
+    assert.equal(completion.byDayName['Viernes'].isCompleted, true);
+    assert.equal(completion.byDayName['Viernes'].executedDateKey, '2026-11-19');
+    assert.equal(completion.completedRoutineIds.has('routine-viernes-id'), true);
 
     const serverReport = buildDailyCaloriesReport({
       athlete: { id: 'test-kmilo', weightKg: 95 },
@@ -337,16 +339,18 @@ async function main() {
     assert.equal(summary.weeklyTotalCalories, 1798);
     assert.equal(summary.weeklyWorkoutsCount, 2);
 
-    // Calendario semanal
+    // Calendario semanal: marca las rutinas realmente ejecutadas (Lunes y Viernes), NO Miércoles ni Jueves
     const routines: Routine[] = [
       { id: 'routine-lunes-id', dayName: 'Lunes', title: 'Lunes: Empuje', tagline: 'Pecho', exercises: [] },
       { id: 'routine-viernes-id', dayName: 'Viernes', title: 'Viernes', tagline: 'Pierna', exercises: [] },
     ];
     const completion = evaluateWeeklyDaysCompletion(sanitized.cleanedHistory, routines, refThuNight);
-    assert.equal(completion.byDayName['Lunes'].isCompleted, false);
-    assert.equal(completion.byDayName['Miércoles'].isCompleted, true);
-    assert.equal(completion.byDayName['Jueves'].isCompleted, true);
-    assert.equal(completion.byDayName['Viernes'].isCompleted, false);
+    assert.equal(completion.byDayName['Lunes'].isCompleted, true);
+    assert.equal(completion.byDayName['Lunes'].executedDateKey, '2026-11-18');
+    assert.equal(completion.byDayName['Miércoles'].isCompleted, false);
+    assert.equal(completion.byDayName['Jueves'].isCompleted, false);
+    assert.equal(completion.byDayName['Viernes'].isCompleted, true);
+    assert.equal(completion.byDayName['Viernes'].executedDateKey, '2026-11-19');
 
     // Progreso (Elite Performance Analytics & WeeklyCycleManager)
     const prs: Record<string, PersonalRecord> = {

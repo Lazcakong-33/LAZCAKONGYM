@@ -1,16 +1,16 @@
 name: Validate AI Studio invitation integration
 on:
   push:
-    branches: ['integration/aistudio-7.0.5-invites']
+    branches: ['integration/aistudio-7.0.6-rutinas']
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: aistudio-invites-validation
+  group: aistudio-rutinas-validation
   cancel-in-progress: true
 jobs:
   validate:
-    if: github.ref == 'refs/heads/integration/aistudio-7.0.5-invites'
+    if: github.ref == 'refs/heads/integration/aistudio-7.0.6-rutinas'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -41,6 +41,8 @@ jobs:
         run: |
           set -euo pipefail
           npx tsx --test src/server/__tests__/coachLocalRecovery701.test.ts src/server/__tests__/trainingCycleHome702.test.ts src/server/__tests__/stagingReleaseDiscovery.test.ts src/server/__tests__/coachGeneralGuidance705.test.ts src/server/__tests__/coachRequestBudget705.test.ts
+          npx tsx src/server/__tests__/chileTimezoneCaloriesSuite.ts
+          npx tsx src/server/__tests__/routineCompletionRegressionSuite.ts
           NODE_OPTIONS=--experimental-vm-modules npx jest --config '{"testEnvironment":"node","extensionsToTreatAsEsm":[".ts",".tsx"],"transform":{"^.+\\\\.(ts|tsx)$":"<rootDir>/scripts/jest-esm-transform.cjs"},"moduleFileExtensions":["ts","tsx","js","json"]}' --runInBand --runTestsByPath src/server/__tests__/recoveryBatchFixes.test.ts
       - name: Allocate next immutable staging version
         run: |
@@ -73,7 +75,7 @@ jobs:
           retention-days: 7
   host:
     needs: validate
-    if: github.ref == 'refs/heads/integration/aistudio-7.0.5-invites'
+    if: github.ref == 'refs/heads/integration/aistudio-7.0.6-rutinas'
     runs-on: ubuntu-latest
     permissions:
       contents: write

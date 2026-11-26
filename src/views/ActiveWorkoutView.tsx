@@ -93,6 +93,10 @@ import {
   getChileWeekdayIndex,
   getChileWeekdayName,
 } from '../utils/calorieCalculator';
+import {
+  evaluateWeeklyRoutineCompliance,
+  resolveCanonicalWeekdayStrict,
+} from '../utils/routineCompletionEngine';
 import { buildRestCompleteNotificationBody } from '../utils/backgroundTimer';
 import {
   getNativeRestTimerCapabilities,
@@ -820,20 +824,31 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
     return scored.slice(0, 60);
   }, [manualSwapTarget, manualSwapSearch, swapMuscleFilter, swapEquipmentFilter]);
 
-  // Evaluate which routines were completed during the current week (Monday -> Sunday)
-  const completedRoutineIdsThisWeek = useMemo(() => {
-    const monday = getMondayOfCurrentWeek();
-    const mondayMs = monday.getTime();
-    const doneSet = new Set<string>();
-    history.forEach((w) => {
-      const wTime = w.startTime || new Date(w.date).getTime();
-      if (wTime >= mondayMs) {
-        if (w.routineId) doneSet.add(w.routineId);
-        if (w.routineTitle) doneSet.add(normalizeTextSimple(w.routineTitle));
-      }
-    });
-    return doneSet;
-  }, [history]);
+  // Evaluate which routines were completed during the current week (Monday -> Sunday in America/Santiago)
+  const weeklyCompliance = useMemo(
+    () =>
+      evaluateWeeklyRoutineCompliance(history, routines, new Date(), {
+        profileId: activeProfile?.id,
+      }),
+    [history, routines, activeProfile?.id]
+  );
+
+  const isRoutineCompletedThisWeek = (routine: Routine | null | undefined): boolean => {
+    if (!routine) return false;
+    if (weeklyCompliance.completedRoutineIds.has(routine.id)) return true;
+    const schedDay = resolveCanonicalWeekdayStrict(routine.dayName || routine.title);
+    if (schedDay && weeklyCompliance.completedByScheduledDay[schedDay]?.isCompleted) {
+      // Si existen múltiples rutinas para el mismo día, priorizar coincidencia por ID si hay alguna registrada con ID explícito
+      const entry = weeklyCompliance.completedByScheduledDay[schedDay];
+      if (entry.routineIds.length === 0) return true;
+      const sameDayRoutines = routines.filter(
+        (r) => resolveCanonicalWeekdayStrict(r.dayName || r.title) === schedDay
+      );
+      if (sameDayRoutines.length <= 1) return true;
+      return entry.routineIds.includes(routine.id);
+    }
+    return false;
+  };
 
   const formatDuration = (sec: number) => {
     const hrs = Math.floor(sec / 3600);
@@ -962,10 +977,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                   </span>
                 </div>
 
-                {(completedRoutineIdsThisWeek.has(activePreRoutine.id) ||
-                  completedRoutineIdsThisWeek.has(
-                    normalizeTextSimple(activePreRoutine.title)
-                  )) && (
+                {isRoutineCompletedThisWeek(activePreRoutine) && (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-accent-text">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Completada esta semana</span>
@@ -1653,9 +1665,7 @@ export const ActiveWorkoutView: React.FC<ActiveWorkoutViewProps> = ({
                 routine.dayName || routine.title,
                 todayWeekdayName
               );
-              const isCompletedThisWeek =
-                completedRoutineIdsThisWeek.has(routine.id) ||
-                completedRoutineIdsThisWeek.has(normalizeTextSimple(routine.title));
+              const isCompletedThisWeek = isRoutineCompletedThisWeek(routine);
               const exCount = routine.exercises.length;
               const setsCount = routine.exercises.reduce(
                 (acc, ex) => acc + (Number(ex.defaultSets) || 3),

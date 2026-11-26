@@ -12,9 +12,13 @@ import {
 } from 'lucide-react';
 import { Routine, CompletedWorkout } from '../types';
 import { isSameWeekday } from '../utils/workoutAnalyticsEngine';
-import { formatDateKeyYYYYMMDD, formatDisplayDateDDMMYYYY } from '../utils/exportReport';
-import { getChileLocalDateKey, getChileWeekdayIndex, resolveWorkoutChileDateKey } from '../utils/calorieCalculator';
+import { formatDisplayDateDDMMYYYY } from '../utils/exportReport';
+import { getChileLocalDateKey, getChileWeekdayIndex } from '../utils/calorieCalculator';
 import { purgeAndSanitizeWorkoutHistory } from '../utils/historySanitizer';
+import {
+  evaluateWeeklyRoutineCompliance,
+  type CanonicalWeekday,
+} from '../utils/routineCompletionEngine';
 
 interface WeeklyCalendarViewProps {
   routines: Routine[];
@@ -74,16 +78,9 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
     const now = new Date();
     const monday = getMondayOfWeek(now, weekOffset);
 
-    // Indexar historial deduplicado por fecha Chile YYYY-MM-DD para cruce exacto en semanas pasadas y actual
+    // Evaluar cumplimiento semanal estricto por routineId y scheduledDay dentro del ciclo Lunes-Domingo Chile
     const sanitized = purgeAndSanitizeWorkoutHistory(Array.isArray(history) ? history : []).cleanedHistory;
-    const workoutsByDateKey = new Map<string, CompletedWorkout[]>();
-    sanitized.forEach((workout) => {
-      const key = resolveWorkoutChileDateKey(workout) || formatDateKeyYYYYMMDD(workout.date);
-      if (!key) return;
-      const list = workoutsByDateKey.get(key) || [];
-      list.push(workout);
-      workoutsByDateKey.set(key, list);
-    });
+    const compliance = evaluateWeeklyRoutineCompliance(sanitized, routines, now, { weekOffset });
 
     const days = ORDERED_WEEKDAYS.map((wd, idx) => {
       const cellDate = new Date(monday);
@@ -102,16 +99,32 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
             r.exercises.length > 0
         ) || null;
 
-      // Entrenamientos ejecutados en esa fecha específica del calendario
-      const completedInDate = workoutsByDateKey.get(dateKey) || [];
-      const isCompleted = completedInDate.length > 0;
+      const isRestDay = !assignedRoutine;
+      const scheduledCompliance = compliance.completedByScheduledDay[wd.name as CanonicalWeekday];
+      const extraUnscheduledWorkouts = compliance.unscheduledWorkoutsByDateKey[dateKey] || [];
+
+      // Si el día tiene rutina programada, se marca SOLO si se ejecutó esa rutina (routineId / scheduledDay).
+      // Si es día de descanso, solo se marca si hubo una sesión libre/no programada en esa fecha real.
+      const matchedWorkouts = isRestDay
+        ? extraUnscheduledWorkouts
+        : scheduledCompliance?.workouts || [];
+      const isCompleted = isRestDay
+        ? extraUnscheduledWorkouts.length > 0
+        : Boolean(
+            (assignedRoutine && compliance.completedRoutineIds.has(assignedRoutine.id)) ||
+              scheduledCompliance?.isCompleted
+          );
+      const executedDateKey = isRestDay
+        ? extraUnscheduledWorkouts.length > 0
+          ? dateKey
+          : null
+        : scheduledCompliance?.lastExecutedDateKey || null;
       const isToday = dateKey === todayDateKey;
       const isPastDate = dateKey < todayDateKey;
       const isFutureDate = dateKey > todayDateKey;
-      const isRestDay = !assignedRoutine;
 
-      // Volumen total ejecutado si hubo sesión en esa fecha
-      const executedVolumeKg = completedInDate.reduce((acc, w) => {
+      // Volumen total ejecutado en la rutina correspondiente
+      const executedVolumeKg = matchedWorkouts.reduce((acc, w) => {
         if (typeof w.totalVolumeKg === 'number' && w.totalVolumeKg > 0) {
           return acc + w.totalVolumeKg;
         }
@@ -146,7 +159,8 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
         dayNumber,
         monthNameShort,
         assignedRoutine,
-        completedWorkouts: completedInDate,
+        completedWorkouts: matchedWorkouts,
+        executedDateKey,
         isCompleted,
         isToday,
         isPastDate,
@@ -395,7 +409,11 @@ export const WeeklyCalendarView: React.FC<WeeklyCalendarViewProps> = ({
                 {day.isCompleted ? (
                   <span className="inline-flex items-center gap-1 font-bold text-emerald-400 truncate">
                     <CheckCircle2 className="w-3 h-3 shrink-0" />
-                    <span>Hecha</span>
+                    <span>
+                      {day.executedDateKey && day.executedDateKey !== day.dateKey
+                        ? `Hecha ${formatDisplayDateDDMMYYYY(day.executedDateKey).slice(0, 5)}`
+                        : 'Hecha'}
+                    </span>
                   </span>
                 ) : day.isRestDay ? (
                   <span className="text-slate-500 font-medium truncate">Día libre</span>

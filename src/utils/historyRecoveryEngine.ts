@@ -1165,11 +1165,33 @@ export function normalizeHistoricalWorkoutRecord(
   const stableId = String(rawItem.id || '').trim() ||
     `recovered-${chileDateKey}-${normalizeText(routineTitle).replace(/\s+/g, '-')}-${fallbackIndex}`;
 
+  const startedAt =
+    typeof rawItem.startedAt === 'string' && rawItem.startedAt.trim()
+      ? rawItem.startedAt.trim()
+      : new Date(startTime).toISOString();
+  const completedAt =
+    typeof rawItem.completedAt === 'string' && rawItem.completedAt.trim()
+      ? rawItem.completedAt.trim()
+      : new Date(endTime).toISOString();
+  const executionDateKey =
+    typeof rawItem.executionDateKey === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawItem.executionDateKey.trim())
+      ? rawItem.executionDateKey.trim()
+      : chileDateKey;
+
   return {
     ...rawItem,
     id: stableId,
     routineId: String(rawItem.routineId || 'rutina-historica'),
     routineTitle,
+    ...(typeof rawItem.scheduledDay === 'string' && rawItem.scheduledDay.trim()
+      ? { scheduledDay: rawItem.scheduledDay.trim() }
+      : {}),
+    startedAt,
+    completedAt,
+    executionDateKey,
+    ...(typeof rawItem.weekId === 'string' && rawItem.weekId.trim()
+      ? { weekId: rawItem.weekId.trim() }
+      : {}),
     date: rawItem.date || new Date(parsedDateMs).toISOString(),
     startTime,
     endTime,
@@ -1281,7 +1303,25 @@ export function reconcileAndUnifyAthleteHistory(
           fingerprint: fp,
           score,
         });
-      } else if (existing.fingerprint !== fp) {
+      } else if (existing.fingerprint === fp) {
+        // Merge non-destructive routine attribution metadata across APK/Web sources when content is identical
+        const mergedMetadata: CompletedWorkout = {
+          ...existing.workout,
+          scheduledDay: existing.workout.scheduledDay || normalized.scheduledDay,
+          startedAt: existing.workout.startedAt || normalized.startedAt,
+          completedAt: existing.workout.completedAt || normalized.completedAt,
+          executionDateKey: existing.workout.executionDateKey || normalized.executionDateKey,
+          weekId: existing.workout.weekId || normalized.weekId,
+          routineId:
+            existing.workout.routineId && existing.workout.routineId !== 'rutina-historica'
+              ? existing.workout.routineId
+              : normalized.routineId,
+        };
+        byId.set(normalized.id, {
+          ...existing,
+          workout: mergedMetadata,
+        });
+      } else {
         const keepNew = score > existing.score ||
           (score === existing.score && (normalized.endTime || 0) > (existing.workout.endTime || 0));
 
@@ -1316,14 +1356,20 @@ export function reconcileAndUnifyAthleteHistory(
           });
         }
 
-        if (keepNew) {
-          byId.set(normalized.id, {
-            workout: normalized,
-            sourceLabel: src.sourceLabel,
-            fingerprint: fp,
-            score,
-          });
-        }
+        const mergedWinner: CompletedWorkout = {
+          ...winner,
+          scheduledDay: winner.scheduledDay || loser.scheduledDay,
+          startedAt: winner.startedAt || loser.startedAt,
+          completedAt: winner.completedAt || loser.completedAt,
+          executionDateKey: winner.executionDateKey || loser.executionDateKey,
+          weekId: winner.weekId || loser.weekId,
+        };
+        byId.set(normalized.id, {
+          workout: mergedWinner,
+          sourceLabel: winnerSource,
+          fingerprint: keepNew ? fp : existing.fingerprint,
+          score: Math.max(score, existing.score),
+        });
       }
     }
 

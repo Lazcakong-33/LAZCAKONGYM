@@ -173,6 +173,10 @@ export interface ActiveWorkoutSession {
   sessionId?: string;
   routineId: string;
   routineTitle: string;
+  /** Día programado canónico de la rutina (ej. 'Miércoles', 'Viernes'), independiente de la fecha real de ejecución */
+  scheduledDay?: string;
+  /** Marca de tiempo ISO-8601 real de inicio del entrenamiento */
+  startedAt?: string;
   startTime: number;
   updatedAt?: number;
   isPaused?: boolean;
@@ -186,6 +190,16 @@ export interface CompletedWorkout {
   profileId?: string;
   routineId: string;
   routineTitle: string;
+  /** Día programado canónico de la rutina ejecutada (ej. 'Miércoles'), estrictamente separado de la fecha real de ejecución */
+  scheduledDay?: string;
+  /** Marca de tiempo ISO-8601 real de inicio del entrenamiento */
+  startedAt?: string;
+  /** Marca de tiempo ISO-8601 real de finalización del entrenamiento */
+  completedAt?: string;
+  /** Fecha calendario local real de ejecución en America/Santiago ('YYYY-MM-DD') */
+  executionDateKey?: string;
+  /** Identificador de ciclo semanal ISO en America/Santiago (ej. '2026-W48') */
+  weekId?: string;
   date: string;
   startTime: number;
   endTime: number;

@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { resolveCanonicalExerciseIdentity } from './historyRecoveryEngine';
 import { getChileLocalDateKey, getChileWeekdayName, getChileWeekdayIndex, resolveWorkoutChileDateKey } from './calorieCalculator';
+import { evaluateWeeklyRoutineCompliance, resolveCanonicalWeekdayStrict, type CanonicalWeekday } from './routineCompletionEngine';
 
 export interface ComparativeExerciseRow {
   name: string;
@@ -189,7 +190,10 @@ export interface WeekdayCompletionStatus {
   dayIndex: number; // 0 = Dom, 1 = Lun, ..., 6 = Sáb
   shortLabel: string; // 'Dom' | 'Lun' | 'Mar' | 'Mié' | 'Jue' | 'Vie' | 'Sáb'
   dayName: string; // 'Domingo' | 'Lunes' | ...
-  dateKey: string; // 'YYYY-MM-DD'
+  dateKey: string; // Fecha real de ejecución ('YYYY-MM-DD') si se completó, o fecha calendario del día programado
+  slotDateKey?: string; // Fecha calendario del día de la semana en el ciclo actual ('YYYY-MM-DD')
+  executedDateKey?: string | null; // Fecha calendario real en Chile en la que se ejecutó la rutina ('YYYY-MM-DD')
+  completedRoutineIds?: string[]; // IDs de rutinas completadas para este día programado en la semana
   displayDate: string; // 'DD-MM-YYYY'
   isToday: boolean;
   isCompleted: boolean;
@@ -197,94 +201,54 @@ export interface WeekdayCompletionStatus {
   statusLabel: string;
 }
 
-const WEEKDAY_FULL_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as const;
+const WEEKDAY_FULL_NAMES: readonly CanonicalWeekday[] = [
+  'Domingo',
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
+] as const;
 const WEEKDAY_SHORT_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as const;
 
 /**
- * Evalúa en tiempo real el estado de cada día de la semana en curso (Dom, Lun, Mar, Mié, Jue, Vie, Sáb)
- * cruzando la fecha exacta del día con el historial de entrenamientos finalizados (Log de Entrenamientos).
+ * Evalúa en tiempo real qué rutinas programadas de la semana en curso (Lunes -> Domingo en America/Santiago)
+ * han sido completadas, identificándolas estrictamente por `routineId` y `scheduledDay` (día programado),
+ * NUNCA por la fecha/día calendario en que se ejecutó la sesión.
+ *
+ * Ejemplo: Si el Jueves 26 de noviembre se ejecuta la rutina del Miércoles,
+ * se marca como completado "Miércoles" (con `executedDateKey: '2026-11-26'`),
+ * mientras "Jueves" permanece pendiente hasta que se ejecute la rutina del Jueves.
  */
 export function evaluateWeeklyDaysCompletion(
   history: CompletedWorkout[] = [],
   routines: Routine[] = [],
-  referenceDate: Date = new Date()
+  referenceDate: Date = new Date(),
+  options?: { profileId?: string; weekOffset?: number }
 ): {
   days: WeekdayCompletionStatus[];
   byDayName: Record<string, WeekdayCompletionStatus>;
+  completedRoutineIds: Set<string>;
+  weekId: string;
+  mondayDateKey: string;
+  sundayDateKey: string;
 } {
-  const safeHistory = Array.isArray(history) ? history : [];
-  const safeRoutines = Array.isArray(routines) ? routines : [];
-
-  const todayDateKey = getChileLocalDateKey(referenceDate);
-  const todayIndex = getChileWeekdayIndex(todayDateKey);
-  const [tY, tM, tD] = todayDateKey.split('-').map(Number);
-  const noonUtc = new Date(Date.UTC(tY || 2026, (tM || 11) - 1, tD || 19, 12, 0, 0));
-
-  // Calcular inicio y fin de la semana actual en Chile (Lunes -> Domingo)
-  const diffToMonday = todayIndex === 0 ? -6 : 1 - todayIndex;
-  const mondayUtc = new Date(noonUtc);
-  mondayUtc.setUTCDate(noonUtc.getUTCDate() + diffToMonday);
-  const sundayUtc = new Date(mondayUtc);
-  sundayUtc.setUTCDate(mondayUtc.getUTCDate() + 6);
-
-  const mondayDateKey = mondayUtc.toISOString().slice(0, 10);
-  const sundayDateKey = sundayUtc.toISOString().slice(0, 10);
-
-  // Mapa de routineId -> nombre canónico de día
-  const routineIdToDay = new Map<string, string>();
-  safeRoutines.forEach((r) => {
-    if (r && r.id) {
-      routineIdToDay.set(r.id, resolveCanonicalWeekday(r.dayName || r.title));
-    }
-  });
-
-  // Cada entrenamiento finalizado en la semana actual cuenta exactamente una vez
-  const completedDatesSet = new Set<string>();
-  const completedWeekdayDates = new Map<string, string>();
-  const claimedExecutionDates = new Set<string>();
-
-  safeHistory.forEach((w) => {
-    if (!w || w.isFinished === false) return;
-    const hasCompletedWork =
-      (typeof w.completedSetsCount === 'number' && w.completedSetsCount > 0) ||
-      (Array.isArray(w.exercisesSummary) && w.exercisesSummary.length > 0) ||
-      (typeof w.totalVolumeKg === 'number' && w.totalVolumeKg > 0);
-    if (!hasCompletedWork) return;
-
-    const wDateKey = resolveWorkoutChileDateKey(w) || formatDateKeyYYYYMMDD(w.date);
-    if (!wDateKey) return;
-
-    if (wDateKey >= mondayDateKey && wDateKey <= sundayDateKey) {
-      completedDatesSet.add(wDateKey);
-      // El día completado de la semana se determina por la fecha real de ejecución (Chile),
-      // no por el nombre programado de la rutina (ej. rutina "Viernes" hecha el Jueves)
-      const executionWeekday = getChileWeekdayName(wDateKey);
-      const prev = completedWeekdayDates.get(executionWeekday);
-      if (!prev || wDateKey >= prev) {
-        completedWeekdayDates.set(executionWeekday, wDateKey);
-      }
-      claimedExecutionDates.add(wDateKey);
-    }
-  });
-
+  const compliance = evaluateWeeklyRoutineCompliance(history, routines, referenceDate, options);
   const byDayName: Record<string, WeekdayCompletionStatus> = {};
 
   const days: WeekdayCompletionStatus[] = WEEKDAY_SHORT_LABELS.map((shortLabel, idx) => {
     const dayName = WEEKDAY_FULL_NAMES[idx];
     const mondayOffset = idx === 0 ? 6 : idx - 1;
-    const slotDate = new Date(mondayUtc);
-    slotDate.setUTCDate(mondayUtc.getUTCDate() + mondayOffset);
+    const slotDate = new Date(compliance.mondayUtc);
+    slotDate.setUTCDate(compliance.mondayUtc.getUTCDate() + mondayOffset);
     const slotDateKey = slotDate.toISOString().slice(0, 10);
 
-    const isToday = slotDateKey === todayDateKey || idx === todayIndex;
-    const matchedDateKey =
-      completedWeekdayDates.get(dayName) ||
-      (completedDatesSet.has(slotDateKey) && !claimedExecutionDates.has(slotDateKey)
-        ? slotDateKey
-        : null);
-
-    const isCompleted = Boolean(matchedDateKey);
-    const finalDateKey = matchedDateKey || slotDateKey;
+    const isToday = slotDateKey === compliance.todayDateKey;
+    const scheduledBucket = compliance.completedByScheduledDay[dayName];
+    const isCompleted = Boolean(scheduledBucket?.isCompleted);
+    const executedDateKey = scheduledBucket?.lastExecutedDateKey || null;
+    const finalDateKey = executedDateKey || slotDateKey;
     const displayDate = formatDisplayDateDDMMYYYY(finalDateKey);
 
     let status: DayCompletionVisualStatus = 'planned';
@@ -292,7 +256,10 @@ export function evaluateWeeklyDaysCompletion(
 
     if (isCompleted) {
       status = 'completed';
-      statusLabel = '¡Rutina hecha!';
+      statusLabel =
+        executedDateKey && executedDateKey !== slotDateKey
+          ? `¡Hecha el ${formatDisplayDateDDMMYYYY(executedDateKey).slice(0, 5)}!`
+          : '¡Rutina hecha!';
     } else if (isToday) {
       status = 'pending_today';
       statusLabel = 'Hoy · Pendiente';
@@ -303,6 +270,9 @@ export function evaluateWeeklyDaysCompletion(
       shortLabel,
       dayName,
       dateKey: finalDateKey,
+      slotDateKey,
+      executedDateKey,
+      completedRoutineIds: scheduledBucket?.routineIds || [],
       displayDate,
       isToday,
       isCompleted,
@@ -315,7 +285,14 @@ export function evaluateWeeklyDaysCompletion(
     return entry;
   });
 
-  return { days, byDayName };
+  return {
+    days,
+    byDayName,
+    completedRoutineIds: compliance.completedRoutineIds,
+    weekId: compliance.weekId,
+    mondayDateKey: compliance.mondayDateKey,
+    sundayDateKey: compliance.sundayDateKey,
+  };
 }
 
 export function formatDayBlockHeader(
@@ -474,6 +451,7 @@ export function buildGroupedComparativeByDay(params: {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .forEach((w) => {
       const workoutDay =
+        resolveCanonicalWeekdayStrict(w.scheduledDay) ||
         (w.routineId && routineDayLookup.get(w.routineId)) ||
         resolveCanonicalWeekday(w.routineTitle, w.date);
       w.exercisesSummary?.forEach((ex) => {
@@ -500,6 +478,7 @@ export function buildGroupedComparativeByDay(params: {
 
   currentWeekHistory.forEach((w) => {
     const workoutDay =
+      resolveCanonicalWeekdayStrict(w.scheduledDay) ||
       (w.routineId && routineDayLookup.get(w.routineId)) ||
       resolveCanonicalWeekday(w.routineTitle, w.date);
     const resolvedChileDate = resolveWorkoutChileDateKey(w) || formatDateKeyYYYYMMDD(w.date) || w.date;
@@ -537,6 +516,7 @@ export function buildGroupedComparativeByDay(params: {
 
   if (activeSession && Array.isArray(activeSession.exercises)) {
     const activeDay =
+      resolveCanonicalWeekdayStrict(activeSession.scheduledDay) ||
       (activeSession.routineId && routineDayLookup.get(activeSession.routineId)) ||
       resolveCanonicalWeekday(activeSession.routineTitle, new Date().toISOString());
 
@@ -603,6 +583,7 @@ export function buildGroupedComparativeByDay(params: {
     if (!dateKey || !hasCompletedWork) return;
 
     const workoutDay =
+      resolveCanonicalWeekdayStrict(w.scheduledDay) ||
       (w.routineId && routineDayLookup.get(w.routineId)) ||
       resolveCanonicalWeekday(w.routineTitle, w.date);
 

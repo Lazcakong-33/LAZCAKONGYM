@@ -311,9 +311,11 @@ export function resolveWorkoutChileDateKey(
   workout: Partial<CompletedWorkout> | null | undefined
 ): string {
   if (!workout) return '';
+  const rawCompletedAt = typeof workout.completedAt === 'string' ? workout.completedAt.trim() : '';
   const rawDate = typeof workout.date === 'string' ? workout.date.trim() : '';
   const ts =
     (typeof workout.endTime === 'number' && workout.endTime > 1577836800000 ? workout.endTime : 0) ||
+    (rawCompletedAt ? parseRobustDate(rawCompletedAt)?.getTime() || 0 : 0) ||
     (typeof workout.startTime === 'number' && workout.startTime > 1577836800000 ? workout.startTime : 0);
 
   if (rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) && ts > 0) {
@@ -322,6 +324,11 @@ export function resolveWorkoutChileDateKey(
       return getChileLocalDateKey(ts);
     }
     return rawDate;
+  }
+
+  if (rawCompletedAt) {
+    const fromCompleted = getChileLocalDateKey(rawCompletedAt);
+    if (fromCompleted) return fromCompleted;
   }
 
   if (rawDate) {
@@ -405,20 +412,32 @@ export function areWorkoutsSameSessionRetry(
   const calB = Math.round(Number(b.caloriesBurned) || 0);
   const sameCalories = calA > 0 && calB > 0 && Math.abs(calA - calB) <= 5;
 
+  const rIdA = String(a.routineId || '').trim();
+  const rIdB = String(b.routineId || '').trim();
+  const isGenericId = (rid: string) => !rid || rid === 'rutina-historica' || rid.startsWith('csv-routine-');
+  const hasDistinctRealRoutineIds =
+    !isGenericId(rIdA) && !isGenericId(rIdB) && rIdA !== rIdB;
+  const schedA = String(a.scheduledDay || '').trim().toLowerCase();
+  const schedB = String(b.scheduledDay || '').trim().toLowerCase();
+  const hasDistinctScheduledDays = Boolean(schedA && schedB && schedA !== schedB);
+
   const titleA = String(a.routineTitle || '').toLowerCase().trim();
   const titleB = String(b.routineTitle || '').toLowerCase().trim();
   const sameRoutine =
-    (Boolean(a.routineId) &&
-      Boolean(b.routineId) &&
-      a.routineId !== 'rutina-historica' &&
-      a.routineId === b.routineId) ||
-    (Boolean(titleA) && titleA === titleB);
+    (!isGenericId(rIdA) && !isGenericId(rIdB) && rIdA === rIdB) ||
+    (!hasDistinctRealRoutineIds && !hasDistinctScheduledDays && Boolean(titleA) && titleA === titleB);
+
+  // Dos rutinas genuinamente distintas ejecutadas el mismo día NUNCA deben fusionarse como reintento duplicado
+  const eitherIsRecoveredCopy = idA.startsWith('recovered-') || idB.startsWith('recovered-');
+  if ((hasDistinctRealRoutineIds || hasDistinctScheduledDays) && !(eitherIsRecoveredCopy && sameExSig)) {
+    return false;
+  }
 
   // Reintento cercano dentro de 20 minutos en el mismo día
   if (timeDiffMins <= 20) {
     if (sameExSig) return true;
     if (sameRoutine && setsA === setsB && Math.abs(volA - volB) <= 5) return true;
-    if (volA > 0 && volA === volB && setsA === setsB) return true;
+    if (sameRoutine && volA > 0 && volA === volB && setsA === setsB) return true;
   }
 
   // Stable IDs and distinct recorded times distinguish separate workouts.

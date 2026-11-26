@@ -320,7 +320,10 @@ export function purgeAndSanitizeWorkoutHistory(
       continue;
     }
 
-    const cleanTitle = sanitizeRoutineTitleForDate(item.routineTitle, effectiveDateStr);
+    const cleanTitle =
+      !item.routineTitle?.trim() && item.scheduledDay
+        ? `Rutina ${item.scheduledDay}`
+        : sanitizeRoutineTitleForDate(item.routineTitle, effectiveDateStr);
 
     const fallbackEndMs = parseRobustDate(effectiveDateStr)?.getTime() || Date.now();
     const endTimeMs = typeof item.endTime === 'number' && item.endTime > 0 ? item.endTime : fallbackEndMs;
@@ -332,6 +335,17 @@ export function purgeAndSanitizeWorkoutHistory(
       typeof item.startTime === 'number' && item.startTime > 0
         ? item.startTime
         : endTimeMs - cleanDurationSeconds * 1000;
+    const startedAtIso =
+      typeof item.startedAt === 'string' && item.startedAt.trim()
+        ? item.startedAt.trim()
+        : new Date(startTimeMs).toISOString();
+    const completedAtIso =
+      typeof item.completedAt === 'string' && item.completedAt.trim()
+        ? item.completedAt.trim()
+        : new Date(endTimeMs).toISOString();
+    const executionDateKey =
+      resolveWorkoutChileDateKey({ ...item, completedAt: completedAtIso, endTime: endTimeMs, startTime: startTimeMs }) ||
+      dateKey;
 
     // Deduplicación estricta:
     // 1. Por ID estable de sesión (para reintentos)
@@ -370,6 +384,11 @@ export function purgeAndSanitizeWorkoutHistory(
       ...item,
       id: resolvedId,
       routineTitle: cleanTitle,
+      ...(item.scheduledDay ? { scheduledDay: item.scheduledDay } : {}),
+      startedAt: startedAtIso,
+      completedAt: completedAtIso,
+      executionDateKey,
+      ...(item.weekId ? { weekId: item.weekId } : {}),
       date: effectiveDateStr,
       startTime: startTimeMs,
       endTime: endTimeMs,
@@ -402,15 +421,17 @@ export function purgeAndSanitizeWorkoutHistory(
 
       const existingScore =
         existingDetailedSets * 10 +
+        (existing.scheduledDay ? 25 : 0) +
         (isGenericDayTitle(existing.routineTitle) ? 0 : 50) +
         (existing.id.startsWith('recovered-') ? 0 : 20);
       const candidateScore =
         candidateDetailedSets * 10 +
+        (candidateEntry.scheduledDay ? 25 : 0) +
         (isGenericDayTitle(candidateEntry.routineTitle) ? 0 : 50) +
         (candidateEntry.id.startsWith('recovered-') ? 0 : 20);
 
       if (candidateScore > existingScore) {
-        // Conservar setsDetail si el existente tenía alguno que el candidato no tiene
+        // Conservar setsDetail y metadatos de rutina si el existente tenía alguno que el candidato no tiene
         const mergedExercises = candidateEntry.exercisesSummary.map((ex) => {
           if (Array.isArray(ex.setsDetail) && ex.setsDetail.length > 0) return ex;
           const matchEx = existing.exercisesSummary.find(
@@ -420,18 +441,31 @@ export function purgeAndSanitizeWorkoutHistory(
         });
         cleanedEntries[duplicateIdx] = {
           ...candidateEntry,
+          scheduledDay: candidateEntry.scheduledDay || existing.scheduledDay,
+          startedAt: candidateEntry.startedAt || existing.startedAt,
+          completedAt: candidateEntry.completedAt || existing.completedAt,
+          executionDateKey: candidateEntry.executionDateKey || existing.executionDateKey,
+          weekId: candidateEntry.weekId || existing.weekId,
           exercisesSummary: mergedExercises,
         };
-      } else if (candidateDetailedSets > 0 && existingDetailedSets === 0) {
-        const mergedExercises = existing.exercisesSummary.map((ex) => {
-          if (Array.isArray(ex.setsDetail) && ex.setsDetail.length > 0) return ex;
-          const matchEx = candidateEntry.exercisesSummary.find(
-            (e) => e.name.trim().toLowerCase() === ex.name.trim().toLowerCase()
-          );
-          return matchEx?.setsDetail?.length ? { ...ex, setsDetail: matchEx.setsDetail } : ex;
-        });
+      } else {
+        const mergedExercises =
+          candidateDetailedSets > 0 && existingDetailedSets === 0
+            ? existing.exercisesSummary.map((ex) => {
+                if (Array.isArray(ex.setsDetail) && ex.setsDetail.length > 0) return ex;
+                const matchEx = candidateEntry.exercisesSummary.find(
+                  (e) => e.name.trim().toLowerCase() === ex.name.trim().toLowerCase()
+                );
+                return matchEx?.setsDetail?.length ? { ...ex, setsDetail: matchEx.setsDetail } : ex;
+              })
+            : existing.exercisesSummary;
         cleanedEntries[duplicateIdx] = {
           ...existing,
+          scheduledDay: existing.scheduledDay || candidateEntry.scheduledDay,
+          startedAt: existing.startedAt || candidateEntry.startedAt,
+          completedAt: existing.completedAt || candidateEntry.completedAt,
+          executionDateKey: existing.executionDateKey || candidateEntry.executionDateKey,
+          weekId: existing.weekId || candidateEntry.weekId,
           exercisesSummary: mergedExercises,
         };
       }

@@ -20,6 +20,11 @@ import {
   sanitizeRoutineTitleForDate,
   sanitizeWorkoutDurationSeconds,
 } from '../utils/historySanitizer';
+import {
+  repairWorkoutRoutineMetadata,
+  resolveCanonicalWeekdayStrict,
+} from '../utils/routineCompletionEngine';
+import { getWeekIdentifier } from '../utils/weeklyCycleManager';
 import { DEFAULT_ROUTINES } from '../data/defaultRoutines';
 import { getEnrichedDefaultRoutines } from '../utils/enrichRoutines';
 import { generateSeedHistory } from '../data/seedHistory';
@@ -1187,8 +1192,13 @@ export function useGymState() {
       if (localSources.length > 0) {
         const unified = reconcileAndUnifyAthleteHistory(localSources, activeProfile?.weightKg || 95);
         if (unified.unifiedHistory.length > 0) {
-          localStorage.setItem(`lazcakon_${activeProfileId}_history`, JSON.stringify(unified.unifiedHistory));
-          return unified.unifiedHistory;
+          const { repairedHistory } = repairWorkoutRoutineMetadata(
+            unified.unifiedHistory,
+            routines,
+            activeProfileId
+          );
+          localStorage.setItem(`lazcakon_${activeProfileId}_history`, JSON.stringify(repairedHistory));
+          return repairedHistory;
         }
       }
       const stored = localStorage.getItem(`lazcakon_${activeProfileId}_history`);
@@ -1199,7 +1209,12 @@ export function useGymState() {
             parsed,
             activeProfile?.weightKg || 95
           );
-          return cleanedHistory;
+          const { repairedHistory } = repairWorkoutRoutineMetadata(
+            cleanedHistory,
+            routines,
+            activeProfileId
+          );
+          return repairedHistory;
         }
       }
     } catch {}
@@ -1473,9 +1488,11 @@ export function useGymState() {
 
     try {
       const storedRoutines = localStorage.getItem(`lazcakon_${targetProfileId}_routines`);
+      let loadedRoutinesForRepair: Routine[] = [];
       if (storedRoutines) {
         const filtered = filterOutPreloadedRoutines(JSON.parse(storedRoutines));
         const sanitized = sanitizeRoutinesRdlRest(filtered);
+        loadedRoutinesForRepair = sanitized;
         setRoutines(sanitized);
         safeLocalStorageSetItem(`lazcakon_${targetProfileId}_routines`, JSON.stringify(sanitized), { critical: true });
       } else {
@@ -1489,9 +1506,18 @@ export function useGymState() {
           Array.isArray(parsedHist) ? parsedHist : [],
           targetWeight
         );
-        setHistory(cleanedHistory);
-        if (wasModified) {
-          safeLocalStorageSetItem(`lazcakon_${targetProfileId}_history`, JSON.stringify(cleanedHistory), { critical: true });
+        const routineRepair = repairWorkoutRoutineMetadata(
+          cleanedHistory,
+          loadedRoutinesForRepair,
+          targetProfileId
+        );
+        setHistory(routineRepair.repairedHistory);
+        if (wasModified || routineRepair.wasModified) {
+          safeLocalStorageSetItem(
+            `lazcakon_${targetProfileId}_history`,
+            JSON.stringify(routineRepair.repairedHistory),
+            { critical: true }
+          );
         }
       } else {
         setHistory([]);
@@ -1609,6 +1635,7 @@ export function useGymState() {
               'import_restore',
               'full_sync',
             ]);
+            let resolvedRoutinesForHistory: Routine[] = routinesRef.current;
             if (Array.isArray(res.data.routines)) {
               const cleanCloudRoutines = filterOutPreloadedRoutines(res.data.routines as Routine[]);
               const reconciledRoutines = reconcileRoutinesWithCloud({
@@ -1617,6 +1644,7 @@ export function useGymState() {
                 hasPendingRoutineOp: hasPendingRoutine,
               });
               if (reconciledRoutines.source !== 'local_kept') {
+                resolvedRoutinesForHistory = reconciledRoutines.resolvedRoutines;
                 setRoutines(reconciledRoutines.resolvedRoutines);
                 safeLocalStorageSetItem(
                   `lazcakon_${targetProfileId}_routines`,
@@ -1648,7 +1676,11 @@ export function useGymState() {
                 unifiedHistory,
                 activeWeightRef.current
               );
-              const sanitizedCloudMerge = sanitizedCloudReport.cleanedHistory;
+              const { repairedHistory: sanitizedCloudMerge } = repairWorkoutRoutineMetadata(
+                sanitizedCloudReport.cleanedHistory,
+                resolvedRoutinesForHistory,
+                targetProfileId
+              );
               // NUNCA vaciar un historial local no vacío con un array vacío de la nube
               if (sanitizedCloudMerge.length > 0 || (historyRef.current.length === 0 && res.data.history.length === 0)) {
                 setHistory(sanitizedCloudMerge);
@@ -1658,10 +1690,10 @@ export function useGymState() {
                   { critical: true }
                 );
                 const cloudDigest = res.data.history
-                  .map((w: any) => `${w?.id || ''}|${w?.date || ''}|${w?.routineTitle || ''}|${w?.caloriesBurned || 0}`)
+                  .map((w: any) => `${w?.id || ''}|${w?.date || ''}|${w?.routineId || ''}|${w?.scheduledDay || ''}|${w?.routineTitle || ''}|${w?.caloriesBurned || 0}`)
                   .join(';;');
                 const sanitizedDigest = sanitizedCloudMerge
-                  .map((w) => `${w.id}|${w.date}|${w.routineTitle}|${w.caloriesBurned || 0}`)
+                  .map((w) => `${w.id}|${w.date}|${w.routineId || ''}|${w.scheduledDay || ''}|${w.routineTitle}|${w.caloriesBurned || 0}`)
                   .join(';;');
                 if (sanitizedCloudMerge.length !== res.data.history.length || cloudDigest !== sanitizedDigest) {
                   syncUserDataToFirebase(targetProfileId, { history: sanitizedCloudMerge }).catch(() => {});
@@ -1766,6 +1798,7 @@ export function useGymState() {
             'import_restore',
             'full_sync',
           ]);
+          let resolvedRoutinesForRealtime: Routine[] = routinesRef.current;
           if (Array.isArray(cloudData.routines)) {
             const cleanCloudRoutines = filterOutPreloadedRoutines(cloudData.routines as Routine[]);
             const reconciledRoutines = reconcileRoutinesWithCloud({
@@ -1774,6 +1807,7 @@ export function useGymState() {
               hasPendingRoutineOp: hasPendingRoutine,
             });
             if (reconciledRoutines.source !== 'local_kept') {
+              resolvedRoutinesForRealtime = reconciledRoutines.resolvedRoutines;
               setRoutines(reconciledRoutines.resolvedRoutines);
               safeLocalStorageSetItem(
                 `lazcakon_${subscribedProfileId}_routines`,
@@ -1800,7 +1834,11 @@ export function useGymState() {
               unifiedHistory,
               activeWeightRef.current
             );
-            const sanitizedRealtimeMerge = sanitizedRealtimeReport.cleanedHistory;
+            const { repairedHistory: sanitizedRealtimeMerge } = repairWorkoutRoutineMetadata(
+              sanitizedRealtimeReport.cleanedHistory,
+              resolvedRoutinesForRealtime,
+              subscribedProfileId
+            );
             if (sanitizedRealtimeMerge.length > 0 || (historyRef.current.length === 0 && cloudData.history.length === 0)) {
               setHistory(sanitizedRealtimeMerge);
               safeLocalStorageSetItem(
@@ -1809,10 +1847,10 @@ export function useGymState() {
                 { critical: true }
               );
               const cloudDigest = cloudData.history
-                .map((w: any) => `${w?.id || ''}|${w?.date || ''}|${w?.routineTitle || ''}|${w?.caloriesBurned || 0}`)
+                .map((w: any) => `${w?.id || ''}|${w?.date || ''}|${w?.routineId || ''}|${w?.scheduledDay || ''}|${w?.routineTitle || ''}|${w?.caloriesBurned || 0}`)
                 .join(';;');
               const sanitizedDigest = sanitizedRealtimeMerge
-                .map((w) => `${w.id}|${w.date}|${w.routineTitle}|${w.caloriesBurned || 0}`)
+                .map((w) => `${w.id}|${w.date}|${w.routineId || ''}|${w.scheduledDay || ''}|${w.routineTitle}|${w.caloriesBurned || 0}`)
                 .join(';;');
               if (sanitizedRealtimeMerge.length !== cloudData.history.length || cloudDigest !== sanitizedDigest) {
                 syncUserDataToFirebase(subscribedProfileId, { history: sanitizedRealtimeMerge }).catch(() => {});
@@ -3142,11 +3180,18 @@ export function useGymState() {
       };
     });
 
+    const scheduledDay =
+      resolveCanonicalWeekdayStrict(routine.dayName) ||
+      resolveCanonicalWeekdayStrict(routine.title) ||
+      undefined;
+
     const newSession: ActiveWorkoutSession = {
       sessionId: `workout-${nowMs}-${Math.random().toString(36).slice(2, 7)}`,
       routineId: routine.id,
       routineTitle: routine.title,
+      scheduledDay,
       startTime: nowMs,
+      startedAt: new Date(nowMs).toISOString(),
       updatedAt: nowMs,
       exercises: exercisesState,
     };
@@ -3238,6 +3283,7 @@ export function useGymState() {
       routineId: `libre-${nowMs}`,
       routineTitle: customTitle?.trim() || 'Sesión Libre',
       startTime: nowMs,
+      startedAt: new Date(nowMs).toISOString(),
       updatedAt: nowMs,
       exercises: exercisesState,
     };
@@ -3813,17 +3859,33 @@ export function useGymState() {
     const workoutAvgRpe =
       workoutTotalRpeSets > 0 ? Number((workoutTotalRpeSum / workoutTotalRpeSets).toFixed(1)) : undefined;
 
-    const nowIso = new Date().toISOString();
+    const nowIso = new Date(endTime).toISOString();
     const todayDateKey = getChileLocalDateKey(nowIso);
     const sanitizedDurationSeconds = sanitizeWorkoutDurationSeconds(
       rawDurationSeconds,
       completedSetsCount,
       exercisesSummary.length
     );
-    const sanitizedRoutineTitle = sanitizeRoutineTitleForDate(
-      currentActiveSession.routineTitle,
-      todayDateKey
-    );
+    const matchedRoutine = routinesRef.current.find((r) => r.id === currentActiveSession.routineId);
+    const resolvedScheduledDay =
+      resolveCanonicalWeekdayStrict(currentActiveSession.scheduledDay) ||
+      resolveCanonicalWeekdayStrict(matchedRoutine?.dayName || matchedRoutine?.title) ||
+      resolveCanonicalWeekdayStrict(currentActiveSession.routineTitle) ||
+      undefined;
+    const rawSessionTitle = currentActiveSession.routineTitle?.trim() || '';
+    const sanitizedRoutineTitle =
+      !rawSessionTitle && resolvedScheduledDay
+        ? `Rutina ${resolvedScheduledDay}`
+        : sanitizeRoutineTitleForDate(currentActiveSession.routineTitle, todayDateKey);
+    const actualStartMs =
+      typeof currentActiveSession.startTime === 'number' && currentActiveSession.startTime > 0
+        ? currentActiveSession.startTime
+        : endTime - sanitizedDurationSeconds * 1000;
+    const startedAtIso =
+      currentActiveSession.startedAt || new Date(actualStartMs).toISOString();
+    const completedAtIso = nowIso;
+    const weekId = getWeekIdentifier(new Date(endTime));
+
     const durationMins = Math.round(sanitizedDurationSeconds / 60);
     const caloriesBurned = calculateWorkoutCaloriesBurned({
       durationMinutes: durationMins,
@@ -3868,7 +3930,12 @@ export function useGymState() {
       profileId: targetProfileId,
       routineId: currentActiveSession.routineId,
       routineTitle: sanitizedRoutineTitle,
-      date: nowIso,
+      ...(resolvedScheduledDay ? { scheduledDay: resolvedScheduledDay } : {}),
+      date: completedAtIso,
+      startedAt: startedAtIso,
+      completedAt: completedAtIso,
+      executionDateKey: todayDateKey,
+      weekId,
       startTime: endTime - sanitizedDurationSeconds * 1000,
       endTime,
       durationSeconds: sanitizedDurationSeconds,
@@ -3885,10 +3952,15 @@ export function useGymState() {
       exercisesSummary,
     };
 
-    // Garantizar registro único e independiente por fecha YYYY-MM-DD (sin bucles ni acumulación)
-    const { cleanedHistory: deduplicatedHistory } = purgeAndSanitizeWorkoutHistory(
+    // Garantizar registro único sin colapsar dos rutinas distintas en un mismo día y enriquecer metadatos históricos
+    const { cleanedHistory: sanitizedFinishHistory } = purgeAndSanitizeWorkoutHistory(
       [completedWorkout, ...currentHistory],
       activeWeightRef.current || 95
+    );
+    const { repairedHistory: deduplicatedHistory } = repairWorkoutRoutineMetadata(
+      sanitizedFinishHistory,
+      routinesRef.current,
+      targetProfileId
     );
 
     activeSessionRef.current = null;

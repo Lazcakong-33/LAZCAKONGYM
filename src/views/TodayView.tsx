@@ -395,17 +395,17 @@ export const TodayView: React.FC<TodayViewProps> = ({
     [caloriesSummary]
   );
 
-  // Construir los 7 días de la semana actual
+  const weeklyCompletion = useMemo(
+    () =>
+      evaluateWeeklyDaysCompletion(sanitizedHistory, routines, now, {
+        profileId: activeProfile?.id,
+      }),
+    [sanitizedHistory, routines, now, activeProfile?.id]
+  );
+
+  // Construir los 7 días de la semana actual (checkmarks por rutina realmente ejecutada, nunca por fecha actual)
   const timelineDays = useMemo(() => {
     const monday = getMondayOfWeek(now, 0);
-    const workoutsByDateKey = new Map<string, CompletedWorkout[]>();
-    sanitizedHistory.forEach((workout) => {
-      const key = resolveWorkoutChileDateKey(workout) || formatDateKeyYYYYMMDD(workout.date);
-      if (!key) return;
-      const list = workoutsByDateKey.get(key) || [];
-      list.push(workout);
-      workoutsByDateKey.set(key, list);
-    });
 
     return ORDERED_WEEKDAYS.map((wd, idx) => {
       const cellDate = new Date(monday);
@@ -421,8 +421,11 @@ export const TodayView: React.FC<TodayViewProps> = ({
             r.exercises.length > 0
         ) || null;
 
-      const completedInDate = workoutsByDateKey.get(dateKey) || [];
-      const isCompleted = completedInDate.length > 0;
+      const dayCompliance = weeklyCompletion.byDayName[wd.name];
+      const isCompleted = assignedRoutine
+        ? weeklyCompletion.completedRoutineIds.has(assignedRoutine.id) ||
+          Boolean(dayCompliance?.isCompleted)
+        : Boolean(dayCompliance?.isCompleted);
       const isToday = dateKey === todayDateKey;
 
       return {
@@ -435,7 +438,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
         isToday,
       };
     });
-  }, [routines, sanitizedHistory, todayDateKey, now]);
+  }, [routines, weeklyCompletion, todayDateKey, now]);
 
   const activeRoutine = useMemo(() => {
     const found = timelineDays.find((d) => d.weekdayName === selectedDayName);
@@ -459,10 +462,6 @@ export const TodayView: React.FC<TodayViewProps> = ({
         return wKey !== '' && wKey >= currentWeekBounds.mondayKey && wKey <= currentWeekBounds.sundayKey;
       }),
     [sanitizedHistory, currentWeekBounds]
-  );
-  const weeklyCompletion = useMemo(
-    () => evaluateWeeklyDaysCompletion(sanitizedHistory, routines, now),
-    [sanitizedHistory, routines, now]
   );
   const completedCountThisWeek = weeklyCompletion.days.filter((d) => d.isCompleted).length;
   const targetDays = Math.max(1, activeProfile.weeklyTargetDays || 5);

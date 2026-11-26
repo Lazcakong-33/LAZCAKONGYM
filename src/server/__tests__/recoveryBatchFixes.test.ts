@@ -340,7 +340,7 @@ describe('Recovery Batch 1-3 Verification Suite', () => {
 
   test('SW cache poisoning guards and Express static 404 guard are properly configured', () => {
     const swSrc = fs.readFileSync(path.join(process.cwd(), 'public/sw.js'), 'utf8');
-    expect(swSrc).toContain("const CACHE_NAME = 'lazcakongym-v7.0.5-ota'");
+    expect(swSrc).toContain("const CACHE_NAME = 'lazcakongym-v7.0.6-ota'");
     expect(swSrc).toContain("contentType.includes('text/html')");
     expect(swSrc).toContain("url.pathname.startsWith('/api/')");
 

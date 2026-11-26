@@ -565,7 +565,9 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
                   const isSelected = matchedRoutine.id === (activeRoutine?.id || selectedDayId);
                   const canonicalDay = resolveCanonicalWeekday(matchedRoutine.dayName || matchedRoutine.title);
                   const dayStatus = weeklyCompletion.byDayName[canonicalDay];
-                  const isCompleted = Boolean(dayStatus?.isCompleted);
+                  const isCompleted =
+                    dayMatches.some((r) => weeklyCompletion.completedRoutineIds.has(r.id)) ||
+                    Boolean(dayStatus?.isCompleted);
 
                   const stateClasses = isSelected
                     ? 'bg-accent text-accent-contrast border border-accent font-black shadow-[0_0_15px_var(--accent-glow)]'
@@ -594,18 +596,22 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
                   </span>
                   {activeDayPlans.map((plan, pIdx) => {
                     const isPlanSelected = plan.id === activeRoutine.id;
+                    const isPlanCompleted = weeklyCompletion.completedRoutineIds.has(plan.id);
                     return (
                       <button
                         key={plan.id}
                         type="button"
                         onClick={() => onSelectRoutineId(plan.id)}
-                        className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 border transition-all cursor-pointer ${
+                        className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 border transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                           isPlanSelected
                             ? 'bg-accent text-accent-contrast border-accent'
                             : 'bg-[#171717] text-[#F5F5F5]/80 border-[#303030] hover:border-accent/50'
                         }`}
                       >
-                        {plan.title || `Plan ${pIdx + 1}`}
+                        <span>{plan.title || `Plan ${pIdx + 1}`}</span>
+                        {isPlanCompleted && (
+                          <CheckCircle2 className={`w-3 h-3 ${isPlanSelected ? 'text-accent-contrast' : 'text-accent-text'}`} />
+                        )}
                       </button>
                     );
                   })}

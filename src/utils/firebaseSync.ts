@@ -2025,23 +2025,50 @@ export async function queryLatestExecutionDatesByDayFromCloud(
         (typeof w.completedSetsCount === 'number' && w.completedSetsCount > 0);
       if (!hasWork) return;
 
-      const sessionDay = toWeekday(w.routineTitle, w.date);
-      if (!result[sessionDay] || dateKey >= result[sessionDay]!) {
-        result[sessionDay] = dateKey;
-      }
+      const resolveStrictDay = (raw?: string): string | null => {
+        const norm = normalizeText(raw);
+        if (!norm) return null;
+        if (norm.includes('lunes')) return 'Lunes';
+        if (norm.includes('martes')) return 'Martes';
+        if (norm.includes('miercoles')) return 'Miércoles';
+        if (norm.includes('jueves')) return 'Jueves';
+        if (norm.includes('viernes')) return 'Viernes';
+        if (norm.includes('sabado')) return 'Sábado';
+        if (norm.includes('domingo')) return 'Domingo';
+        return null;
+      };
 
-      if (Array.isArray(w.exercisesSummary)) {
+      const sessionDay =
+        resolveStrictDay(w.scheduledDay) ||
+        (w.routineId ? routineIdToDay.get(w.routineId) || null : null) ||
+        resolveStrictDay(w.routineTitle);
+
+      if (sessionDay) {
+        if (!result[sessionDay] || dateKey >= result[sessionDay]!) {
+          result[sessionDay] = dateKey;
+        }
+      } else if (Array.isArray(w.exercisesSummary)) {
+        // Solo usar inferencia por ejercicios si no existe identidad explícita de rutina/día programado
+        const matchedDayCounts = new Map<string, number>();
         w.exercisesSummary.forEach((ex: any) => {
           const exKey = normalizeText(ex?.name);
           const mappedDays = exerciseToDays.get(exKey);
           if (mappedDays) {
             mappedDays.forEach((dName) => {
-              if (!result[dName] || dateKey >= result[dName]!) {
-                result[dName] = dateKey;
-              }
+              matchedDayCounts.set(dName, (matchedDayCounts.get(dName) || 0) + 1);
             });
           }
         });
+        const rankedDays = Array.from(matchedDayCounts.entries()).sort((a, b) => b[1] - a[1]);
+        if (
+          rankedDays.length > 0 &&
+          (rankedDays.length === 1 || rankedDays[0][1] > rankedDays[1][1])
+        ) {
+          const bestDay = rankedDays[0][0];
+          if (!result[bestDay] || dateKey >= result[bestDay]!) {
+            result[bestDay] = dateKey;
+          }
+        }
       }
     });
   } catch (err) {
