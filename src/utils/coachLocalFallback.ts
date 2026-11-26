@@ -81,7 +81,7 @@ export function buildCoachLocalFallback(params: {
 /** An unavailable provider is not permission to bypass authentication. */
 export function canUseCoachLocalFallback(status: number, code?: string): boolean {
   if ([401, 403, 409].includes(status)) return false;
-  if (code && /auth|session|token|forbidden|aborted|permission/i.test(code)) return false;
+  if (code && /auth|session|token|forbidden|aborted|permission|ownership/i.test(code)) return false;
   return status === 404 || status === 429 || status >= 500 ||
     (status === 0 && code === 'coach/network-error') || code === 'coach/empty-response';
 }

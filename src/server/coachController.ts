@@ -262,7 +262,7 @@ function createDefaultGeminiClient(apiKey: string): CoachGeminiClient {
         systemInstruction,
         // Hydrogen uses output tokens for both thinking and final answer.
         // A 700-token cap with default HIGH reasoning can yield empty text.
-        maxOutputTokens: isGemini4 ? 2_048 : 1_024,
+        maxOutputTokens: isGemini4 ? 1_400 : 700,
       };
       if (isGemini4) {
         // Google's Gemini 4 Hydrogen guidance: HIGH is the default, LOW is
