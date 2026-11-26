@@ -54,7 +54,7 @@ import {
   SpeechRecognitionLike,
 } from '../utils/coachVoiceEngine.ts';
 import { checkCoachServiceStatus, type CoachServiceDiagnostic } from '../utils/coachServiceDiagnostics.ts';
-import { buildCoachLocalFallback, resolveCoachLocalIntent } from '../utils/coachLocalFallback.ts';
+import { buildCoachLocalFallback, resolveCoachLocalIntent, canUseCoachLocalFallback } from '../utils/coachLocalFallback.ts';
 
 const COACH_EQUIPMENT_FILTERS = [
   'Todos',
@@ -302,7 +302,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       loadReport,
       alternatives: filteredAlternativesResult.alternatives,
     }) ?? defaultReply;
-    if (!summary) return;
+    if (!summary) return false;
     setMessages(prev => [
       ...prev,
       {
@@ -312,6 +312,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
         model: 'local-deterministic',
       },
     ]);
+    return true;
   };
 
   const sendToGemini = async (
@@ -399,7 +400,14 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
         return;
       }
 
-      if (!result.ok || !result.reply) {
+      if (!result.ok || !result.reply?.trim()) {
+        // A local answer is explicitly labeled and only uses this profile's existing data.
+        // Never use it to bypass invalid credentials or an ownership denial.
+        if (canUseCoachLocalFallback(result.status, result.code || (!result.reply?.trim() && result.ok ? 'coach/empty-response' : undefined)) &&
+            appendLocalSummaryIfAvailable(intent)) {
+          setGeminiError(null);
+          return;
+        }
         setGeminiError({
           message:
             result.error ||
@@ -408,11 +416,6 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
           retryable: result.retryable !== false,
           lastRequest: { message: cleanPrompt, intent },
         });
-        // Do not reveal locally cached athlete training data when the
-        // session is invalid or the user is not authorized for this profile.
-        const mayUseLocalSummary =
-          result.status === 0 || result.status >= 500;
-        if (mayUseLocalSummary) appendLocalSummaryIfAvailable(intent);
         return;
       }
 
@@ -1031,7 +1034,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       return;
     }
 
-    void sendToGemini(msg, useLocalCoachActions ? resolveCoachLocalIntent(msg) : (activeIntent || 'freeform'), true);
+    void sendToGemini(msg, resolveCoachLocalIntent(msg), true);
   };
 
   return (
