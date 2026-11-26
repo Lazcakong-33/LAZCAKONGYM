@@ -54,7 +54,7 @@ import {
   SpeechRecognitionLike,
 } from '../utils/coachVoiceEngine.ts';
 import { checkCoachServiceStatus, type CoachServiceDiagnostic } from '../utils/coachServiceDiagnostics.ts';
-import { buildCoachLocalFallback, resolveCoachLocalIntent, canUseCoachLocalFallback } from '../utils/coachLocalFallback.ts';
+import { buildCoachLocalFallback, resolveCoachLocalIntent, canUseCoachLocalFallback, buildCoachGeneralGuidance } from '../utils/coachLocalFallback.ts';
 
 const COACH_EQUIPMENT_FILTERS = [
   'Todos',
@@ -315,6 +315,8 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
     return true;
   };
 
+  const providerCooldownUntilRef = useRef(0);
+  const lastOnlineRequestRef = useRef(0);
   const sendToGemini = async (
     promptText: string,
     intent: CoachQuickIntent,
@@ -334,15 +336,24 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       ]);
     }
 
+    const generalFallback = intent === 'freeform' ? buildCoachGeneralGuidance(cleanPrompt) : null;
+    const localUnavailable = generalFallback || 'No tengo acceso al modelo en línea en este momento. No voy a inventar una respuesta. Puedes consultar tus registros o volver a intentar cuando se restablezca el servicio.';
     if (useLocalCoachActions && (!coachWorkersAi || intent !== 'freeform')) {
       setGeminiError(null);
       appendLocalSummaryIfAvailable(
         intent,
-        'Esa pregunta está fuera de lo que puedo resolver en modo local. Prueba «¿Qué entreno hoy?», «¿Cuánto peso levanté la última vez?» o «¿Qué alternativa tengo si la máquina está ocupada?».'
+        localUnavailable
       );
       return;
     }
 
+    const now = Date.now();
+    if (now < providerCooldownUntilRef.current || (lastOnlineRequestRef.current && now - lastOnlineRequestRef.current < 2500)) {
+      setGeminiError(null);
+      appendLocalSummaryIfAvailable(intent, generalFallback || 'El Coach está limitando temporalmente las consultas en línea para evitar saturación. Espera un momento y vuelve a intentarlo.');
+      return;
+    }
+    lastOnlineRequestRef.current = now;
     isRequestInFlightRef.current = true;
     const requestId = ++latestRequestIdRef.current;
     abortReasonRef.current = 'none';
@@ -366,13 +377,13 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
           retryable: true,
           lastRequest: lastReq,
         });
-        appendLocalSummaryIfAvailable(lastReq.intent);
+        appendLocalSummaryIfAvailable(lastReq.intent, lastReq.intent === 'freeform' ? buildCoachGeneralGuidance(lastReq.message) || undefined : undefined);
       }
     }, COACH_MAX_WAIT_MS);
 
     setGeminiError(null);
 
-    const priorTurns: CoachChatApiTurn[] = messages.slice(-8).map((m) => ({
+    const priorTurns: CoachChatApiTurn[] = messages.filter(m => m.model !== 'local-deterministic').slice(-6).map((m) => ({
       role: m.role,
       text: m.text,
     }));
@@ -403,8 +414,9 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
       if (!result.ok || !result.reply?.trim()) {
         // A local answer is explicitly labeled and only uses this profile's existing data.
         // Never use it to bypass invalid credentials or an ownership denial.
+        if (result.status === 429 || result.status === 503) providerCooldownUntilRef.current = Date.now() + 60_000;
         if (canUseCoachLocalFallback(result.status, result.code || (!result.reply?.trim() && result.ok ? 'coach/empty-response' : undefined)) &&
-            appendLocalSummaryIfAvailable(intent)) {
+            appendLocalSummaryIfAvailable(intent, generalFallback || undefined)) {
           setGeminiError(null);
           return;
         }
@@ -443,7 +455,7 @@ export const CoachChatModal: React.FC<CoachChatModalProps> = ({
         retryable: true,
         lastRequest: { message: cleanPrompt, intent },
       });
-      appendLocalSummaryIfAvailable(intent);
+      if (appendLocalSummaryIfAvailable(intent, generalFallback || undefined)) setGeminiError(null);
     } finally {
       if (activeAbortControllerRef.current === controller) {
         activeAbortControllerRef.current = null;

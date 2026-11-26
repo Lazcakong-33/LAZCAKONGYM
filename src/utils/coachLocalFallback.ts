@@ -85,3 +85,22 @@ export function canUseCoachLocalFallback(status: number, code?: string): boolean
   return status === 404 || status === 429 || status >= 500 ||
     (status === 0 && code === 'coach/network-error') || code === 'coach/empty-response';
 }
+
+/** Bounded offline educational answers, not generated or personalized prescriptions. */
+export function buildCoachGeneralGuidance(message: string): string | null {
+  const t=message.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const prefix='Orientación general local (sin IA en línea): ';
+  if (/\b(dolor|lesion|mareo|desmayo|cirugia|fractura|medicamento)\b/.test(t)) {
+    return prefix+'No puedo evaluar una lesión o autorizar entrenamiento con síntomas. Si hay dolor agudo o creciente, detén el ejercicio y consulta a un profesional. Si hay síntomas graves, busca atención urgente.';
+  }
+  // Never guess personal metrics, specific loads, meals or a medical prescription.
+  if (/\b(mi|mis|mio|mia|cuanto|cuanta|cuantos|cuantas|debo|necesito)\b/.test(t) &&
+      /\b(kg|kilos|peso|calorias|proteina|dosis|carga|series|repeticiones)\b/.test(t)) return null;
+  if (/\b(hipertrofia|musculo|masa muscular|ganar masa)\b/.test(t)) return prefix+'Para hipertrofia, prioriza técnica estable, series exigentes sin perder el control y progresión gradual. Registra cargas y repeticiones; cuando alcances el extremo superior de tu rango con buena técnica, considera aumentar ligeramente la carga. Alterna estímulo y recuperación; no necesitas llegar al fallo en todas las series.';
+  if (/\b(recuperacion|descarga|fatiga|descanso|dormir|sueno)\b/.test(t)) return prefix+'La recuperación depende del esfuerzo, sueño, alimentación y descanso. Si cae el rendimiento durante varias sesiones o aumenta la fatiga, reduce temporalmente el volumen o intensidad. La estimación de recuperación de la app no sustituye cómo te sientes.';
+  if (/\b(progresion|progresar|fuerza|sobrecarga)\b/.test(t)) return prefix+'Aumenta de forma gradual una variable: repeticiones, carga o calidad del movimiento. Compara sesiones del mismo ejercicio y equipo; no extrapoles pesos entre máquinas. Mantén margen de esfuerzo si la técnica empeora.';
+  if (/\b(calentamiento|calentar|movilidad|tecnica)\b/.test(t)) return prefix+'Empieza con movilidad y actividad suave, luego realiza series progresivas del ejercicio con cargas menores antes de las series de trabajo. Evita fatigar el músculo durante el calentamiento y respeta tu rango de movimiento cómodo.';
+  if (/\b(nutricion|alimentacion|proteinas?|creatina|grasa|deficit)\b/.test(t)) return prefix+'Para apoyar el entrenamiento, procura una alimentación suficiente y variada, proteína repartida en tus comidas, hidratación y sueño. Para disminuir grasa sin perder rendimiento, evita restricciones extremas. Las cantidades y suplementos dependen de tus circunstancias; para una pauta personal consulta a un profesional.';
+  if (/\b(cardio|resistencia|acondicionamiento)\b/.test(t)) return prefix+'Combina sesiones de fuerza con cardio ajustado a tu recuperación. Aumenta duración o intensidad gradualmente y evita que el cardio exigente comprometa la calidad de tus sesiones prioritarias.';
+  return null;
+}

@@ -52,9 +52,9 @@ export interface CoachControllerDeps {
 }
 
 const SENSITIVE_KEY_PATTERN = /^(pin|password|passwd|token|rawidtoken|idtoken|secret|apikey|api_key|authorization|credential|credentials|email|authuid)$/i;
-const MAX_HISTORY_TURNS = 8;
+const MAX_HISTORY_TURNS = 6;
 const MAX_MESSAGE_LENGTH = 1000;
-const MAX_CONTEXT_JSON_BYTES = 18000;
+const MAX_CONTEXT_JSON_BYTES = 12000;
 
 /**
  * Recursively strips sensitive credentials or PII keys from context objects before prompting Gemini.
@@ -261,7 +261,7 @@ function createDefaultGeminiClient(apiKey: string): CoachGeminiClient {
         systemInstruction,
         // Hydrogen uses output tokens for both thinking and final answer.
         // A 700-token cap with default HIGH reasoning can yield empty text.
-        maxOutputTokens: isGemini4 ? 1_400 : 700,
+        maxOutputTokens: isGemini4 ? 2_048 : 1_024,
       };
       if (isGemini4) {
         // Google's Gemini 4 Hydrogen guidance: HIGH is the default, LOW is
@@ -289,7 +289,7 @@ function createDefaultGeminiClient(apiKey: string): CoachGeminiClient {
           }),
         ]);
 
-        const text = response.text?.trim() || '';
+        const text = response.text?.trim() || response.candidates?.flatMap(c => c.content?.parts || []).filter(p => !p.thought && typeof p.text === 'string').map(p => p.text).join('\n').trim() || '';
         if (!text) {
           const emptyErr: any = new Error('Gemini devolvió una respuesta vacía.');
           emptyErr.status = 502;
@@ -313,7 +313,7 @@ function buildCoachSystemInstruction(sanitizedContext: Record<string, any>): str
     'Eres "Coach LazcaKong IA", coach de entrenamiento de fuerza e hipertrofia dentro de LAZCAKONG GYM.',
     'Responde siempre en español claro, directo y accionable (máximo 4 párrafos cortos o viñetas concisas).',
     'REGLAS ESTRICTAS DE INTEGRIDAD DE DATOS:',
-    '1. Usa EXCLUSIVAMENTE los datos reales incluidos en CONTEXTO_AUTORIZADO_DEL_ATLETA más abajo.',
+    '1. Para preguntas sobre el atleta usa exclusivamente CONTEXTO_AUTORIZADO_DEL_ATLETA. Para preguntas generales de fuerza, hipertrofia, recuperación, técnica, nutrición deportiva y planificación, usa conocimiento general y marca claramente que no es un dato personal. Si falta contexto, pide el dato necesario. No presentes como historial un ejemplo ni una recomendación.',
     '2. NUNCA inventes series, repeticiones, pesos, fechas ni entrenamientos pasados.',
     '3. Distingue explícitamente entre "Lo que levantaste" (registros reales con fecha y series) y "Sugerencia" (cálculo o recomendación de progresión).',
     '4. Si "hasRegisteredSets" es false o no hay series registradas para un ejercicio, di exactamente que aún no tiene series registradas para ese ejercicio.',
@@ -421,7 +421,7 @@ function mapGeminiErrorResponse(err: any): {
       status: 502,
       code: 'coach/gemini-model-error',
       retryable: false,
-      message: `Error de configuración o modelo al consultar Gemini: ${rawMsg}`,
+      message: 'El modelo en línea no pudo procesar la solicitud. Revisa la configuración del servicio.',
     };
   }
 
@@ -429,7 +429,7 @@ function mapGeminiErrorResponse(err: any): {
     status: 502,
     code: errCode === 'coach/gemini-empty-response' ? 'coach/gemini-empty-response' : 'coach/gemini-upstream-error',
     retryable: true,
-    message: `No se pudo obtener respuesta de Coach IA (${rawMsg}). Tus datos de entrenamiento siguen disponibles abajo.`,
+    message: 'El modelo en línea no respondió correctamente. Tus datos de entrenamiento siguen disponibles.',
   };
 }
 
@@ -633,10 +633,7 @@ export async function handleCoachChat(
     });
   } catch (err: any) {
     const mapped = mapGeminiErrorResponse(err);
-    console.error(
-      `[Coach LazcaKong IA] Gemini upstream error (status=${mapped.status}, code=${mapped.code}):`,
-      err?.message || err
-    );
+    console.error(`[Coach LazcaKong IA] Gemini upstream error (status=${mapped.status}, code=${mapped.code})`);
     return res.status(mapped.status).json({
       success: false,
       code: mapped.code,
