@@ -61,6 +61,7 @@ import {
 import { useAuth } from '../components/AuthProvider';
 import { isEffectiveFrontendAdmin } from '../utils/adminAuthCriterion';
 import { safeApiFetchJson } from '../utils/safeApiFetch';
+import { speakTechniqueInstructionText } from '../utils/coachVoiceEngine';
 import {
   playBeep,
   playRestCompleteAlarm,
@@ -1935,6 +1936,7 @@ export function useGymState() {
   // Track which second tick was last played so we don't depend on React state batching when locked
   const lastPlayedTickSecRef = useRef<number | null>(null);
   const fiveSecFiredTargetRef = useRef<number>(0);
+  const fiveSecVoiceFiredRef = useRef(false);
   const completeFiredTargetRef = useRef<number>(0);
 
   const getCurrentRestAlertMode = (): 'sound' | 'vibrate_only' | 'silent' => {
@@ -2211,6 +2213,11 @@ export function useGymState() {
       // 2. 5-second countdown warning & per-second ticks apply ONLY to "Pitido final" mode.
       // In "Solo vibración" and "Silencio", keep countdown silent & un-vibrated until 00:00.
       if (activeSoundEnabledRef.current) {
+        if (diffSec === 5 && !fiveSecVoiceFiredRef.current && document.visibilityState === 'visible') {
+          fiveSecVoiceFiredRef.current = true;
+          speakTechniqueInstructionText('Te quedan cinco segundos de descanso.');
+        }
+
         if (remainingMs <= 5300 && remainingMs > 1000) {
           if (fiveSecFiredTargetRef.current !== current.targetEndTime) {
             fiveSecFiredTargetRef.current = current.targetEndTime;
@@ -2318,6 +2325,7 @@ export function useGymState() {
       enableScreenWakeLock().catch(() => {});
       lastPlayedTickSecRef.current = null;
       fiveSecFiredTargetRef.current = 0;
+      fiveSecVoiceFiredRef.current = false;
       completeFiredTargetRef.current = 0;
 
       const resolvedContext = resolveNextRestTargetContext(
@@ -2559,6 +2567,7 @@ export function useGymState() {
       );
       lastPlayedTickSecRef.current = null;
       fiveSecFiredTargetRef.current = 0;
+      fiveSecVoiceFiredRef.current = false;
       completeFiredTargetRef.current = 0;
       resetCompleteAlertTracking(targetEndTime);
       resetCompleteAlertTracking(restId);
