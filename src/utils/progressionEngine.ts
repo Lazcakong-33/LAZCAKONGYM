@@ -1,3 +1,4 @@
+import { validMinutes } from './treadmill';
 import { CompletedWorkout, ExerciseSetSnapshot, LoggedSet } from '../types';
 import { normalizeExerciseName, resolveLibraryExercise } from '../data/exerciseLibrary';
 import { parseRobustDate } from './calorieCalculator';
@@ -690,7 +691,7 @@ function sanitizeSetSnapshot(
   const repsRaw = Number(raw.reps ?? anyRaw.targetReps ?? 0);
   const weight = Number.isFinite(weightRaw) && weightRaw >= 0 ? weightRaw : 0;
   const reps = Number.isFinite(repsRaw) && repsRaw >= 0 ? Math.round(repsRaw) : 0;
-  if (reps <= 0 && weight <= 0) return null;
+  if (!validMinutes(raw.durationMinutes) && reps <= 0 && weight <= 0) return null;
 
   const rpe =
     typeof raw.rpe === 'number' && Number.isFinite(raw.rpe) && raw.rpe > 0
@@ -710,7 +711,8 @@ function sanitizeSetSnapshot(
     setNumber:
       typeof raw.setNumber === 'number' && raw.setNumber > 0 ? raw.setNumber : fallbackNumber,
     weight,
-    reps: reps > 0 ? reps : 1,
+    reps: validMinutes(raw.durationMinutes) ? 0 : (reps > 0 ? reps : 1),
+    ...(validMinutes(raw.durationMinutes) ? { durationMinutes: raw.durationMinutes } : {}),
   };
   if (typeof rpe === 'number') snap.rpe = rpe;
   if (typeof rir === 'number') snap.rir = rir;

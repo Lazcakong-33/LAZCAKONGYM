@@ -1,3 +1,4 @@
+import { formatLoggedMinutes, isTreadmill } from '../utils/treadmill';
 import React, { useMemo } from 'react';
 import {
   Trophy,
@@ -345,10 +346,12 @@ export const CelebrationModal: React.FC<CelebrationModalProps> = ({
                   </div>
                   <div className="text-right font-mono tabular-nums shrink-0">
                     <span className="text-accent-text font-bold">
-                      {ex.maxWeight} kg × {ex.maxReps}
+                      {isTreadmill(ex.name)
+                        ? formatLoggedMinutes(ex.setsDetail)
+                        : `${ex.maxWeight} kg × ${ex.maxReps}`}
                     </span>
                     <span className="block text-[10px] text-zinc-400">
-                      {ex.sets} series · {(ex.volumeKg || 0).toLocaleString()} kg
+                      {isTreadmill(ex.name) ? 'Caminadora' : `${ex.sets} series · ${(ex.volumeKg || 0).toLocaleString()} kg`}
                     </span>
                   </div>
                 </div>

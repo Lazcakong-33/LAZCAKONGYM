@@ -1,3 +1,4 @@
+import { validMinutes } from './treadmill';
 import { CompletedWorkout } from '../types';
 import {
   calculateWorkoutCaloriesBurned,
@@ -191,10 +192,11 @@ export function purgeAndSanitizeWorkoutHistory(
                 const w = Number(s.weight ?? s.weightKg ?? s.targetWeightKg ?? 0);
                 const r = Number(s.reps ?? s.targetReps ?? 0);
                 if (s.completed === false && w <= 0 && r <= 0) return false;
-                return r > 0 || w > 0;
+                return validMinutes(s.durationMinutes) || r > 0 || w > 0;
               })
               .map((s: any, sIdx: number) => {
                 const entry: Record<string, unknown> = {
+                  ...(validMinutes(s.durationMinutes) ? { durationMinutes: s.durationMinutes } : {}),
                   setNumber: Number(s.setNumber) > 0 ? Number(s.setNumber) : sIdx + 1,
                   weight: Number(s.weight ?? s.weightKg ?? s.targetWeightKg ?? 0) || 0,
                   reps: Math.max(0, Math.round(Number(s.reps ?? s.targetReps ?? 0) || 0)),

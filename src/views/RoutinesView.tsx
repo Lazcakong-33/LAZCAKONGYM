@@ -1,3 +1,4 @@
+import { formatLoggedMinutes, isTreadmill, treadmillGoal, validMinutes } from '../utils/treadmill';
 import React, { useState, useEffect } from 'react';
 import {
   Play,
@@ -824,6 +825,7 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
               const isAltSelected = !!selectedAlternatives[exercise.id];
               const displayedName =
                 isAltSelected && exercise.alternative ? exercise.alternative : exercise.name;
+              const timed = isTreadmill(displayedName);
               const activeThumbnailQuery =
                 isAltSelected && exercise.alternative
                   ? { name: exercise.alternative }
@@ -862,7 +864,7 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
                         {exercise.targetMuscles}
                       </p>
                       <div className="text-xs font-mono font-bold text-accent-text pt-0.5">
-                        {exercise.defaultSets} series · {exercise.repRange} repeticiones
+                        {timed ? treadmillGoal(exercise.targetMinutes, exercise.repRange) : `${exercise.defaultSets} series · ${exercise.repRange}${/rep/i.test(exercise.repRange) ? '' : ' repeticiones'}`}
                       </div>
                       {!isAltSelected && !resolvedMatch && onAddRoutine && (
                         <button
@@ -888,8 +890,21 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-end w-full sm:w-auto gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#303030]">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 font-mono text-xs text-[#F5F5F5]/80 bg-[#090909] px-3 py-2 rounded-xl border border-[#303030]">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[#F5F5F5]/50 text-[10px]" title="Carga planificada en rutina">Plan:</span>
-                        <input
+                        <span className="text-[#F5F5F5]/50 text-[10px]" title={timed ? "Duración planificada" : "Carga planificada en rutina"}>Plan:</span>
+                        {timed ? (
+                          <label className="flex items-center gap-1">
+                            <input type="number" min="0" step="any" aria-label="Duración objetivo en minutos"
+                              placeholder="Tiempo" value={exercise.targetMinutes ?? ''}
+                              onChange={(event) => {
+                                const minutes = event.currentTarget.valueAsNumber;
+                                onAddRoutine?.({ ...activeRoutine, exercises: activeRoutine.exercises.map(ex =>
+                                  ex.id === exercise.id ? { ...ex, targetMinutes: validMinutes(minutes) ? minutes : undefined } : ex
+                                ) });
+                              }}
+                              className="w-16 bg-transparent text-accent-text text-right font-bold" />
+                            min
+                          </label>
+                        ) : <>                        <input
                           type="number"
                           min="0"
                           step="0.5"
@@ -922,7 +937,7 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
                           }}
                           className="w-16 bg-transparent text-accent-text font-black focus:outline-none text-right"
                         />
-                        <span className="text-[#F5F5F5]/50 text-[10px]">kg</span>
+                        <span className="text-[#F5F5F5]/50 text-[10px]">kg</span></>}
                       </div>
                       {/* Última sesión real */}
                       <div className="text-[10px] text-slate-400 border-t sm:border-t-0 sm:border-l border-[#303030] sm:pl-2 pt-1 sm:pt-0">
@@ -941,6 +956,9 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({
                           const lastMatch = prevSessions[0] || null;
                           if (lastMatch) {
                             const dateStr = new Date(lastMatch.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                            if (timed) {
+                              return <span>Última ({dateStr}): {formatLoggedMinutes(lastMatch.setsDetail)}</span>;
+                            }
                             const setsSummary = lastMatch.setsDetail.length > 0
                               ? lastMatch.setsDetail.map(s => `${s.weight}kg×${s.reps}`).join(', ')
                               : `${lastMatch.maxWeight}kg×${lastMatch.maxReps}`;
