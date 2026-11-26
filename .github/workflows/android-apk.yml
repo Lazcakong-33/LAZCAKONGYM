@@ -75,8 +75,8 @@ jobs:
         env:
           VITE_API_BASE_URL: https://lazcakongym.ai.studio
           VITE_GOOGLE_WEB_CLIENT_ID: 13537846485-8j7931cki5gtlpq2eklsru35765sv3pq.apps.googleusercontent.com
-          VITE_APP_VERSION: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && '7.0.0' || inputs.version_name || '' }}
-          VITE_OTA_CHANNEL: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && 'staging' || 'development' }}
+          VITE_APP_VERSION: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && '7.0.0' || github.ref == 'refs/heads/ci/validar-voz-android' && '7.0.8' || inputs.version_name || '' }}
+          VITE_OTA_CHANNEL: ${{ github.ref == 'refs/heads/release/7.0.0-ota' && 'staging' || github.ref == 'refs/heads/ci/validar-voz-android' && 'staging' || 'development' }}
           VITE_OTA_PRODUCTION_ENABLED: 'false'
         run: npm run build
 
@@ -141,6 +141,8 @@ jobs:
         if: ${{ github.ref != 'refs/heads/release/7.0.0-ota' && (github.event_name != 'workflow_dispatch' || inputs.build_type == 'debug') }}
         working-directory: android
         env:
+          LAZCAKONG_VERSION_CODE: ${{ github.ref == 'refs/heads/ci/validar-voz-android' && '70001' || '' }}
+          LAZCAKONG_VERSION_NAME: ${{ github.ref == 'refs/heads/ci/validar-voz-android' && '7.0.8' || '' }}
           ANDROID_DEBUG_KEYSTORE_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
           LAZCAKONG_DEBUG_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_DEBUG_KEYSTORE_PASSWORD }}
           LAZCAKONG_DEBUG_KEY_ALIAS: ${{ secrets.ANDROID_DEBUG_KEY_ALIAS }}
