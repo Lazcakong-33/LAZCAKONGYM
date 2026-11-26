@@ -33,5 +33,5 @@ export function resolveLibraryExercise(input: string | { id?: string; sourceId?:
 export function isObsoleteLibraryMedia(url?: string | null): boolean {
   return !!url && /(?:^|[/.])smartworkout\.app(?:[/:]|$)/i.test(url);
 }
-export const MUSCLE_GROUPS = ['Todos', 'Pecho', 'Espalda', 'Pierna', 'Hombro', 'Bíceps', 'Tríceps', 'Abdomen', 'Glúteos', 'Antebrazo'] as const;
+export const MUSCLE_GROUPS = ['Todos', 'Pecho', 'Espalda', 'Pierna', 'Hombro', 'Bíceps', 'Tríceps', 'Abdomen', 'Glúteos', 'Antebrazo', 'Cuello'] as const;
 export const EQUIPMENT_LIST = ['Todos', ...Array.from(new Set(EXERCISE_LIBRARY.flatMap(ex => ex.allEquipment || [ex.equipment || 'Peso corporal']))).sort((a, b) => a.localeCompare(b, 'es'))];

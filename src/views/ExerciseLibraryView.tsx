@@ -115,7 +115,7 @@ export const ExerciseLibraryView: React.FC<ExerciseLibraryViewProps> = ({
               Biblioteca de Ejercicios
             </h1>
             <p className="text-xs text-slate-400 mt-1 max-w-xl">
-              669 movimientos de gimnasio con animaciones originales: ocho poses en cuatro segundos, disponibles dentro de la app.
+              {EXERCISE_LIBRARY.length} movimientos de gimnasio con animaciones originales: ocho poses en cuatro segundos, disponibles dentro de la app.
             </p>
           </div>
 

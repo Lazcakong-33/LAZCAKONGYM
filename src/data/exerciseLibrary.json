@@ -17842,5 +17842,286 @@
     "secondaryMuscles": [],
     "frames": 8,
     "durationMs": 4000
+  },
+  {
+    "id": "0819db8f-0b80-5084-a6e3-356db3059c21",
+    "sourceId": "0819db8f-0b80-5084-a6e3-356db3059c21",
+    "name": "Flexión cervical isométrica con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/0819db8f-0b80-5084-a6e3-356db3059c21.webp",
+    "animationUrl": "/exercise-library/0819db8f-0b80-5084-a6e3-356db3059c21.webp",
+    "thumbnailUrl": "/exercise-library/0819db8f-0b80-5084-a6e3-356db3059c21-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/0819db8f-0b80-5084-a6e3-356db3059c21.webp",
+    "tags": [
+      "STRENGTH",
+      "ISOMETRIC"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "54348fde-3228-5f81-ad33-ed81d46bdd4e",
+    "sourceId": "54348fde-3228-5f81-ad33-ed81d46bdd4e",
+    "name": "Extensión cervical isométrica con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/54348fde-3228-5f81-ad33-ed81d46bdd4e.webp",
+    "animationUrl": "/exercise-library/54348fde-3228-5f81-ad33-ed81d46bdd4e.webp",
+    "thumbnailUrl": "/exercise-library/54348fde-3228-5f81-ad33-ed81d46bdd4e-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/54348fde-3228-5f81-ad33-ed81d46bdd4e.webp",
+    "tags": [
+      "STRENGTH",
+      "ISOMETRIC"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "51a6683c-9678-53c7-b397-3ec6e2ffb686",
+    "sourceId": "51a6683c-9678-53c7-b397-3ec6e2ffb686",
+    "name": "Inclinación cervical isométrica izquierda con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/51a6683c-9678-53c7-b397-3ec6e2ffb686.webp",
+    "animationUrl": "/exercise-library/51a6683c-9678-53c7-b397-3ec6e2ffb686.webp",
+    "thumbnailUrl": "/exercise-library/51a6683c-9678-53c7-b397-3ec6e2ffb686-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/51a6683c-9678-53c7-b397-3ec6e2ffb686.webp",
+    "tags": [
+      "STRENGTH",
+      "ISOMETRIC"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "90931242-7ae2-5e25-84d9-643a1db5b10a",
+    "sourceId": "90931242-7ae2-5e25-84d9-643a1db5b10a",
+    "name": "Inclinación cervical isométrica derecha con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/90931242-7ae2-5e25-84d9-643a1db5b10a.webp",
+    "animationUrl": "/exercise-library/90931242-7ae2-5e25-84d9-643a1db5b10a.webp",
+    "thumbnailUrl": "/exercise-library/90931242-7ae2-5e25-84d9-643a1db5b10a-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/90931242-7ae2-5e25-84d9-643a1db5b10a.webp",
+    "tags": [
+      "STRENGTH",
+      "ISOMETRIC"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "3a442fc1-4e72-59da-9c9e-461ef3e93c72",
+    "sourceId": "3a442fc1-4e72-59da-9c9e-461ef3e93c72",
+    "name": "Rotación cervical isométrica izquierda con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/3a442fc1-4e72-59da-9c9e-461ef3e93c72.webp",
+    "animationUrl": "/exercise-library/3a442fc1-4e72-59da-9c9e-461ef3e93c72.webp",
+    "thumbnailUrl": "/exercise-library/3a442fc1-4e72-59da-9c9e-461ef3e93c72-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/3a442fc1-4e72-59da-9c9e-461ef3e93c72.webp",
+    "tags": [
+      "STRENGTH",
+      "ISOMETRIC"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "55c80fd2-cad4-5215-9192-c9caa85fceca",
+    "sourceId": "55c80fd2-cad4-5215-9192-c9caa85fceca",
+    "name": "Rotación cervical isométrica derecha con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/55c80fd2-cad4-5215-9192-c9caa85fceca.webp",
+    "animationUrl": "/exercise-library/55c80fd2-cad4-5215-9192-c9caa85fceca.webp",
+    "thumbnailUrl": "/exercise-library/55c80fd2-cad4-5215-9192-c9caa85fceca-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/55c80fd2-cad4-5215-9192-c9caa85fceca.webp",
+    "tags": [
+      "STRENGTH",
+      "ISOMETRIC"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "f6ee4756-0a3b-5a6a-9949-56999300a824",
+    "sourceId": "f6ee4756-0a3b-5a6a-9949-56999300a824",
+    "name": "Flexión cervical dinámica con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/f6ee4756-0a3b-5a6a-9949-56999300a824.webp",
+    "animationUrl": "/exercise-library/f6ee4756-0a3b-5a6a-9949-56999300a824.webp",
+    "thumbnailUrl": "/exercise-library/f6ee4756-0a3b-5a6a-9949-56999300a824-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/f6ee4756-0a3b-5a6a-9949-56999300a824.webp",
+    "tags": [
+      "STRENGTH"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "952c8c54-c894-59c0-a87e-16202c2072ff",
+    "sourceId": "952c8c54-c894-59c0-a87e-16202c2072ff",
+    "name": "Extensión cervical dinámica con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/952c8c54-c894-59c0-a87e-16202c2072ff.webp",
+    "animationUrl": "/exercise-library/952c8c54-c894-59c0-a87e-16202c2072ff.webp",
+    "thumbnailUrl": "/exercise-library/952c8c54-c894-59c0-a87e-16202c2072ff-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/952c8c54-c894-59c0-a87e-16202c2072ff.webp",
+    "tags": [
+      "STRENGTH"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "52b21898-e936-5c14-ab37-3c131a1b2c86",
+    "sourceId": "52b21898-e936-5c14-ab37-3c131a1b2c86",
+    "name": "Retracción cervical con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/52b21898-e936-5c14-ab37-3c131a1b2c86.webp",
+    "animationUrl": "/exercise-library/52b21898-e936-5c14-ab37-3c131a1b2c86.webp",
+    "thumbnailUrl": "/exercise-library/52b21898-e936-5c14-ab37-3c131a1b2c86-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/52b21898-e936-5c14-ab37-3c131a1b2c86.webp",
+    "tags": [
+      "STRENGTH"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "d2ecbc8c-ddaa-5aca-80e1-611ffcc93c3c",
+    "sourceId": "d2ecbc8c-ddaa-5aca-80e1-611ffcc93c3c",
+    "name": "Inclinación cervical dinámica izquierda con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/d2ecbc8c-ddaa-5aca-80e1-611ffcc93c3c.webp",
+    "animationUrl": "/exercise-library/d2ecbc8c-ddaa-5aca-80e1-611ffcc93c3c.webp",
+    "thumbnailUrl": "/exercise-library/d2ecbc8c-ddaa-5aca-80e1-611ffcc93c3c-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/d2ecbc8c-ddaa-5aca-80e1-611ffcc93c3c.webp",
+    "tags": [
+      "STRENGTH"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
+  },
+  {
+    "id": "2f4f00e4-bb28-53c6-9363-affd4dafadea",
+    "sourceId": "2f4f00e4-bb28-53c6-9363-affd4dafadea",
+    "name": "Inclinación cervical dinámica derecha con banda elástica",
+    "muscleGroup": "Cuello",
+    "equipment": "Banda elástica",
+    "allEquipment": [
+      "Banda elástica"
+    ],
+    "videoUrl": "/exercise-library/2f4f00e4-bb28-53c6-9363-affd4dafadea.webp",
+    "animationUrl": "/exercise-library/2f4f00e4-bb28-53c6-9363-affd4dafadea.webp",
+    "thumbnailUrl": "/exercise-library/2f4f00e4-bb28-53c6-9363-affd4dafadea-poster.webp",
+    "secondaryThumbnailUrl": null,
+    "url": "/exercise-library/2f4f00e4-bb28-53c6-9363-affd4dafadea.webp",
+    "tags": [
+      "STRENGTH"
+    ],
+    "source": "LazcaKong Gym",
+    "primaryMuscles": [
+      "neck"
+    ],
+    "secondaryMuscles": [],
+    "frames": 8,
+    "durationMs": 4000
   }
 ]

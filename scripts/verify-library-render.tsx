@@ -8,7 +8,8 @@ import type { Exercise } from '../src/types';
 
 const noop = () => {};
 const html = renderToStaticMarkup(<ExerciseLibraryView routines={[]} onAddExerciseToRoutine={noop} onCreateRoutineWithExercise={noop} />);
-assert(html.includes('669'));
+assert(html.includes('680'));
+assert(html.includes('Cuello'));
 assert(html.includes('Biblioteca LazcaKong Gym'));
 assert(html.includes('Cuadrícula Muscular'));
 assert(!html.includes('smartworkout'));
@@ -19,4 +20,4 @@ const detail=renderToStaticMarkup(<ExerciseDetailModal exercise={ex} isOpen onCl
 assert(detail.includes(item.videoUrl!));
 assert(detail.includes('4 segundos'));
 assert(!detail.includes('smartworkout'));
-console.log('Render de biblioteca (grupos musculares, 669 ejercicios) y ficha animada local: correcto.');
+console.log('Render de biblioteca (grupos musculares, 680 ejercicios) y ficha animada local: correcto.');
