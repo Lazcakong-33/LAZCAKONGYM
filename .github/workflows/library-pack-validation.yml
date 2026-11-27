@@ -45,16 +45,21 @@ jobs:
           import assert from 'node:assert/strict';
           import fs from 'node:fs';
           import { EXERCISE_LIBRARY, resolveLibraryExercise } from './src/data/exerciseLibrary.ts';
-          const pack = JSON.parse(fs.readFileSync('src/data/exerciseLibraryPechoTriceps01.json', 'utf8'));
-          assert.equal(pack.length, 30);
+          const packs = ['PechoTriceps01', 'EspaldaBiceps01'].map(name =>
+            JSON.parse(fs.readFileSync(`src/data/exerciseLibrary${name}.json`, 'utf8'))
+          );
+          for (const pack of packs) assert.equal(pack.length, 30);
+          const normalize = name => name.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+          const pack = packs.flat();
           for (const item of pack) {
             assert.equal(EXERCISE_LIBRARY.filter(e => e.id === item.id).length, 1);
+            assert.equal(EXERCISE_LIBRARY.filter(e => normalize(e.name) === normalize(item.name)).length, 1);
             const entry = resolveLibraryExercise({ id: item.id });
             assert.equal(entry?.name, item.name);
             assert.ok(entry.shortInstructions?.length);
             assert.equal(entry.visualResourceStatus, 'pending_resource');
           }
-          console.log('Las 30 fichas aparecen una vez y conservan instrucciones.');
+          console.log('Las 60 fichas aparecen una vez y conservan instrucciones.');
           JS
           npx tsx src/server/__tests__/chileTimezoneCaloriesSuite.ts
           npx tsx src/server/__tests__/routineCompletionRegressionSuite.ts
@@ -66,7 +71,7 @@ jobs:
           import os, re, subprocess
           tags = subprocess.check_output(['git','tag','--list','ota-staging-v7.0.*'],text=True).splitlines()
           patches = [int(m[1]) for t in tags if (m:=re.fullmatch(r'ota-staging-v7\.0\.(\d+)',t))]
-          version = f'7.0.{max([9]+patches)+1}'
+          version = f'7.0.{max([10]+patches)+1}'
           with open(os.environ['GITHUB_ENV'],'a') as f:
               f.write(f'OTA_VERSION={version}\nVITE_APP_VERSION={version}\n')
           PY
@@ -80,7 +85,7 @@ jobs:
       - name: Package isolated staging candidate (not a release)
         run: |
           set -euo pipefail
-          npm run ota:package -- --version "$OTA_VERSION" --channel staging --min-native 70000 --bundle-base-url "https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v$OTA_VERSION" --notes "30 fichas nuevas de pecho y tríceps con instrucciones; animaciones pendientes."
+          npm run ota:package -- --version "$OTA_VERSION" --channel staging --min-native 70000 --bundle-base-url "https://github.com/Lazcakong-33/LAZCAKONGYM/releases/download/ota-staging-v$OTA_VERSION" --notes "60 fichas nuevas de pecho, tríceps, espalda y bíceps con instrucciones; animaciones pendientes."
           unzip -tq "dist-ota/lazcakongym-ota-$OTA_VERSION.zip"
           (cd dist-ota && sha256sum -c SHA256SUMS.txt)
       - uses: actions/upload-artifact@v4
@@ -128,7 +133,7 @@ jobs:
             echo "::error::Version already exists; never overwrite another release."
             exit 1
           fi
-          printf '30 fichas de pecho y tríceps. Paquete de pruebas sin activación del canal.\n\n<!-- LAZCAKONG_STAGING_MANIFEST_BASE64:%s -->\n' "$(base64 -w0 manifest.staging.json)" > release-notes.txt
+          printf '60 fichas de pecho, tríceps, espalda y bíceps. Paquete de pruebas sin activación del canal.\n\n<!-- LAZCAKONG_STAGING_MANIFEST_BASE64:%s -->\n' "$(base64 -w0 manifest.staging.json)" > release-notes.txt
           gh release create "$tag" "$zip" manifest.staging.json SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "LAZCAKONG GYM $version - staging" --notes-file release-notes.txt --prerelease --latest=false
           mkdir downloaded
           gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern "$zip" --dir downloaded

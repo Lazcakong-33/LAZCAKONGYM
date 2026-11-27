@@ -1,4 +1,5 @@
 import libraryData from './exerciseLibrary.json';
+import espaldaBiceps01 from './exerciseLibraryEspaldaBiceps01.json';
 import pechoTriceps01 from './exerciseLibraryPechoTriceps01.json';
 import { NECK_EXERCISE_ADDITIONS } from './neckExerciseAdditions';
 import { getNeckMovementSpec } from '../utils/neckMovementSpec';
@@ -85,6 +86,7 @@ const rawLibrary: LibraryExercise[] = [
   ...(libraryData as LibraryExercise[]),
   ...NECK_EXERCISE_ADDITIONS,
   ...(pechoTriceps01 as LibraryExercise[]),
+  ...(espaldaBiceps01 as LibraryExercise[]),
 ];
 
 export const EXERCISE_LIBRARY: LibraryExercise[] = rawLibrary.map((ex) => {
